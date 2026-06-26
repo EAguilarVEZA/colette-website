@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Colette · French Pastries — Alpharetta, GA</title>
+<meta name="description" content="Colette French Pastries — authentic French viennoiserie, signature cakes, macarons and café fare in the heart of Alpharetta, Georgia. Order online, earn rewards, taste Paris." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&family=Parisienne&display=swap" rel="stylesheet">
+
+<!-- ============================================================= -->
+<!-- COLETTE · MARKETING TRACKING — CONSENT MODE v2 DEFAULTS       -->
+<!-- This runs on every load. It only sets Google Consent Mode     -->
+<!-- DEFAULTS to "denied". NO marketing tags (GA4 / Ads / Meta)    -->
+<!-- are loaded here. They load ONLY after the visitor clicks      -->
+<!-- "Accept" in the consent banner (see end of <body>).           -->
+<!-- ============================================================= -->
+<script>
+  // Initialize the dataLayer + gtag() shim as early as possible.
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+
+  // Google Consent Mode v2 — default EVERYTHING to denied until the
+  // visitor opts in. 'wait_for_update' gives the banner time to respond.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied',
+    functionality_storage: 'denied',
+    personalization_storage: 'denied',
+    security_storage: 'granted',
+    wait_for_update: 500
+  });
+
+  gtag('set', 'ads_data_redaction', true);
+  gtag('set', 'url_passthrough', true);
+</script>
+<!-- ===================== END CONSENT DEFAULTS ===================== -->
+
+<style>
+:root{
+  --cream:#F7F1E7;
+  --cream-2:#EFE6D7;
+  --paper:#FBF7F0;
+  --ink:#221E1A;
+  --ink-soft:#4A433B;
+  --orange:#E07A2F;       /* Colette brand script orange */
+  --orange-deep:#C25E1B;
+  --wine:#6E2B2B;
+  --gold:#C09B4B;
+  --line:rgba(34,30,26,.14);
+  --shadow:0 18px 50px -22px rgba(34,30,26,.45);
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Jost',system-ui,sans-serif;
+  --script:'Parisienne',cursive;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);color:var(--ink);background:var(--cream);line-height:1.6;font-weight:300;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4{font-family:var(--serif);font-weight:500;line-height:1.08;letter-spacing:.2px}
+.script{font-family:var(--script)}
+.eyebrow{font-family:var(--sans);font-weight:500;letter-spacing:.42em;text-transform:uppercase;font-size:.7rem;color:var(--orange-deep)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+.btn{display:inline-flex;align-items:center;gap:.5em;font-family:var(--sans);font-weight:500;letter-spacing:.16em;text-transform:uppercase;font-size:.74rem;padding:15px 30px;border-radius:2px;border:1px solid var(--ink);background:var(--ink);color:var(--cream);cursor:pointer;transition:.25s}
+.btn:hover{background:transparent;color:var(--ink)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:var(--ink);color:var(--cream)}
+.btn.orange{background:var(--orange);border-color:var(--orange);color:#fff}
+.btn.orange:hover{background:transparent;color:var(--orange-deep);border-color:var(--orange-deep)}
+
+/* NAV */
+header.nav{position:fixed;top:0;left:0;right:0;z-index:60;transition:.35s;padding:22px 0}
+header.nav.scrolled{background:rgba(247,241,231,.94);backdrop-filter:blur(10px);box-shadow:0 1px 0 var(--line);padding:12px 0}
+.nav-inner{display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--script);font-size:2.1rem;line-height:1;color:var(--cream);transition:.35s}
+.logo small{display:block;font-family:var(--sans);font-weight:500;letter-spacing:.5em;font-size:.5rem;text-transform:uppercase;margin-top:-4px;padding-left:6px}
+header.nav.scrolled .logo{color:var(--orange-deep)}
+.nav-links{display:flex;align-items:center;gap:34px}
+.nav-links a{font-weight:400;letter-spacing:.14em;text-transform:uppercase;font-size:.74rem;color:var(--cream);transition:.25s}
+header.nav.scrolled .nav-links a{color:var(--ink)}
+.nav-links a:hover{color:var(--orange)}
+.nav-cta{padding:11px 22px;border:1px solid var(--cream);border-radius:2px;color:var(--cream)!important}
+header.nav.scrolled .nav-cta{border-color:var(--orange);color:var(--orange-deep)!important}
+.nav-cta:hover{background:var(--orange);border-color:var(--orange);color:#fff!important}
+.burger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:0}
+.burger span{width:26px;height:2px;background:var(--cream);transition:.3s}
+header.nav.scrolled .burger span{background:var(--ink)}
+
+/* HERO */
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;color:var(--cream);overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:url('images/chocolate-tart.jpg') center/cover no-repeat;transform:scale(1.05);filter:saturate(1.05)}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,rgba(20,16,12,.82) 0%,rgba(20,16,12,.55) 45%,rgba(20,16,12,.25) 100%)}
+.hero-inner{position:relative;z-index:3;max-width:680px}
+.hero .since{letter-spacing:.5em;font-size:.7rem;text-transform:uppercase;color:var(--gold);font-weight:500;margin-bottom:24px}
+.hero h1{font-size:clamp(3rem,8vw,6.4rem);font-weight:500;line-height:.98}
+.hero h1 .script{display:block;color:var(--orange);font-size:clamp(3.4rem,9vw,7rem);line-height:.8;margin-bottom:-6px}
+.hero p.lede{font-size:1.18rem;font-weight:300;max-width:520px;margin:26px 0 36px;color:rgba(247,241,231,.92)}
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap}
+.hero .btn{padding:17px 34px}
+.scroll-hint{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);z-index:3;color:var(--cream);font-size:.62rem;letter-spacing:.4em;text-transform:uppercase;opacity:.8;display:flex;flex-direction:column;align-items:center;gap:8px}
+.scroll-hint::after{content:"";width:1px;height:42px;background:linear-gradient(var(--cream),transparent);animation:pulse 2.2s infinite}
+@keyframes pulse{0%,100%{opacity:.2}50%{opacity:1}}
+
+/* MARQUEE strip */
+.strip{background:var(--ink);color:var(--cream);padding:16px 0;overflow:hidden;white-space:nowrap}
+.strip .track{display:inline-block;animation:marq 28s linear infinite}
+.strip span{font-family:var(--serif);font-style:italic;font-size:1.15rem;padding:0 30px;color:var(--cream)}
+.strip span b{color:var(--orange);font-style:normal;font-family:var(--sans);font-weight:300}
+@keyframes marq{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* SECTIONS */
+section{padding:96px 0}
+.section-head{text-align:center;max-width:680px;margin:0 auto 56px}
+.section-head h2{font-size:clamp(2.3rem,5vw,3.4rem);margin:14px 0 16px}
+.section-head p{color:var(--ink-soft);font-size:1.06rem}
+.rule{width:54px;height:1px;background:var(--orange);margin:0 auto}
+
+/* STORY */
+.story{background:var(--paper)}
+.story-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:64px;align-items:center}
+.story-imgs{position:relative}
+.story-imgs img{border-radius:3px;box-shadow:var(--shadow);width:100%;object-fit:cover}
+.story-imgs .a{aspect-ratio:4/5}
+.story-imgs .b{position:absolute;width:46%;bottom:-34px;right:-26px;aspect-ratio:1;border:7px solid var(--paper)}
+.story-copy h2{font-size:clamp(2.2rem,4.5vw,3.2rem);margin:16px 0 22px}
+.story-copy p{color:var(--ink-soft);margin-bottom:18px;font-size:1.04rem}
+.story-sign{font-family:var(--script);font-size:2rem;color:var(--orange-deep);margin-top:10px}
+
+/* ORDER HUB */
+.order{background:var(--ink);color:var(--cream)}
+.order .section-head h2{color:var(--cream)}
+.order .section-head p{color:rgba(247,241,231,.72)}
+.order .eyebrow{color:var(--gold)}
+.order .rule{background:var(--gold)}
+.channels{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:10px}
+.channel{background:rgba(247,241,231,.05);border:1px solid rgba(247,241,231,.16);border-radius:4px;padding:30px 22px;text-align:center;transition:.3s;display:flex;flex-direction:column;align-items:center;gap:12px}
+.channel:hover{background:rgba(247,241,231,.1);transform:translateY(-5px);border-color:var(--gold)}
+.channel .ic{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;background:var(--orange);color:#fff;font-family:var(--serif);font-size:1.5rem;font-weight:600}
+.channel h4{font-size:1.4rem;color:var(--cream)}
+.channel p{font-size:.84rem;color:rgba(247,241,231,.65);min-height:38px}
+.channel .lnk{font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);border-bottom:1px solid var(--gold);padding-bottom:3px}
+
+/* MENU */
+.menu-tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:44px}
+.tab{font-family:var(--sans);font-weight:400;letter-spacing:.14em;text-transform:uppercase;font-size:.74rem;padding:11px 22px;border:1px solid var(--line);border-radius:40px;background:transparent;cursor:pointer;transition:.25s;color:var(--ink-soft)}
+.tab:hover{border-color:var(--orange);color:var(--orange-deep)}
+.tab.active{background:var(--ink);border-color:var(--ink);color:var(--cream)}
+.panel{display:none;animation:fade .5s}
+.panel.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.panel-note{text-align:center;color:var(--ink-soft);font-style:italic;font-family:var(--serif);font-size:1.15rem;margin-bottom:34px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:30px}
+.card{background:var(--paper);border-radius:4px;overflow:hidden;box-shadow:0 14px 40px -28px rgba(34,30,26,.6);transition:.35s;display:flex;flex-direction:column}
+.card:hover{transform:translateY(-7px);box-shadow:var(--shadow)}
+.card .ph{aspect-ratio:4/3;overflow:hidden;background:var(--cream-2)}
+.card .ph img{width:100%;height:100%;object-fit:cover;transition:.6s}
+.card:hover .ph img{transform:scale(1.07)}
+.card .body{padding:22px 24px 26px;flex:1;display:flex;flex-direction:column}
+.card .tt{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.card .tt h4{font-size:1.5rem}
+.card .price{font-family:var(--serif);font-weight:600;color:var(--orange-deep);font-size:1.2rem;white-space:nowrap}
+.card .desc{color:var(--ink-soft);font-size:.92rem;margin-top:8px}
+.card .tag{margin-top:14px;align-self:flex-start;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--wine);border:1px solid rgba(110,43,43,.3);padding:4px 10px;border-radius:30px}
+
+/* text menu rows */
+.rows{max-width:780px;margin:0 auto;display:grid;gap:6px}
+.row{display:flex;align-items:baseline;gap:14px;padding:15px 4px;border-bottom:1px dashed var(--line)}
+.row .n{font-family:var(--serif);font-size:1.35rem;font-weight:500;white-space:nowrap}
+.row .d{flex:1;color:var(--ink-soft);font-size:.9rem;border-bottom:1px dotted transparent}
+.row .dots{flex:1;border-bottom:1px dotted var(--line);transform:translateY(-4px)}
+.row .p{font-family:var(--serif);font-weight:600;color:var(--orange-deep);font-size:1.2rem;white-space:nowrap}
+
+/* LOYALTY / APP */
+.loyalty{background:linear-gradient(160deg,var(--wine),#4a1d1d);color:var(--cream);position:relative;overflow:hidden}
+.loyalty .eyebrow{color:var(--gold)}
+.loyalty-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+.loyalty h2{font-size:clamp(2.3rem,5vw,3.6rem);color:var(--cream);margin:14px 0 20px}
+.loyalty p.l{color:rgba(247,241,231,.86);font-size:1.06rem;margin-bottom:26px;max-width:480px}
+.perks{display:grid;gap:16px;margin-bottom:32px}
+.perk{display:flex;gap:16px;align-items:flex-start}
+.perk .pc{flex:0 0 42px;height:42px;border-radius:50%;background:rgba(247,241,231,.12);display:grid;place-items:center;color:var(--gold);font-family:var(--serif);font-size:1.3rem;border:1px solid rgba(201,162,75,.5)}
+.perk h4{font-size:1.3rem;color:var(--cream)}
+.perk p{color:rgba(247,241,231,.7);font-size:.9rem}
+/* phone mock */
+.phone{justify-self:center;width:300px;height:600px;background:#0e0c0b;border-radius:42px;padding:12px;box-shadow:0 40px 80px -30px rgba(0,0,0,.7);border:1px solid rgba(247,241,231,.15);position:relative}
+.phone .screen{width:100%;height:100%;background:var(--cream);border-radius:32px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.phone .notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:120px;height:24px;background:#0e0c0b;border-radius:0 0 16px 16px;z-index:5}
+.app-top{background:var(--ink);color:var(--cream);padding:30px 20px 18px;text-align:center}
+.app-top .script{color:var(--orange);font-size:1.9rem;line-height:1}
+.app-top .pts{margin-top:10px;background:rgba(247,241,231,.08);border-radius:30px;padding:8px 0;font-size:.7rem;letter-spacing:.1em;border:1px solid rgba(201,162,75,.4);color:var(--gold)}
+.app-body{flex:1;padding:16px;overflow:hidden;background:var(--cream)}
+.app-card{background:#fff;border-radius:14px;padding:12px;box-shadow:0 8px 24px -16px rgba(0,0,0,.4);margin-bottom:12px;display:flex;gap:12px;align-items:center}
+.app-card img{width:54px;height:54px;border-radius:10px;object-fit:cover}
+.app-card .ac-t{font-family:var(--serif);font-size:1.1rem;font-weight:600;color:var(--ink)}
+.app-card .ac-p{font-size:.72rem;color:var(--ink-soft)}
+.app-card .ac-add{margin-left:auto;width:30px;height:30px;border-radius:50%;background:var(--orange);color:#fff;display:grid;place-items:center;font-size:1.2rem;flex:0 0 30px}
+.app-promo{background:linear-gradient(120deg,var(--orange),var(--orange-deep));color:#fff;border-radius:14px;padding:14px;font-size:.78rem}
+.app-promo b{font-family:var(--serif);font-size:1.1rem;display:block;margin-bottom:2px}
+.app-nav{display:flex;justify-content:space-around;padding:14px 0;background:#fff;border-top:1px solid var(--line);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.app-nav span.on{color:var(--orange-deep)}
+
+/* CTA email band */
+.eband{background:var(--cream-2);text-align:center}
+.eband h2{font-size:clamp(2.2rem,5vw,3.3rem);margin:14px 0 10px}
+.eband p{color:var(--ink-soft);max-width:520px;margin:0 auto 26px;font-size:1.05rem}
+.eform{display:flex;gap:10px;max-width:520px;margin:0 auto;flex-wrap:wrap;justify-content:center}
+.eform input{flex:1;min-width:220px;padding:15px 18px;border:1px solid var(--line);border-radius:2px;font-family:var(--sans);font-size:.92rem;background:var(--paper)}
+.eform input:focus{outline:none;border-color:var(--orange)}
+
+/* FOOTER */
+footer{background:var(--ink);color:var(--cream);padding:80px 0 36px}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:48px}
+.foot .logo2{font-family:var(--script);font-size:2.6rem;color:var(--orange)}
+.foot p{color:rgba(247,241,231,.66);font-size:.92rem;margin-top:14px;max-width:300px}
+.foot h5{letter-spacing:.22em;text-transform:uppercase;font-size:.72rem;color:var(--gold);font-family:var(--sans);font-weight:500;margin-bottom:18px}
+.foot a,.foot li{color:rgba(247,241,231,.8);font-size:.92rem;display:block;margin-bottom:9px;list-style:none}
+.foot a:hover{color:var(--orange)}
+.foot-bottom{border-top:1px solid rgba(247,241,231,.12);margin-top:54px;padding-top:24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:.78rem;color:rgba(247,241,231,.5)}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(20,16,12,.7);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.overlay.show{display:flex;animation:fade .3s}
+.modal{background:var(--paper);max-width:880px;width:100%;border-radius:6px;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;box-shadow:0 50px 90px -30px rgba(0,0,0,.6);position:relative}
+.modal .mimg{background:url('images/macarons-box.jpg') center/cover;min-height:440px}
+.modal .mbody{padding:48px 44px}
+.modal .close{position:absolute;top:16px;right:18px;background:none;border:0;font-size:1.8rem;cursor:pointer;color:var(--ink);line-height:1;z-index:3}
+.modal .eyebrow{color:var(--orange-deep)}
+.modal h3{font-size:2.6rem;margin:12px 0 8px;line-height:1}
+.modal h3 .script{color:var(--orange);font-size:3rem}
+.modal p{color:var(--ink-soft);font-size:.98rem;margin-bottom:22px}
+.modal form{display:grid;gap:12px}
+.modal input{padding:14px 16px;border:1px solid var(--line);border-radius:2px;font-family:var(--sans);font-size:.92rem;background:#fff}
+.modal input:focus{outline:none;border-color:var(--orange)}
+.modal .fine{font-size:.72rem;color:var(--ink-soft);margin-top:6px;line-height:1.5}
+.success{text-align:center;padding:30px 0}
+.success .code{font-family:var(--serif);font-size:2.4rem;color:var(--orange-deep);letter-spacing:.1em;border:2px dashed var(--orange);padding:14px;border-radius:4px;margin:18px 0}
+
+/* AI CHAT */
+.chat-fab{position:fixed;bottom:26px;right:26px;z-index:90;background:var(--orange);color:#fff;border:none;border-radius:50px;padding:15px 22px;font-family:var(--sans);font-weight:500;letter-spacing:.08em;font-size:.82rem;cursor:pointer;box-shadow:0 18px 40px -14px rgba(224,122,47,.7);display:flex;align-items:center;gap:9px;transition:.3s}
+.chat-fab:hover{background:var(--orange-deep);transform:translateY(-3px)}
+.chat-fab .dot{width:8px;height:8px;border-radius:50%;background:#7CFC9A;box-shadow:0 0 0 0 rgba(124,252,154,.6);animation:ping 1.8s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(124,252,154,.6)}70%{box-shadow:0 0 0 9px rgba(124,252,154,0)}100%{box-shadow:0 0 0 0 rgba(124,252,154,0)}}
+.chat-win{position:fixed;bottom:96px;right:26px;width:360px;max-width:calc(100vw - 40px);height:520px;background:var(--paper);border-radius:16px;box-shadow:0 40px 80px -24px rgba(0,0,0,.5);z-index:91;display:none;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
+.chat-win.show{display:flex;animation:fade .3s}
+.chat-h{background:var(--ink);color:var(--cream);padding:18px 20px;display:flex;align-items:center;gap:12px}
+.chat-h .av{width:40px;height:40px;border-radius:50%;background:var(--orange);display:grid;place-items:center;font-family:var(--script);font-size:1.5rem;color:#fff}
+.chat-h .ht{font-family:var(--serif);font-size:1.2rem}
+.chat-h .hs{font-size:.66rem;color:var(--gold);letter-spacing:.1em;text-transform:uppercase}
+.chat-h .cx{margin-left:auto;background:none;border:0;color:var(--cream);font-size:1.4rem;cursor:pointer}
+.chat-body{flex:1;padding:18px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;background:var(--cream)}
+.msg{max-width:82%;padding:11px 15px;border-radius:14px;font-size:.88rem;line-height:1.5}
+.msg.bot{background:#fff;border:1px solid var(--line);border-bottom-left-radius:3px;align-self:flex-start;color:var(--ink)}
+.msg.user{background:var(--orange);color:#fff;border-bottom-right-radius:3px;align-self:flex-end}
+.quick{display:flex;flex-wrap:wrap;gap:7px;padding:0 18px 12px;background:var(--cream)}
+.quick button{font-size:.72rem;border:1px solid var(--orange);color:var(--orange-deep);background:transparent;border-radius:30px;padding:7px 13px;cursor:pointer;transition:.2s}
+.quick button:hover{background:var(--orange);color:#fff}
+.chat-in{display:flex;border-top:1px solid var(--line);background:#fff}
+.chat-in input{flex:1;border:0;padding:15px 18px;font-family:var(--sans);font-size:.88rem}
+.chat-in input:focus{outline:none}
+.chat-in button{background:var(--ink);color:var(--cream);border:0;padding:0 22px;cursor:pointer;font-size:1.1rem}
+.demo-pill{position:absolute;top:64px;left:50%;transform:translateX(-50%);background:rgba(34,30,26,.85);color:var(--gold);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;padding:4px 12px;border-radius:30px;z-index:6}
+
+/* COOKIE / CONSENT BANNER (dark) */
+.consent{position:fixed;left:18px;right:18px;bottom:18px;z-index:300;background:rgba(20,16,12,.97);color:var(--cream);border:1px solid rgba(201,162,75,.4);border-left:3px solid var(--orange);border-radius:8px;box-shadow:0 24px 60px -22px rgba(0,0,0,.7);padding:18px 20px;display:none;gap:16px;align-items:center;flex-wrap:wrap;backdrop-filter:blur(8px)}
+.consent.show{display:flex;animation:fade .4s}
+.consent .ctext{flex:1;min-width:240px;font-size:.82rem;line-height:1.55;color:rgba(247,241,231,.86)}
+.consent .ctext b{color:var(--cream);font-weight:500}
+.consent .ctext a{color:var(--orange);border-bottom:1px solid rgba(224,122,47,.5)}
+.consent .cbtns{display:flex;gap:10px;flex-wrap:wrap}
+.consent button{font-family:var(--sans);font-weight:500;letter-spacing:.1em;text-transform:uppercase;font-size:.68rem;padding:11px 18px;border-radius:3px;cursor:pointer;transition:.25s;border:1px solid transparent}
+.consent .c-accept{background:var(--orange);color:#fff;border-color:var(--orange)}
+.consent .c-accept:hover{background:var(--orange-deep);border-color:var(--orange-deep)}
+.consent .c-ess{background:transparent;color:var(--cream);border-color:rgba(247,241,231,.4)}
+.consent .c-ess:hover{border-color:var(--gold);color:var(--gold)}
+.consent .c-decline{background:transparent;color:rgba(247,241,231,.6);border-color:rgba(247,241,231,.22)}
+.consent .c-decline:hover{color:var(--cream);border-color:rgba(247,241,231,.5)}
+@media(max-width:600px){.consent{left:10px;right:10px;bottom:10px;padding:16px}.consent .cbtns{width:100%}.consent .cbtns button{flex:1}}
+
+@media(max-width:900px){
+  .nav-links{position:fixed;inset:0 0 0 auto;width:78%;max-width:320px;background:var(--ink);flex-direction:column;justify-content:center;gap:26px;transform:translateX(100%);transition:.35s;z-index:70}
+  .nav-links.open{transform:none}
+  .nav-links a{color:var(--cream)!important;font-size:1rem}
+  .burger{display:flex;z-index:80}
+  .story-grid,.loyalty-grid,.foot-grid{grid-template-columns:1fr;gap:40px}
+  .story-imgs .b{position:static;width:60%;margin:-30px auto 0;display:block}
+  .channels{grid-template-columns:repeat(2,1fr)}
+  .cards{grid-template-columns:repeat(2,1fr)}
+  .modal{grid-template-columns:1fr}
+  .modal .mimg{min-height:170px}
+}
+@media(max-width:600px){
+  .wrap{padding:0 20px}
+  section{padding:70px 0}
+  .cards{grid-template-columns:1fr}
+  .channels{grid-template-columns:1fr 1fr}
+  .hero p.lede{font-size:1.05rem}
+  .row{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a href="#top" class="logo">Colette<small>Paris · Alpharetta</small></a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#story">Our Story</a>
+      <a href="#order">Order</a>
+      <a href="#menu">Menu</a>
+      <a href="#rewards">Rewards</a>
+      <a href="#visit">Visit</a>
+      <a href="#order" class="nav-cta">Order Now</a>
+    </nav>
+    <button class="burger" id="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero-bg"></div>
+  <div class="wrap hero-inner">
+    <div class="since">Authentically French · Depuis 2022</div>
+    <h1><span class="script">Colette</span>French Pastries</h1>
+    <p class="lede">French-trained chefs, an in-house artist, and bread baked fresh each morning — a corner of Paris in the heart of Alpharetta, Georgia.</p>
+    <div class="hero-actions">
+      <a href="order.html" class="btn orange">Order Now</a>
+      <a href="#menu" class="btn ghost" style="color:var(--cream);border-color:var(--cream)">Explore the Menu</a>
+    </div>
+  </div>
+  <div class="scroll-hint">Scroll</div>
+</section>
+
+<!-- MARQUEE -->
+<div class="strip" aria-hidden="true">
+  <div class="track">
+    <span>Croissants au beurre <b>•</b></span><span>Macarons <b>•</b></span><span>Signature Cakes <b>•</b></span><span>Café Richard Paris <b>•</b></span><span>Crêpes <b>•</b></span><span>Kouign-Amann <b>•</b></span><span>Éclairs <b>•</b></span>
+    <span>Croissants au beurre <b>•</b></span><span>Macarons <b>•</b></span><span>Signature Cakes <b>•</b></span><span>Café Richard Paris <b>•</b></span><span>Crêpes <b>•</b></span><span>Kouign-Amann <b>•</b></span><span>Éclairs <b>•</b></span>
+  </div>
+</div>
+
+<!-- STORY -->
+<section class="story" id="story">
+  <div class="wrap story-grid">
+    <div class="story-imgs">
+      <img class="a" src="images/twice-baked-almond.jpg" alt="Twice-baked almond croissant">
+      <img class="b" src="images/iced-latte-nocciola.jpg" alt="Iced hazelnut latte">
+    </div>
+    <div class="story-copy">
+      <div class="eyebrow">Artistic Mastery</div>
+      <h2>A home for artists, built around the table.</h2>
+      <p>At Colette, two words guide every decision: <em>artistic mastery</em>. From our French-trained pastry chefs to the in-house artist whose abstract pieces line our walls, we put detail and comfort above everything else.</p>
+      <p>Surrounded by imported French coffee, authentic pastries, and bread crafted fresh every morning, you're transported to the romantic cobblestone streets of Paris — all while right here, in Alpharetta.</p>
+      <div class="story-sign">— Colette</div>
+    </div>
+  </div>
+</section>
+
+<!-- ORDER HUB -->
+<section class="order" id="order">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Order Your Way</div>
+      <h2>Paris, delivered.</h2>
+      <div class="rule"></div>
+      <p style="margin-top:18px">Pick up at the café or have Colette brought to your door. Order direct to earn rewards — or through your favorite app.</p>
+    </div>
+    <div class="channels">
+      <a class="channel" href="order.html">
+        <div class="ic">C</div>
+        <h4>Order Direct</h4>
+        <p>Pickup &amp; in-store. Earn points on every order.</p>
+        <span class="lnk">Start order</span>
+      </a>
+      <a class="channel" href="https://www.doordash.com/" target="_blank" rel="noopener">
+        <div class="ic">D</div>
+        <h4>DoorDash</h4>
+        <p>Delivery across Alpharetta &amp; nearby.</p>
+        <span class="lnk">Open DoorDash</span>
+      </a>
+      <a class="channel" href="https://www.ubereats.com/" target="_blank" rel="noopener">
+        <div class="ic">U</div>
+        <h4>Uber Eats</h4>
+        <p>Fast delivery to your door.</p>
+        <span class="lnk">Open Uber Eats</span>
+      </a>
+      <a class="channel" href="https://www.clover.com/online-ordering" target="_blank" rel="noopener">
+        <div class="ic">◑</div>
+        <h4>Clover Online</h4>
+        <p>Our in-house ordering &amp; checkout.</p>
+        <span class="lnk">Order on Clover</span>
+      </a>
+    </div>
+    <p style="text-align:center;margin-top:30px;font-size:.82rem;color:rgba(247,241,231,.55)">Crêpes served Friday–Sunday, 10am–2pm · Catering available with 48 hours' notice</p>
+  </div>
+</section>
+
+<!-- MENU -->
+<section id="menu">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">La Carte</div>
+      <h2>The Menu</h2>
+      <div class="rule"></div>
+      <p style="margin-top:18px">Baked in small batches every morning. Below is a taste — view the full carte at the café or in the app.</p>
+    </div>
+
+    <div class="menu-tabs" id="tabs">
+      <button class="tab active" data-p="vien">Viennoiserie</button>
+      <button class="tab" data-p="cakes">Signature Cakes</button>
+      <button class="tab" data-p="sweet">Tarts &amp; Macarons</button>
+      <button class="tab" data-p="cafe">Café &amp; Savory</button>
+      <button class="tab" data-p="crepes">Crêpes</button>
+      <button class="tab" data-p="drinks">Coffee &amp; Tea</button>
+    </div>
+
+    <!-- VIENNOISERIE -->
+    <div class="panel active" id="p-vien">
+      <p class="panel-note">All viennoiserie $5.25 – $7.95 · baked fresh daily</p>
+      <div class="cards" id="grid-vien"></div>
+    </div>
+    <!-- CAKES -->
+    <div class="panel" id="p-cakes">
+      <p class="panel-note">Individual cakes $12.99 – $14.99 · 8" cakes $55–$65 · 10" cakes $75 (48 hrs' notice)</p>
+      <div class="cards" id="grid-cakes"></div>
+    </div>
+    <!-- SWEET -->
+    <div class="panel" id="p-sweet">
+      <p class="panel-note">Tarts $12.99 · Mini tarts $3.50 · Éclairs $9.00 · Macarons $3.25 each</p>
+      <div class="cards" id="grid-sweet"></div>
+    </div>
+    <!-- CAFE -->
+    <div class="panel" id="p-cafe">
+      <p class="panel-note">All main courses served with a complimentary side salad</p>
+      <div class="cards" id="grid-cafe"></div>
+      <div class="rows" id="rows-cafe" style="margin-top:36px"></div>
+    </div>
+    <!-- CREPES -->
+    <div class="panel" id="p-crepes">
+      <p class="panel-note">Served Friday – Sunday, 10am – 2pm</p>
+      <div class="rows" id="rows-crepes"></div>
+    </div>
+    <!-- DRINKS -->
+    <div class="panel" id="p-drinks">
+      <p class="panel-note">All our coffee &amp; tea is from Café Richard, Paris · make it yours with hazelnut, vanilla, caramel &amp; more</p>
+      <div class="cards" id="grid-drinks" style="grid-template-columns:repeat(2,1fr);max-width:760px;margin:0 auto 36px"></div>
+      <div class="rows" id="rows-drinks"></div>
+    </div>
+  </div>
+</section>
+
+<!-- LOYALTY / APP -->
+<section class="loyalty" id="rewards">
+  <div class="wrap loyalty-grid">
+    <div>
+      <div class="eyebrow">The Colette App</div>
+      <h2>Closer to Colette, every day.</h2>
+      <p class="l">A companion app that remembers your usual, rewards every visit, and lets our AI concierge take your order — connected straight to our kitchen.</p>
+      <div class="perks">
+        <div class="perk"><div class="pc">★</div><div><h4>Earn &amp; redeem rewards</h4><p>Points on every order, free pastries, and a treat on your birthday.</p></div></div>
+        <div class="perk"><div class="pc">✦</div><div><h4>Ask Colette, our AI concierge</h4><p>"A box of 6 macarons and two lattes for pickup at 9." Done — it knows the menu and reorders your favorites.</p></div></div>
+        <div class="perk"><div class="pc">✉</div><div><h4>Members-only drops</h4><p>New flavors, seasonal cakes and promos, by app &amp; text before anyone else.</p></div></div>
+      </div>
+      <button class="btn orange" onclick="openModal()">Join &amp; get 10% off</button>
+    </div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="app-top">
+          <div class="script">Colette</div>
+          <div class="pts">★ 240 points · 60 to a free croissant</div>
+        </div>
+        <div class="app-body">
+          <div class="app-card"><img src="images/cake-sophia.jpg" alt=""><div><div class="ac-t">Sophia</div><div class="ac-p">Your usual · $13.99</div></div><div class="ac-add">+</div></div>
+          <div class="app-card"><img src="images/macarons-box.jpg" alt=""><div><div class="ac-t">Macaron Box ×6</div><div class="ac-p">$20.00</div></div><div class="ac-add">+</div></div>
+          <div class="app-promo"><b>Members' drop 🍓</b>La Fraise Enchantée crêpe — this weekend only.</div>
+        </div>
+        <div class="app-nav"><span class="on">Order</span><span>Rewards</span><span>Ask Colette</span><span>Me</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EMAIL BAND -->
+<section class="eband" id="join">
+  <div class="wrap">
+    <div class="eyebrow">Welcome to the table</div>
+    <h2>Get 10% off your first order</h2>
+    <p>Join our list for a one-time welcome offer, early access to new pastries, and the occasional sweet surprise by email &amp; text.</p>
+    <form class="eform" onsubmit="return inlineJoin(event)">
+      <input type="email" placeholder="Your email address" required>
+      <input type="tel" placeholder="Mobile (for text offers)">
+      <button class="btn orange" type="submit">Claim 10% Off</button>
+    </form>
+    <p style="font-size:.72rem;margin-top:14px;color:var(--ink-soft)">No spam, just pastries. Unsubscribe anytime.</p>
+  </div>
+</section>
+
+<!-- FOOTER / VISIT -->
+<footer id="visit">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot">
+        <div class="logo2">Colette</div>
+        <p>Authentic French pastries, café fare and bread baked fresh every morning in the heart of Alpharetta, Georgia.</p>
+      </div>
+      <div class="foot">
+        <h5>Visit</h5>
+        <a href="https://maps.google.com/?q=2225+Old+Milton+Pkwy+Suite+100+Alpharetta+GA+30004" target="_blank" rel="noopener">2225 Old Milton Pkwy, Suite&nbsp;100<br>Alpharetta, GA 30004</a>
+        <a href="tel:6786917714">678.691.7714</a>
+        <a href="https://www.instagram.com/colettefrenchpastries/" target="_blank" rel="noopener">@colettefrenchpastries</a>
+      </div>
+      <div class="foot">
+        <h5>Hours</h5>
+        <ul>
+          <li>Monday — Closed</li>
+          <li>Tue – Sat — 8am – 4pm</li>
+          <li>Sunday — 8am – 4pm</li>
+          <li style="color:var(--gold);margin-top:10px">Crêpes: Fri–Sun 10am–2pm</li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Colette French Pastries · Alpharetta, GA</span>
+      <span>Designed for the love of Paris</span>
+    </div>
+  </div>
+</footer>
+
+<!-- AI CHAT FAB + WINDOW -->
+<button class="chat-fab" id="chatFab" onclick="toggleChat()"><span class="dot"></span> Ask Colette</button>
+<div class="chat-win" id="chatWin">
+  <div class="demo-pill">Concept demo</div>
+  <div class="chat-h">
+    <div class="av">C</div>
+    <div><div class="ht">Ask Colette</div><div class="hs">AI Concierge</div></div>
+    <button class="cx" onclick="toggleChat()">×</button>
+  </div>
+  <div class="chat-body" id="chatBody">
+    <div class="msg bot">Bonjour! I'm Colette, your pastry concierge 🥐 I can help you build an order, suggest pairings, or reorder your usual. What are you craving?</div>
+  </div>
+  <div class="quick" id="quick">
+    <button onclick="quick('What\'s good with a latte?')">Pair my latte</button>
+    <button onclick="quick('I need a box of macarons')">Box of macarons</button>
+    <button onclick="quick('Order my usual')">My usual</button>
+  </div>
+  <div class="chat-in">
+    <input id="chatInput" placeholder="Type your order…" onkeydown="if(event.key==='Enter')sendChat()">
+    <button onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<!-- WELCOME MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="close" onclick="closeModal()">×</button>
+    <div class="mimg"></div>
+    <div class="mbody" id="modalBody">
+      <div class="eyebrow">A little welcome gift</div>
+      <h3><span class="script">10%</span> off your first order</h3>
+      <p>Join the Colette list for a one-time welcome offer, first look at new pastries, and members-only drops by email &amp; text.</p>
+      <form onsubmit="return submitModal(event)">
+        <input type="email" placeholder="Email address" required>
+        <input type="tel" placeholder="Mobile number (for text offers)">
+        <button class="btn orange" type="submit" style="width:100%;justify-content:center">Send my 10% code</button>
+        <div class="fine">By joining you agree to receive marketing emails &amp; texts from Colette. Msg &amp; data rates may apply. Unsubscribe anytime.</div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- MENU DATA (edit prices/text here) ---------- */
+const IMG='images/';
+const viennoiserie=[
+  {n:'Plain Croissant',img:'plain-croissant',d:'Laminated French butter dough, baked golden each morning.'},
+  {n:'Twice-Baked Almond',img:'twice-baked-almond',d:'Almond cream, baked twice, dusted in sugar — a café classic.'},
+  {n:'Nutella Croissant',img:'nutella-croissant',d:'Filled with chocolate-hazelnut, finished with powdered sugar.'},
+  {n:'Apricot Jam Croissant',img:'apricot-croissant',d:'Flaky croissant with bright house apricot jam.'},
+  {n:'Kouign-Amann',img:'kouign-amann',d:'Caramelized Breton butter pastry — crisp, flaky, addictive.'},
+  {n:'Sesame Gruyère Twist',img:'gruyere-twist',d:'Savory laminated twist with aged Gruyère and sesame.'},
+  {n:'Cinnamon Stick',img:'cinnamon-stick',d:'Buttery laminated dough rolled in cinnamon sugar.'},
+];
+const cakes=[
+  {n:'Sophia',img:'cake-sophia',p:'$13.99',d:'Light chocolate mousse, vanilla crème brûlée insert, hazelnut crunch, cherries in liqueur.'},
+  {n:'Valentino',img:'cake-valentino',p:'$13.99',d:'Dark chocolate mousse, raspberry insert, coconut sponge.'},
+  {n:'Roche',img:'cake-roche',p:'$13.99',d:'Hazelnut mousse, house-made praline & soft caramel, hazelnut sponge.'},
+  {n:'Royal',img:'cake-royal',p:'$14.99',d:'Dark chocolate mousse, hazelnut dacquoise, crunchy wafer base.'},
+  {n:'Raspberry Chocolate',img:'cake-raspberry-chocolate',p:'$12.99',d:'Dark chocolate mousse, raspberry center, vanilla sponge.'},
+  {n:'Le Chocolat',img:'cake-chocolate-delice',p:'$14.99',d:'Layered dark chocolate mousse wrapped in delicate chocolate shards.'},
+];
+const sweet=[
+  {n:'Chocolate Tart',img:'chocolate-tart',p:'$12.99',d:'Silky dark chocolate ganache in a buttery sablé shell.'},
+  {n:'Crème Brûlée',img:'creme-brulee',p:'$9.00',d:'Madagascar vanilla custard under a crackling caramel crust.',flag:true},
+  {n:'Macaron Box ×6',img:'macarons-box',p:'$20.00',d:'Six house macarons — rotating seasonal flavors.'},
+  {n:'Macaron Box ×12',img:'macarons-assortment',p:'$40.00',d:'A dozen jewels for sharing (or not).'},
+];
+const cafeCards=[
+  {n:'Mushroom & Fontina Quiche',img:'quiche-mushroom-fontina',p:'$11.00',d:'Buttery quiche with mushrooms and melted Fontina. Also: Spinach & Butternut Squash.'},
+];
+const cafeRows=[
+  {n:'Avocado Toast',d:'Sourdough, guacamole, feta · add poached eggs $18',p:'$15.95'},
+  {n:'Salmon Toast',d:'Smoked salmon, cream cheese, capers · add eggs $19.95',p:'$17.95'},
+  {n:'Croque-Monsieur',d:'Ham & cheese, béchamel, Swiss · salmon $17.95',p:'$16.95'},
+  {n:'Cordon Bleu Panini',d:'Black Forest ham, Swiss, chicken, basil pesto, sriracha',p:'$17.00'},
+  {n:'Turkey Bacon Panini',d:'Turkey, bacon, Swiss, arugula, sun-dried tomato',p:'$16.00'},
+  {n:'Panini Caprese',d:'Mozzarella, fresh tomato, pesto',p:'$15.00'},
+  {n:'Niçoise Salad',d:'Tuna, green beans, potato, egg, olives, house vinaigrette',p:'$15.50'},
+  {n:'Parfait Bowl',d:'Yogurt, seasonal fruit, granola, honey',p:'$11.75'},
+  {n:'Creamy Tomato Soup',d:'Organic tomatoes & ingredients',p:'$10.75'},
+  {n:'Ham & Cheese Croissant',d:'',p:'$10.99'},
+];
+const crepeRows=[
+  {h:'Salty Crêpes'},
+  {n:'Jambon Comté',d:'French ham & Swiss cheese',p:'$17.50'},
+  {n:'La Complète',d:'Ham, Gruyère, scrambled eggs',p:'$18.50'},
+  {n:'Grande Complète',d:'Prosciutto, parmesan, arugula, tomato, eggs',p:'$20.00'},
+  {n:'Saumon',d:'Smoked salmon, spinach, dill, cream cheese',p:'$19.95'},
+  {n:'Green Chicken',d:'Rotisserie chicken, arugula, parmesan',p:'$19.50'},
+  {n:'Cabécou et Miel',d:'Goat cheese, spinach, pine nuts, honey',p:'$16.50'},
+  {n:'La Marguerite',d:'Cherry tomato, mozzarella, pesto',p:'$16.50'},
+  {h:'Sweet Crêpes'},
+  {n:'Nutella',d:'Nutella & powdered sugar · add strawberries $18',p:'$16.50'},
+  {n:'The Colette Suzette',d:'Orange, lemon, caramelized sugar, Grand Marnier',p:'$17.00'},
+  {n:'Cultura Latina',d:'Dulce de leche, fresh berries, cocoa',p:'$17.50'},
+  {n:'La Fraise Enchantée',d:'Condensed milk & strawberries',p:'$17.50'},
+  {n:'Chocolat',d:'Chocolate ganache & powdered sugar',p:'$14.95'},
+  {n:'Fraise Confiture',d:'Strawberries & strawberry jam',p:'$14.95'},
+  {n:'Citron et Miel',d:'Lemon juice & honey',p:'$14.95'},
+  {n:'Beurre-Sucre',d:'Butter & cassonade sugar',p:'$12.50'},
+];
+const drinkCards=[
+  {n:'Latte e Nocciola',img:'iced-latte-nocciola',p:'$6.75',d:'Our signature iced hazelnut latte — Café Richard espresso, hazelnut, milk.'},
+];
+const drinkRows=[
+  {n:'Café Latte / Iced',d:'',p:'$6.75'},
+  {n:'Cappuccino',d:'',p:'$6.50'},
+  {n:'Espresso',d:'',p:'$4.50'},
+  {n:'Americano / Iced',d:'',p:'$5.50'},
+  {n:'Macchiato',d:'',p:'$5.25'},
+  {n:'Mocha / Iced',d:'',p:'$7.50'},
+  {n:'Matcha Latte / Iced',d:'',p:'$7.50'},
+  {n:'Chai Latte / Iced',d:'',p:'$6.75'},
+  {n:'Hot Chocolate',d:'',p:'$7.50'},
+  {n:'Hot Tea',d:'Black · Green · White · Herbal — Café Richard Paris',p:'$6.50'},
+  {n:'Fresh Orange Juice',d:'',p:'$7.50'},
+  {n:'Orangina',d:'',p:'$5.75'},
+  {n:'San Pellegrino',d:'',p:'$3.50'},
+  {n:'Perrier / Evian',d:'',p:'$3.75'},
+];
+
+/* ---------- RENDER ---------- */
+function card(it,showTag){
+  return `<div class="card">
+    <div class="ph"><img src="${IMG}${it.img}.jpg" alt="${it.n}" loading="lazy"></div>
+    <div class="body">
+      <div class="tt"><h4>${it.n}</h4>${it.p?`<span class="price">${it.p}</span>`:''}</div>
+      <div class="desc">${it.d||''}</div>
+      ${showTag?`<span class="tag">${showTag}</span>`:''}
+    </div></div>`;
+}
+function rowsHtml(arr){
+  return arr.map(r=> r.h
+    ? `<div style="font-family:var(--serif);font-style:italic;color:var(--orange-deep);font-size:1.5rem;margin:26px 0 6px;text-align:center">${r.h}</div>`
+    : `<div class="row"><span class="n">${r.n}</span>${r.d?`<span class="d">${r.d}</span>`:'<span class="dots"></span>'}<span class="p">${r.p}</span></div>`
+  ).join('');
+}
+document.getElementById('grid-vien').innerHTML=viennoiserie.map(i=>card(i,'Viennoiserie')).join('');
+document.getElementById('grid-cakes').innerHTML=cakes.map(i=>card(i)).join('');
+document.getElementById('grid-sweet').innerHTML=sweet.map(i=>card(i)).join('');
+document.getElementById('grid-cafe').innerHTML=cafeCards.map(i=>card(i)).join('');
+document.getElementById('rows-cafe').innerHTML=rowsHtml(cafeRows);
+document.getElementById('rows-crepes').innerHTML=rowsHtml(crepeRows);
+document.getElementById('grid-drinks').innerHTML=drinkCards.map(i=>card(i)).join('');
+document.getElementById('rows-drinks').innerHTML=rowsHtml(drinkRows);
+
+/* ---------- TABS ---------- */
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(!b)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById('p-'+b.dataset.p).classList.add('active');
+});
+
+/* ---------- NAV ---------- */
+const nav=document.getElementById('nav');
+addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>60));
+const burger=document.getElementById('burger'),navLinks=document.getElementById('navLinks');
+burger.addEventListener('click',()=>navLinks.classList.toggle('open'));
+navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLinks.classList.remove('open')));
+
+/* ---------- MODAL ---------- */
+const overlay=document.getElementById('overlay');
+function openModal(){overlay.classList.add('show')}
+function closeModal(){overlay.classList.remove('show')}
+overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal()});
+let shown=false;
+setTimeout(()=>{if(!shown){shown=true;openModal()}},9000);
+function submitModal(e){
+  e.preventDefault();
+  /* TRACK: email lead (fires only after consent) */
+  if(window.track){window.track('generate_lead',{currency:'USD',value:10,method:'welcome_modal',event_id:(window.coletteEventId&&window.coletteEventId())},{event:'Lead',params:{content_name:'Welcome 10% Modal'}});}
+  document.getElementById('modalBody').innerHTML=`
+    <div class="success">
+      <div class="eyebrow">You're in 🎉</div>
+      <h3 style="margin:10px 0">Merci!</h3>
+      <p>Here's your one-time welcome code. Show it at the café or use it at checkout.</p>
+      <div class="code">COLETTE10</div>
+      <p style="font-size:.8rem">We'll also text & email you first when new pastries drop.</p>
+    </div>`;
+  return false;
+}
+function inlineJoin(e){
+  e.preventDefault();
+  /* TRACK: email lead (fires only after consent) */
+  if(window.track){window.track('generate_lead',{currency:'USD',value:10,method:'inline_email_band',event_id:(window.coletteEventId&&window.coletteEventId())},{event:'Lead',params:{content_name:'Welcome 10% Inline'}});}
+  const f=e.target;
+  f.innerHTML='<p style="margin:0;font-family:var(--serif);font-size:1.4rem;color:var(--orange-deep)">Merci! Your code <b>COLETTE10</b> is on its way 🥐</p>';
+  return false;
+}
+
+/* ---------- ORDER / CHECKOUT TRACKING (fires only after consent) ---------- */
+document.querySelectorAll('.channel, .nav-cta, .hero-actions .btn.orange').forEach(function(el){
+  el.addEventListener('click',function(){
+    if(window.track){window.track('begin_checkout',{currency:'USD',channel:(el.querySelector('h4')?el.querySelector('h4').textContent:'order'),event_id:(window.coletteEventId&&window.coletteEventId())},{event:'InitiateCheckout',params:{content_category:'order'}});}
+  });
+});
+
+/* ---------- AI CHAT (concept demo, scripted) ---------- */
+const chatWin=document.getElementById('chatWin'),chatBody=document.getElementById('chatBody');
+function toggleChat(){chatWin.classList.toggle('show')}
+function addMsg(t,who){const d=document.createElement('div');d.className='msg '+who;d.innerHTML=t;chatBody.appendChild(d);chatBody.scrollTop=chatBody.scrollHeight}
+function botReply(text){
+  const typing=document.createElement('div');typing.className='msg bot';typing.textContent='…';chatBody.appendChild(typing);chatBody.scrollTop=chatBody.scrollHeight;
+  setTimeout(()=>{typing.remove();addMsg(text,'bot')},650);
+}
+function answer(q){
+  q=q.toLowerCase();
+  if(q.includes('macaron'))return'Lovely choice 🌸 A box of 6 is $20, a dozen is $40 — flavors rotate daily. Want me to add a Box ×6 to a pickup order?';
+  if(q.includes('latte')||q.includes('pair'))return'A latte loves our Twice-Baked Almond croissant or a Kouign-Amann. Add one for $5.25–$7.95?';
+  if(q.includes('usual'))return'Your usual: a Sophia cake and an iced Latte e Nocciola — $20.74. Pickup at 9:00am? Just say "confirm".';
+  if(q.includes('confirm'))return'Tout est prêt ✅ Order placed via Clover for 9:00am pickup. You earned 21 points!';
+  if(q.includes('cake')||q.includes('birthday'))return'For celebrations, our 8" cakes are $55–$65 and 10" are $75 (48 hrs notice). Sophia and Valentino are favorites!';
+  if(q.includes('vegan')||q.includes('gluten'))return'Our Matignon is gluten-free (dark chocolate mousse on a GF brownie). I can flag allergens on anything you like.';
+  return'I can help with that! I know the full menu, your past orders, and rewards. Tell me what you\'d like to order and your pickup time.';
+}
+function quick(t){addMsg(t,'user');botReply(answer(t))}
+function sendChat(){const i=document.getElementById('chatInput');if(!i.value.trim())return;const v=i.value;addMsg(v,'user');i.value='';botReply(answer(v))}
+</script>
+
+<!-- ===================== CONSENT BANNER ===================== -->
+<div class="consent" id="consentBanner" role="dialog" aria-live="polite" aria-label="Cookie consent">
+  <div class="ctext">
+    <b>We use cookies for a sweeter visit.</b> Colette uses cookies and similar tools for analytics and marketing (Google &amp; Meta) to improve the site and show relevant offers. Nothing non-essential loads until you choose. See our <a href="#visit">privacy notice</a>.
+  </div>
+  <div class="cbtns">
+    <button class="c-decline" id="consentDecline" type="button">Decline</button>
+    <button class="c-ess" id="consentEssential" type="button">Only essential</button>
+    <button class="c-accept" id="consentAccept" type="button">Accept</button>
+  </div>
+</div>
+
+<!-- ============================================================= -->
+<!-- COLETTE · MARKETING TRACKING LOADER + EVENT HELPER            -->
+<!-- Marketing tags load ONLY after consent === "granted".         -->
+<!-- The track() helper no-ops until then.                         -->
+<!-- ============================================================= -->
+<script>
+(function(){
+  /* ---- PLACEHOLDER IDS — OWNER REPLACES THESE ---- */
+  var GA4_ID   = 'G-XXXXXXXXXX';      // TODO: replace G-XXXXXXXXXX with your GA4 Measurement ID
+  var ADS_ID   = 'AW-XXXXXXXXX';      // TODO: replace AW-XXXXXXXXX with your Google Ads ID
+  var META_PIXEL_ID = 'YOUR_META_PIXEL_ID'; // TODO: replace YOUR_META_PIXEL_ID with your Meta Pixel ID
+  var CONSENT_COOKIE = 'colette_consent';
+  var COOKIE_DAYS = 180;
+
+  var tagsLoaded = false;
+  window.__coletteConsent = false; // in-page flag read by track()
+
+  /* ---------- cookie helpers ---------- */
+  function setCookie(name,val){
+    var d=new Date(); d.setTime(d.getTime()+COOKIE_DAYS*24*60*60*1000);
+    document.cookie=name+'='+val+';expires='+d.toUTCString()+';path=/;SameSite=Lax';
+  }
+  function getCookie(name){
+    return document.cookie.split('; ').reduce(function(acc,c){
+      var p=c.split('='); return p[0]===name?decodeURIComponent(p[1]):acc;
+    },'');
+  }
+
+  /* ---------- generate an event_id for browser+CAPI dedup ---------- */
+  function newEventId(){
+    return 'col-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
+  }
+  window.coletteEventId = newEventId;
+
+  /* ---------- load the actual marketing tags (called on Accept) ---------- */
+  function loadMarketingTags(){
+    if(tagsLoaded) return;
+    tagsLoaded = true;
+
+    // --- Google: gtag.js (GA4 + Google Ads share one library) ---
+    var s=document.createElement('script');
+    s.async=true;
+    s.src='https://www.googletagmanager.com/gtag/js?id='+GA4_ID; // TODO: uses your GA4 ID above
+    document.head.appendChild(s);
+
+    gtag('js', new Date());
+    gtag('config', GA4_ID);   // <!-- TODO: replace G-XXXXXXXXXX with your GA4 ID -->
+    gtag('config', ADS_ID);   // <!-- TODO: replace AW-XXXXXXXXX with your Google Ads ID -->
+
+    // --- Meta Pixel base code ---
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+      (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', META_PIXEL_ID); // <!-- TODO: replace YOUR_META_PIXEL_ID with your Meta Pixel ID -->
+    fbq('track', 'PageView');
+  }
+
+  /* ---------- grant consent: update Consent Mode + load tags ---------- */
+  function grantConsent(){
+    window.__coletteConsent = true;
+    gtag('consent','update',{
+      ad_storage:'granted',
+      ad_user_data:'granted',
+      ad_personalization:'granted',
+      analytics_storage:'granted',
+      functionality_storage:'granted',
+      personalization_storage:'granted'
+    });
+    loadMarketingTags();
+  }
+
+  /* ---------- public tracking helper — no-ops until consent ---------- */
+  // Usage: track('generate_lead',{...}) fires gtag; pass fb:{event,params} for Meta.
+  window.track = function(name, params, fb){
+    if(!window.__coletteConsent) return; // privacy-first: silent until opt-in
+    try { if(typeof gtag==='function'){ gtag('event', name, params||{}); } } catch(e){}
+    try {
+      if(typeof fbq==='function' && fb && fb.event){ fbq('track', fb.event, fb.params||{}); }
+    } catch(e){}
+  };
+
+  /* ---------- banner wiring ---------- */
+  var banner=document.getElementById('consentBanner');
+  function hide(){ if(banner) banner.classList.remove('show'); }
+  function show(){ if(banner) banner.classList.add('show'); }
+
+  document.getElementById('consentAccept').addEventListener('click',function(){
+    setCookie(CONSENT_COOKIE,'granted'); grantConsent(); hide();
+  });
+  document.getElementById('consentEssential').addEventListener('click',function(){
+    setCookie(CONSENT_COOKIE,'essential'); hide(); // essential only — no marketing tags
+  });
+  document.getElementById('consentDecline').addEventListener('click',function(){
+    setCookie(CONSENT_COOKIE,'denied'); hide(); // keep tags off
+  });
+
+  /* ---------- restore prior choice ---------- */
+  var prior=getCookie(CONSENT_COOKIE);
+  if(prior==='granted'){ grantConsent(); }      // returning opted-in visitor
+  else if(prior==='essential'||prior==='denied'){ /* stay off, no banner */ }
+  else { show(); }                              // first visit — ask
+})();
+</script>
+</body>
+</html>

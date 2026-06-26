@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Colette App — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Parisienne&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#F7F1E7;--paper:#FBF7F0;--ink:#221E1A;--ink-soft:#6A6056;
+  --orange:#E07A2F;--orange-deep:#C25E1B;--wine:#6E2B2B;--gold:#C09B4B;
+  --line:rgba(34,30,26,.12);--shadow:0 18px 50px -22px rgba(34,30,26,.45);
+  --serif:'Cormorant Garamond',Georgia,serif;--sans:'Jost',system-ui,sans-serif;--script:'Parisienne',cursive;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--sans);background:#2a2622;color:var(--ink);font-weight:300;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:24px 12px}
+.intro{color:#cbb89c;text-align:center;max-width:360px;margin-bottom:18px;font-size:.82rem;letter-spacing:.02em}
+.intro .script{font-family:var(--script);color:var(--orange);font-size:2rem;display:block;line-height:1}
+h1,h2,h3,h4{font-family:var(--serif);font-weight:500;line-height:1.1}
+.script{font-family:var(--script)}
+img{display:block;max-width:100%}
+
+/* PHONE FRAME */
+.device{width:390px;max-width:100%;height:800px;max-height:90vh;background:#0e0c0b;border-radius:46px;padding:13px;box-shadow:0 50px 90px -30px rgba(0,0,0,.8);position:relative}
+.screen{width:100%;height:100%;background:var(--cream);border-radius:34px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:120px;height:26px;background:#0e0c0b;border-radius:0 0 16px 16px;z-index:50}
+.statusbar{height:30px;flex:0 0 30px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:.66rem;font-weight:500;color:var(--ink);z-index:5}
+.statusbar.dark{color:var(--cream)}
+
+/* generic screen */
+.view{flex:1;overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column}
+.view.active{display:flex;animation:fade .35s}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.view::-webkit-scrollbar{width:0}
+.pad{padding:18px 20px}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:.5em;width:100%;font-family:var(--sans);font-weight:500;letter-spacing:.1em;text-transform:uppercase;font-size:.74rem;padding:15px;border-radius:30px;border:none;background:var(--orange);color:#fff;cursor:pointer;transition:.2s}
+.btn:active{transform:scale(.97)}
+.btn.dark{background:var(--ink)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.sm{width:auto;padding:9px 16px;font-size:.66rem;border-radius:30px}
+
+/* ===== AUTH / ONBOARD ===== */
+#auth{background:var(--ink);color:var(--cream);align-items:stretch;justify-content:flex-end}
+#auth .hero-img{position:absolute;inset:0;background:url('images/kouign-amann.jpg') center/cover}
+#auth .hero-img::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(20,16,12,.97) 28%,rgba(20,16,12,.45))}
+#auth .ac{position:relative;z-index:3;padding:28px 26px 30px}
+#auth .script{color:var(--orange);font-size:3.4rem;line-height:.8}
+#auth .sub{letter-spacing:.4em;text-transform:uppercase;font-size:.6rem;color:var(--gold);margin:8px 0 16px;padding-left:4px}
+#auth h2{color:var(--cream);font-size:1.7rem;margin-bottom:6px}
+#auth p.t{color:rgba(247,241,231,.78);font-size:.86rem;margin-bottom:20px}
+.field{margin-bottom:11px}
+.field input{width:100%;padding:14px 16px;border-radius:12px;border:1px solid rgba(247,241,231,.2);background:rgba(247,241,231,.08);color:var(--cream);font-family:var(--sans);font-size:.9rem}
+.field input::placeholder{color:rgba(247,241,231,.5)}
+.field input:focus{outline:none;border-color:var(--orange)}
+.offer{display:flex;align-items:center;gap:10px;background:linear-gradient(120deg,var(--orange),var(--orange-deep));border-radius:12px;padding:11px 14px;margin-bottom:16px;font-size:.78rem;color:#fff}
+.offer .big{font-family:var(--serif);font-size:1.8rem;font-weight:600}
+.switch{text-align:center;font-size:.8rem;color:rgba(247,241,231,.7);margin-top:14px}
+.switch b{color:var(--orange);cursor:pointer}
+
+/* ===== TOP BAR (in-app) ===== */
+.appbar{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:8px 20px 14px}
+.appbar .greet small{display:block;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--orange-deep)}
+.appbar .greet h3{font-size:1.45rem}
+.appbar .bell{margin-left:auto;position:relative;width:42px;height:42px;border-radius:50%;background:var(--paper);border:1px solid var(--line);display:grid;place-items:center;font-size:1.1rem;cursor:pointer}
+.badge{position:absolute;top:-3px;right:-3px;background:var(--wine);color:#fff;font-size:.58rem;min-width:17px;height:17px;border-radius:10px;display:grid;place-items:center;padding:0 4px;font-weight:600}
+
+/* points card */
+.pts-card{margin:0 20px 16px;background:linear-gradient(135deg,var(--wine),#46201f);color:var(--cream);border-radius:18px;padding:18px 20px;position:relative;overflow:hidden}
+.pts-card::after{content:"✦";position:absolute;right:-6px;top:-14px;font-size:6rem;color:rgba(201,155,75,.16)}
+.pts-card .lbl{font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+.pts-card .n{font-family:var(--serif);font-size:2.4rem;font-weight:600;line-height:1}
+.pts-card .bar{height:6px;background:rgba(247,241,231,.18);border-radius:6px;margin:12px 0 7px;overflow:hidden}
+.pts-card .bar i{display:block;height:100%;width:80%;background:var(--gold)}
+.pts-card .hint{font-size:.74rem;color:rgba(247,241,231,.85)}
+
+/* section title */
+.sec{display:flex;align-items:center;justify-content:space-between;padding:6px 20px 10px}
+.sec h4{font-size:1.3rem}
+.sec a{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep);cursor:pointer}
+
+/* usual / quick reorder */
+.usual{margin:0 20px 18px;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;gap:12px;align-items:center}
+.usual img{width:64px;height:64px;border-radius:12px;object-fit:cover}
+.usual .u-t{font-family:var(--serif);font-size:1.2rem;font-weight:600}
+.usual .u-d{font-size:.74rem;color:var(--ink-soft)}
+
+/* promo banner */
+.promo{margin:0 20px 18px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer}
+.promo img{width:100%;height:130px;object-fit:cover}
+.promo .ov{position:absolute;inset:0;background:linear-gradient(90deg,rgba(20,16,12,.85),rgba(20,16,12,.1));display:flex;flex-direction:column;justify-content:center;padding:0 20px;color:#fff}
+.promo .tagp{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+.promo h4{color:#fff;font-size:1.35rem;max-width:180px}
+
+/* category chips */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 20px 16px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;padding:9px 16px;border-radius:30px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);cursor:pointer;white-space:nowrap}
+.chip.active{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+
+/* product list */
+.plist{padding:0 20px 14px;display:grid;gap:12px}
+.item{display:flex;gap:13px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:11px}
+.item img{width:72px;height:72px;border-radius:12px;object-fit:cover;flex:0 0 72px}
+.item .info{flex:1;min-width:0}
+.item .info h5{font-family:var(--serif);font-size:1.2rem;font-weight:600}
+.item .info p{font-size:.72rem;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .info .pr{font-family:var(--serif);font-weight:600;color:var(--orange-deep);font-size:1.05rem;margin-top:2px}
+.item .add{flex:0 0 36px;width:36px;height:36px;border-radius:50%;background:var(--orange);color:#fff;border:none;font-size:1.4rem;display:grid;place-items:center;cursor:pointer;line-height:1}
+.item .add:active{transform:scale(.9)}
+
+/* cart bar */
+.cartbar{position:absolute;left:14px;right:14px;bottom:78px;background:var(--ink);color:var(--cream);border-radius:16px;padding:13px 18px;display:none;align-items:center;justify-content:space-between;box-shadow:0 14px 30px -10px rgba(0,0,0,.5);z-index:30;cursor:pointer}
+.cartbar.show{display:flex;animation:fade .3s}
+.cartbar .ct{display:flex;align-items:center;gap:10px;font-size:.8rem}
+.cartbar .cnt{background:var(--orange);width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:.74rem}
+.cartbar .go{font-family:var(--serif);font-weight:600;font-size:1.1rem}
+
+/* CART sheet / checkout */
+.sheet{position:absolute;inset:0;background:var(--cream);z-index:60;display:none;flex-direction:column}
+.sheet.show{display:flex;animation:up .35s}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+.sheet-h{display:flex;align-items:center;gap:12px;padding:18px 20px 10px}
+.sheet-h h3{font-size:1.5rem;flex:1}
+.sheet-h .x{width:34px;height:34px;border-radius:50%;background:var(--paper);border:1px solid var(--line);font-size:1.2rem;cursor:pointer}
+.cart-lines{flex:1;overflow-y:auto;padding:0 20px}
+.cline{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.cline img{width:52px;height:52px;border-radius:10px;object-fit:cover}
+.cline .cl-t{font-family:var(--serif);font-size:1.1rem;font-weight:600}
+.cline .cl-p{font-size:.78rem;color:var(--ink-soft)}
+.qty{display:flex;align-items:center;gap:10px;margin-left:auto}
+.qty button{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--paper);font-size:1rem;cursor:pointer}
+.qty span{font-weight:500;min-width:14px;text-align:center}
+.empty{flex:1;display:grid;place-items:center;color:var(--ink-soft);font-style:italic;font-family:var(--serif);font-size:1.2rem;padding:40px}
+.pickup{padding:14px 20px;border-top:1px solid var(--line)}
+.pickup .lbl{font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px}
+.timeslots{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+.timeslots::-webkit-scrollbar{display:none}
+.slot{flex:0 0 auto;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:var(--paper);font-size:.78rem;cursor:pointer;white-space:nowrap}
+.slot.active{background:var(--orange);color:#fff;border-color:var(--orange)}
+.checkout-foot{padding:14px 20px 20px;border-top:1px solid var(--line);background:var(--paper)}
+.totrow{display:flex;justify-content:space-between;font-size:.86rem;color:var(--ink-soft);margin-bottom:6px}
+.totrow.big{font-family:var(--serif);font-size:1.3rem;font-weight:600;color:var(--ink);margin:8px 0 14px}
+.earn{font-size:.74rem;color:var(--orange-deep);text-align:center;margin-top:8px}
+
+/* confirm */
+.confirm{position:absolute;inset:0;background:var(--ink);color:var(--cream);z-index:70;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px}
+.confirm.show{display:flex;animation:fade .4s}
+.confirm .check{width:90px;height:90px;border-radius:50%;background:var(--orange);display:grid;place-items:center;font-size:3rem;margin-bottom:24px;animation:pop .5s}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.confirm h2{color:var(--cream);font-size:2.2rem}
+.confirm .script{color:var(--orange);font-size:2.6rem}
+.confirm p{color:rgba(247,241,231,.8);margin:10px 0 6px;font-size:.92rem}
+.confirm .pts-won{background:rgba(201,155,75,.16);border:1px solid var(--gold);color:var(--gold);border-radius:30px;padding:9px 18px;font-size:.8rem;margin:18px 0 26px}
+
+/* WHAT'S NEW feed */
+.feed{padding:4px 20px 16px;display:grid;gap:18px}
+.fcard{background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.fcard img{width:100%;height:180px;object-fit:cover}
+.fcard .fb{padding:15px 17px 18px}
+.fcard .tagp{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--wine)}
+.fcard h4{font-size:1.4rem;margin:5px 0 6px}
+.fcard p{font-size:.84rem;color:var(--ink-soft);margin-bottom:12px}
+
+/* INBOX */
+.inbox{padding:6px 16px 16px;display:grid;gap:8px}
+.msg-it{display:flex;gap:13px;padding:14px;border-radius:16px;background:var(--paper);border:1px solid var(--line);cursor:pointer;align-items:flex-start}
+.msg-it.unread{background:#fff;border-color:rgba(224,122,47,.4)}
+.msg-it .mi{flex:0 0 44px;width:44px;height:44px;border-radius:50%;background:var(--orange);color:#fff;display:grid;place-items:center;font-family:var(--serif);font-size:1.3rem}
+.msg-it .mc{flex:1;min-width:0}
+.msg-it .mc .row1{display:flex;justify-content:space-between;align-items:baseline}
+.msg-it .mc h5{font-family:var(--serif);font-size:1.15rem;font-weight:600}
+.msg-it .mc .tm{font-size:.66rem;color:var(--ink-soft)}
+.msg-it .mc p{font-size:.8rem;color:var(--ink-soft);margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.msg-it .dotu{width:9px;height:9px;border-radius:50%;background:var(--orange);flex:0 0 9px;margin-top:6px}
+
+/* message detail */
+.mdetail{position:absolute;inset:0;background:var(--cream);z-index:55;display:none;flex-direction:column}
+.mdetail.show{display:flex;animation:right .3s}
+@keyframes right{from{transform:translateX(40px);opacity:.4}to{transform:none;opacity:1}}
+.mdetail .back{padding:16px 20px 8px;font-size:.8rem;color:var(--orange-deep);cursor:pointer;letter-spacing:.06em}
+.mdetail img{width:100%;height:200px;object-fit:cover}
+.mdetail .mbody{padding:20px;overflow-y:auto}
+.mdetail .mbody h3{font-size:1.7rem;margin-bottom:6px}
+.mdetail .mbody .dt{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--orange-deep);margin-bottom:14px}
+.mdetail .mbody p{font-size:.92rem;color:var(--ink-soft);line-height:1.7;margin-bottom:14px}
+
+/* PROFILE */
+.prof-head{text-align:center;padding:18px 20px 6px}
+.prof-head .av{width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--wine));color:#fff;display:grid;place-items:center;font-family:var(--script);font-size:2.6rem;margin:0 auto 10px}
+.prof-head h3{font-size:1.6rem}
+.prof-head .em{font-size:.8rem;color:var(--ink-soft)}
+.prof-head .tier{display:inline-block;margin-top:8px;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);border:1px solid var(--gold);border-radius:30px;padding:5px 14px}
+.plist-set{padding:14px 20px;display:grid;gap:2px}
+.set-row{display:flex;align-items:center;gap:14px;padding:15px 4px;border-bottom:1px solid var(--line);font-size:.92rem;cursor:pointer}
+.set-row .si{width:22px;text-align:center;color:var(--orange-deep)}
+.set-row .chev{margin-left:auto;color:var(--ink-soft)}
+.toggle{margin-left:auto;width:44px;height:26px;border-radius:30px;background:var(--orange);position:relative;cursor:pointer}
+.toggle i{position:absolute;top:3px;left:21px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
+.toggle.off{background:var(--line)}
+.toggle.off i{left:3px}
+
+/* BOTTOM NAV */
+.tabbar{flex:0 0 auto;display:flex;background:var(--paper);border-top:1px solid var(--line);padding:8px 6px calc(8px + env(safe-area-inset-bottom))}
+.tabbar button{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);cursor:pointer;padding:4px 0;position:relative}
+.tabbar button .ti{font-size:1.25rem;line-height:1}
+.tabbar button.on{color:var(--orange-deep)}
+.tabbar button .nb{position:absolute;top:-2px;right:50%;margin-right:-18px;background:var(--wine);color:#fff;font-size:.52rem;min-width:15px;height:15px;border-radius:9px;display:grid;place-items:center;padding:0 3px}
+.hide{display:none!important}
+.demo-pill{position:absolute;top:36px;left:50%;transform:translateX(-50%);background:rgba(34,30,26,.8);color:var(--gold);font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;padding:3px 11px;border-radius:30px;z-index:45}
+@media(max-width:430px){body{padding:0}.device{border-radius:0;padding:0;height:100vh;max-height:100vh;width:100vw}.screen{border-radius:0}.notch{display:none}.intro{display:none}}
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <span class="script">Colette</span>
+  Interactive app prototype — tap through it. Create a profile, reorder in one tap, browse &amp; check out, see new-item drops and messages from Colette.
+</div>
+
+<div class="device">
+  <div class="notch"></div>
+  <div class="screen">
+    <div class="demo-pill">Prototype · demo data</div>
+
+    <!-- ====== AUTH ====== -->
+    <div class="view active" id="auth">
+      <div class="statusbar dark"><span>9:41</span><span>● ● ●  ▦</span></div>
+      <div class="hero-img"></div>
+      <div class="ac">
+        <div class="script">Colette</div>
+        <div class="sub">Paris · Alpharetta</div>
+        <div id="signup-block">
+          <h2>Create your profile</h2>
+          <p class="t">Order faster, earn rewards, and be first to taste what's new.</p>
+          <div class="offer"><span class="big">10%</span><span>off your first order, just for joining 🥐</span></div>
+          <div class="field"><input id="su-name" placeholder="First name" value="Edgar"></div>
+          <div class="field"><input id="su-email" type="email" placeholder="Email address" value="edgar@email.com"></div>
+          <div class="field"><input id="su-phone" type="tel" placeholder="Mobile (for text offers)"></div>
+          <div class="field"><input id="su-bday" placeholder="Birthday (free treat!) — MM/DD"></div>
+          <button class="btn" onclick="createProfile()">Create profile &amp; get 10%</button>
+          <div class="switch">Already a member? <b onclick="signIn()">Sign in</b></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== HOME ====== -->
+    <div class="view" id="home">
+      <div class="statusbar"><span>9:41</span><span>● ● ●  ▦</span></div>
+      <div class="appbar">
+        <div class="greet"><small>Bonjour</small><h3 id="home-name">Edgar</h3></div>
+        <div class="bell" onclick="go('inbox')">🔔<span class="badge" id="bell-badge">2</span></div>
+      </div>
+      <div class="pts-card">
+        <div class="lbl">Colette Rewards</div>
+        <div class="n"><span id="pts">240</span> pts</div>
+        <div class="bar"><i></i></div>
+        <div class="hint">60 points to a <b>free croissant</b> 🥐</div>
+      </div>
+
+      <div class="sec"><h4>Your usual</h4><a onclick="go('order')">Browse all</a></div>
+      <div class="usual">
+        <img src="images/cake-sophia.jpg" alt="">
+        <div style="flex:1">
+          <div class="u-t">Sophia + Iced Latte e Nocciola</div>
+          <div class="u-d">Ordered 6 times · $20.74</div>
+        </div>
+        <button class="btn sm" onclick="reorderUsual()">Reorder</button>
+      </div>
+
+      <div class="sec"><h4>This week at Colette</h4></div>
+      <div class="promo" onclick="go('new')">
+        <img src="images/cake-raspberry-chocolate.jpg" alt="">
+        <div class="ov"><div class="tagp">New drop</div><h4>La Fraise Enchantée crêpe</h4></div>
+      </div>
+
+      <div class="sec"><h4>Order again</h4><a onclick="go('order')">See menu</a></div>
+      <div class="plist" id="home-quick"></div>
+      <div style="height:80px"></div>
+    </div>
+
+    <!-- ====== ORDER ====== -->
+    <div class="view" id="order">
+      <div class="statusbar"><span>9:41</span><span>● ● ●  ▦</span></div>
+      <div class="appbar"><div class="greet"><small>Order · Pickup</small><h3>The Menu</h3></div>
+        <div class="bell" onclick="go('inbox')">🔔<span class="badge" id="bell-badge2">2</span></div>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="plist" id="order-list"></div>
+      <div style="height:150px"></div>
+    </div>
+
+    <!-- ====== NEW ====== -->
+    <div class="view" id="new">
+      <div class="statusbar"><span>9:41</span><span>● ● ●  ▦</span></div>
+      <div class="appbar"><div class="greet"><small>Fresh from the kitchen</small><h3>What's New</h3></div></div>
+      <div class="feed" id="feed"></div>
+      <div style="height:80px"></div>
+    </div>
+
+    <!-- ====== INBOX ====== -->
+    <div class="view" id="inbox">
+      <div class="statusbar"><span>9:41</span><span>● ● ●  ▦</span></div>
+      <div class="appbar"><div class="greet"><small>From Colette</small><h3>Messages</h3></div></div>
+      <div class="inbox" id="inbox-list"></div>
+      <div style="height:80px"></div>
+    </div>
+
+    <!-- ====== PROFILE ====== -->
+    <div class="view" id="me">
+      <div class="statusbar"><span>9:41</span><span>● ● ●  ▦</span></div>
+      <div class="prof-head">
+        <div class="av" id="me-av">E</div>
+        <h3 id="me-name">Edgar</h3>
+        <div class="em" id="me-email">edgar@email.com</div>
+        <div class="tier">★ Gold member · 240 pts</div>
+      </div>
+      <div class="plist-set">
+        <div class="set-row"><span class="si">🧾</span> Order history <span class="chev">›</span></div>
+        <div class="set-row"><span class="si">🎁</span> Rewards &amp; offers <span class="chev">›</span></div>
+        <div class="set-row"><span class="si">❤️</span> Favorites <span class="chev">›</span></div>
+        <div class="set-row"><span class="si">💳</span> Payment methods <span class="chev">›</span></div>
+        <div class="set-row"><span class="si">📍</span> Pickup location · Old Milton Pkwy <span class="chev">›</span></div>
+        <div class="set-row"><span class="si">🔔</span> Push notifications <div class="toggle" onclick="this.classList.toggle('off')"><i></i></div></div>
+        <div class="set-row"><span class="si">💬</span> Text me offers <div class="toggle" onclick="this.classList.toggle('off')"><i></i></div></div>
+        <div class="set-row"><span class="si">✉️</span> Email me news <div class="toggle" onclick="this.classList.toggle('off')"><i></i></div></div>
+        <div class="set-row" onclick="go('auth')"><span class="si">↩︎</span> Sign out <span class="chev">›</span></div>
+      </div>
+      <div style="height:80px"></div>
+    </div>
+
+    <!-- CART BAR -->
+    <div class="cartbar" id="cartbar" onclick="openCart()">
+      <div class="ct"><span class="cnt" id="cart-cnt">0</span><span>View cart</span></div>
+      <div class="go" id="cart-total">$0.00</div>
+    </div>
+
+    <!-- CART SHEET -->
+    <div class="sheet" id="cartSheet">
+      <div class="sheet-h"><button class="x" onclick="closeCart()">×</button><h3>Your order</h3></div>
+      <div class="cart-lines" id="cart-lines"></div>
+      <div class="pickup" id="pickup-wrap">
+        <div class="lbl">Pickup time · Old Milton Pkwy</div>
+        <div class="timeslots" id="slots"></div>
+      </div>
+      <div class="checkout-foot" id="checkout-foot"></div>
+    </div>
+
+    <!-- CONFIRM -->
+    <div class="confirm" id="confirm">
+      <div class="check">✓</div>
+      <h2>Order <span class="script">confirmée</span></h2>
+      <p id="confirm-line">Ready for pickup at 9:15am</p>
+      <p style="font-size:.8rem">Sent to the kitchen via Clover · we'll text you when it's ready</p>
+      <div class="pts-won" id="pts-won">+21 points earned</div>
+      <button class="btn" style="max-width:200px" onclick="finishOrder()">Back to home</button>
+    </div>
+
+    <!-- MESSAGE DETAIL -->
+    <div class="mdetail" id="mdetail">
+      <div class="back" onclick="document.getElementById('mdetail').classList.remove('show')">‹ Messages</div>
+      <img id="md-img" src="" alt="">
+      <div class="mbody"><div class="dt" id="md-dt"></div><h3 id="md-title"></h3><div id="md-body"></div>
+        <button class="btn" onclick="go('order');document.getElementById('mdetail').classList.remove('show')">Order now</button>
+      </div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div class="tabbar hide" id="tabbar">
+      <button data-v="home" class="on" onclick="go('home')"><span class="ti">⌂</span>Home</button>
+      <button data-v="order" onclick="go('order')"><span class="ti">🥐</span>Order</button>
+      <button data-v="new" onclick="go('new')"><span class="ti">✦</span>New</button>
+      <button data-v="inbox" onclick="go('inbox')"><span class="ti">✉</span>Inbox<span class="nb" id="tab-badge">2</span></button>
+      <button data-v="me" onclick="go('me')"><span class="ti">◍</span>Me</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ===== DATA ===== */
+const IMG='images/';
+const MENU={
+ 'Viennoiserie':[
+   {n:'Plain Croissant',img:'plain-croissant',p:5.25,d:'Laminated French butter dough'},
+   {n:'Twice-Baked Almond',img:'twice-baked-almond',p:7.50,d:'Almond cream, baked twice'},
+   {n:'Nutella Croissant',img:'nutella-croissant',p:6.95,d:'Chocolate-hazelnut, powdered sugar'},
+   {n:'Apricot Jam Croissant',img:'apricot-croissant',p:6.50,d:'House apricot jam'},
+   {n:'Kouign-Amann',img:'kouign-amann',p:6.95,d:'Caramelized Breton butter pastry'},
+   {n:'Sesame Gruyère Twist',img:'gruyere-twist',p:5.95,d:'Aged Gruyère & sesame'},
+ ],
+ 'Cakes':[
+   {n:'Sophia',img:'cake-sophia',p:13.99,d:'Choc mousse, crème brûlée, cherry'},
+   {n:'Valentino',img:'cake-valentino',p:13.99,d:'Dark choc mousse, raspberry, coconut'},
+   {n:'Roche',img:'cake-roche',p:13.99,d:'Hazelnut praline & caramel'},
+   {n:'Royal',img:'cake-royal',p:14.99,d:'Choc mousse, hazelnut dacquoise'},
+ ],
+ 'Tarts & Macarons':[
+   {n:'Chocolate Tart',img:'chocolate-tart',p:12.99,d:'Dark chocolate ganache, sablé'},
+   {n:'Crème Brûlée',img:'creme-brulee',p:9.00,d:'Madagascar vanilla custard'},
+   {n:'Macaron Box ×6',img:'macarons-box',p:20.00,d:'Six house macarons'},
+   {n:'Macaron Box ×12',img:'macarons-assortment',p:40.00,d:'A dozen jewels'},
+ ],
+ 'Café':[
+   {n:'Mushroom & Fontina Quiche',img:'quiche-mushroom-fontina',p:11.00,d:'With complimentary side salad'},
+   {n:'Latte e Nocciola',img:'iced-latte-nocciola',p:6.75,d:'Signature iced hazelnut latte'},
+ ],
+};
+const QUICK=[MENU['Viennoiserie'][1],MENU['Tarts & Macarons'][2],MENU['Café'][1]];
+const FEED=[
+ {img:'cake-raspberry-chocolate',tag:'New this weekend',n:'La Fraise Enchantée',d:'A sweet crêpe of condensed milk and fresh strawberries — our newest weekend special. Friday to Sunday only.'},
+ {img:'cake-royal',tag:'Now on the cake case',n:'Royal',d:'Dark chocolate mousse over hazelnut dacquoise and a crunchy wafer base. A new permanent addition to our signature cakes.'},
+ {img:'macarons-box',tag:'Seasonal flavors',n:'Summer Macaron Collection',d:'Yuzu, rose, and mango passion fruit join the box this month. Available individually or by the six and dozen.'},
+];
+const MSGS=[
+ {ic:'🍓',t:'La Fraise Enchantée is here',tm:'2h',unread:true,img:'cake-raspberry-chocolate',dt:'New weekend crêpe',body:'Bonjour Edgar!<br><br>Our newest sweet crêpe has arrived — condensed milk and fresh strawberries, available Friday through Sunday only. Members get first taste.<br><br>Reserve yours in the app and skip the line.'},
+ {ic:'★',t:"You're 60 points from a free croissant",tm:'1d',unread:true,img:'plain-croissant',dt:'Rewards',body:"You're so close! One more order and that buttery croissant is on us. Your 240 points are waiting in your Rewards.<br><br>Merci for being a Gold member 🥐"},
+ {ic:'☕',t:'Win-back: a free latte on us',tm:'4d',unread:false,img:'iced-latte-nocciola',dt:'We miss you',body:"It's been a little while! Come back this week and your Latte e Nocciola is on the house with any pastry. Tap to order — see you soon at Old Milton Pkwy."},
+];
+
+/* ===== STATE ===== */
+let cart=[], slot='9:15am', points=240, unread=2;
+
+/* ===== RENDER ===== */
+function itemHtml(it){
+  return `<div class="item">
+    <img src="${IMG}${it.img}.jpg" alt="${it.n}">
+    <div class="info"><h5>${it.n}</h5><p>${it.d}</p><div class="pr">$${it.p.toFixed(2)}</div></div>
+    <button class="add" onclick='addToCart(${JSON.stringify(it)})'>+</button>
+  </div>`;
+}
+document.getElementById('home-quick').innerHTML=QUICK.map(itemHtml).join('');
+// chips + order list
+const cats=Object.keys(MENU);
+document.getElementById('chips').innerHTML=cats.map((c,i)=>`<button class="chip ${i===0?'active':''}" onclick="showCat('${c}',this)">${c}</button>`).join('');
+function showCat(c,el){document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));el.classList.add('active');document.getElementById('order-list').innerHTML=MENU[c].map(itemHtml).join('')}
+document.getElementById('order-list').innerHTML=MENU[cats[0]].map(itemHtml).join('');
+// feed
+document.getElementById('feed').innerHTML=FEED.map(f=>`<div class="fcard"><img src="${IMG}${f.img}.jpg"><div class="fb"><div class="tagp">${f.tag}</div><h4>${f.n}</h4><p>${f.d}</p><button class="btn ghost sm" onclick="go('order')">Add to order</button></div></div>`).join('');
+// inbox
+function renderInbox(){
+  document.getElementById('inbox-list').innerHTML=MSGS.map((m,i)=>`<div class="msg-it ${m.unread?'unread':''}" onclick="openMsg(${i})">
+    <div class="mi">${m.ic}</div>
+    <div class="mc"><div class="row1"><h5>${m.t}</h5><span class="tm">${m.tm}</span></div><p>${m.body.replace(/<[^>]+>/g,' ')}</p></div>
+    ${m.unread?'<span class="dotu"></span>':''}
+  </div>`).join('');
+}
+renderInbox();
+// time slots
+const times=['9:15am','9:30am','9:45am','10:00am','10:15am'];
+document.getElementById('slots').innerHTML=times.map((t,i)=>`<button class="slot ${i===0?'active':''}" onclick="pickSlot('${t}',this)">${t}</button>`).join('');
+function pickSlot(t,el){slot=t;document.querySelectorAll('.slot').forEach(s=>s.classList.remove('active'));el.classList.add('active')}
+
+/* ===== NAV ===== */
+function go(v){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.getElementById(v).classList.add('active');
+  const inApp=(v!=='auth');
+  document.getElementById('tabbar').classList.toggle('hide',!inApp);
+  document.querySelectorAll('.tabbar button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  document.getElementById(v).scrollTop=0;
+  if(v==='inbox'){clearUnread()}
+  toggleCartBar();
+}
+function createProfile(){
+  const name=document.getElementById('su-name').value||'Friend';
+  const email=document.getElementById('su-email').value||'you@email.com';
+  document.getElementById('home-name').textContent=name;
+  document.getElementById('me-name').textContent=name;
+  document.getElementById('me-email').textContent=email;
+  document.getElementById('me-av').textContent=(name[0]||'C').toUpperCase();
+  go('home');
+}
+function signIn(){go('home')}
+
+/* ===== CART ===== */
+function addToCart(it){
+  const ex=cart.find(c=>c.n===it.n);
+  if(ex)ex.q++; else cart.push({...it,q:1});
+  bumpCart();
+}
+function bumpCart(){
+  const cnt=cart.reduce((s,c)=>s+c.q,0);
+  const tot=cart.reduce((s,c)=>s+c.q*c.p,0);
+  document.getElementById('cart-cnt').textContent=cnt;
+  document.getElementById('cart-total').textContent='$'+tot.toFixed(2);
+  toggleCartBar();
+}
+function toggleCartBar(){
+  const cur=document.querySelector('.view.active').id;
+  const show=cart.length>0 && !['auth'].includes(cur) && !document.getElementById('cartSheet').classList.contains('show');
+  document.getElementById('cartbar').classList.toggle('show',show);
+}
+function openCart(){renderCart();document.getElementById('cartSheet').classList.add('show');document.getElementById('cartbar').classList.remove('show')}
+function closeCart(){document.getElementById('cartSheet').classList.remove('show');toggleCartBar()}
+function renderCart(){
+  const wrap=document.getElementById('cart-lines'),foot=document.getElementById('checkout-foot'),pk=document.getElementById('pickup-wrap');
+  if(cart.length===0){wrap.innerHTML='<div class="empty">Your order is empty 🥐<br>Add something delicious.</div>';foot.innerHTML='';pk.style.display='none';return}
+  pk.style.display='block';
+  wrap.innerHTML=cart.map((c,i)=>`<div class="cline"><img src="${IMG}${c.img}.jpg"><div><div class="cl-t">${c.n}</div><div class="cl-p">$${c.p.toFixed(2)}</div></div>
+    <div class="qty"><button onclick="chg(${i},-1)">−</button><span>${c.q}</span><button onclick="chg(${i},1)">+</button></div></div>`).join('');
+  const sub=cart.reduce((s,c)=>s+c.q*c.p,0), tax=sub*0.08, tot=sub+tax, pts=Math.round(tot);
+  foot.innerHTML=`<div class="totrow"><span>Subtotal</span><span>$${sub.toFixed(2)}</span></div>
+    <div class="totrow"><span>Tax</span><span>$${tax.toFixed(2)}</span></div>
+    <div class="totrow big"><span>Total</span><span>$${tot.toFixed(2)}</span></div>
+    <button class="btn" onclick="placeOrder(${pts})">Pay &amp; place order · pickup ${slot}</button>
+    <div class="earn">You'll earn ${pts} points on this order</div>`;
+}
+function chg(i,d){cart[i].q+=d;if(cart[i].q<=0)cart.splice(i,1);bumpCart();renderCart()}
+function reorderUsual(){
+  cart=[{...MENU['Cakes'][0],q:1},{...MENU['Café'][1],q:1}];
+  bumpCart();openCart();
+}
+function placeOrder(pts){
+  document.getElementById('confirm-line').textContent='Ready for pickup at '+slot;
+  document.getElementById('pts-won').textContent='+'+pts+' points earned';
+  document.getElementById('cartSheet').classList.remove('show');
+  document.getElementById('confirm').classList.add('show');
+  points+=pts;document.getElementById('pts').textContent=points;
+}
+function finishOrder(){
+  cart=[];bumpCart();
+  document.getElementById('confirm').classList.remove('show');
+  go('home');
+}
+
+/* ===== INBOX detail ===== */
+function openMsg(i){
+  const m=MSGS[i];
+  document.getElementById('md-img').src=IMG+m.img+'.jpg';
+  document.getElementById('md-dt').textContent=m.dt;
+  document.getElementById('md-title').textContent=m.t;
+  document.getElementById('md-body').innerHTML='<p>'+m.body+'</p>';
+  document.getElementById('mdetail').classList.add('show');
+  if(m.unread){m.unread=false;renderInbox();recountUnread()}
+}
+function clearUnread(){MSGS.forEach(m=>m.unread=false);renderInbox();recountUnread()}
+function recountUnread(){
+  unread=MSGS.filter(m=>m.unread).length;
+  ['bell-badge','bell-badge2','tab-badge'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=unread?'grid':'none';if(e)e.textContent=unread});
+}
+</script>
+</body>
+</html>

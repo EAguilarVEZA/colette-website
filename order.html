@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order · Colette French Pastries</title>
+<meta name="description" content="Order Colette French pastries online — clear descriptions, ingredients and allergens for every item, easy pickup and pay.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Jost:wght@300;400;500;600&family=Parisienne&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FCFBF8;--bg-2:#F4F1EA;--paper:#fff;--ink:#211F1B;--muted:#8A857B;
+  --accent:#D9772E;--accent-deep:#B85F1C;--wine:#6E2B2B;--gold:#C09B4B;--line:#E7E2D8;
+  --green:#4F7A4A;--serif:'Cormorant Garamond',Georgia,serif;--sans:'Jost',system-ui,sans-serif;--script:'Parisienne',cursive;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-weight:300;line-height:1.6;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4{font-family:var(--serif);font-weight:500;line-height:1.1}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+button{font-family:var(--sans);cursor:pointer}
+
+.nav{position:sticky;top:0;z-index:50;background:rgba(252,251,248,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+.brand{font-family:var(--script);font-size:1.9rem;color:var(--ink);line-height:1}
+.brand small{display:block;font-family:var(--sans);letter-spacing:.4em;font-size:.46rem;text-transform:uppercase;color:var(--muted);padding-left:4px;margin-top:-2px}
+.nav-right{display:flex;align-items:center;gap:18px}
+.nav-right a.back{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.cart-btn{position:relative;background:var(--ink);color:var(--bg);border:0;border-radius:30px;padding:11px 20px;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.cart-btn .cc{background:var(--accent);border-radius:50%;min-width:20px;height:20px;display:grid;place-items:center;font-size:.72rem;font-weight:600}
+
+.head{padding:46px 0 26px;text-align:center}
+.head .eyebrow{font-weight:400;letter-spacing:.4em;text-transform:uppercase;font-size:.64rem;color:var(--accent-deep)}
+.head h1{font-size:clamp(2.4rem,5vw,3.6rem);font-weight:500;margin:10px 0 8px}
+.head h1 .script{color:var(--accent);font-style:normal}
+.head p{color:var(--muted);max-width:560px;margin:0 auto}
+
+.controls{position:sticky;top:64px;z-index:40;background:var(--bg);padding:16px 0 12px;border-bottom:1px solid var(--line)}
+.searchrow{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.search{flex:1;min-width:220px;display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:30px;padding:11px 18px;background:var(--paper)}
+.search input{border:0;outline:0;flex:1;font-family:var(--sans);font-size:.92rem;background:transparent}
+.filters{display:flex;gap:8px;overflow-x:auto;padding-top:12px}
+.filters::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:transparent;border-radius:30px;padding:9px 16px;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap;transition:.2s}
+.chip:hover{border-color:var(--accent);color:var(--accent-deep)}
+.chip.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.diet.active{background:var(--green);border-color:var(--green)}
+
+.layout{padding:30px 0 120px}
+.catname{font-family:var(--serif);font-style:italic;font-size:1.9rem;color:var(--ink);margin:34px 0 16px;border-bottom:1px solid var(--line);padding-bottom:8px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.item{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:.3s}
+.item:hover{box-shadow:0 16px 40px -26px rgba(33,31,27,.5);transform:translateY(-4px)}
+.item .ph{aspect-ratio:4/3;overflow:hidden;background:var(--bg-2);cursor:pointer}
+.item .ph img{width:100%;height:100%;object-fit:cover;transition:.7s}
+.ph-ph{width:100%;height:100%;display:grid;place-items:center;background:linear-gradient(135deg,var(--bg-2),#ece2d2);color:var(--accent-deep);font-family:var(--serif);font-weight:600;font-size:2.4rem}
+.item:hover .ph img{transform:scale(1.06)}
+.item .b{padding:16px 17px 18px;flex:1;display:flex;flex-direction:column}
+.item .tt{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.item .tt h4{font-size:1.4rem;font-weight:500}
+.item .pr{font-family:var(--serif);font-weight:600;color:var(--accent-deep);font-size:1.15rem;white-space:nowrap}
+.item .desc{color:var(--muted);font-size:.86rem;margin-top:7px;flex:1}
+.badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:11px}
+.badge{font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:20px;border:1px solid var(--line);color:var(--muted)}
+.badge.diet{color:var(--green);border-color:rgba(79,122,74,.4)}
+.badge.al{color:var(--wine);border-color:rgba(110,43,43,.28)}
+.item .row{display:flex;align-items:center;gap:10px;margin-top:14px}
+.add{flex:1;background:var(--accent);color:#fff;border:0;border-radius:30px;padding:11px;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;transition:.2s}
+.add:hover{background:var(--accent-deep)}
+.info-btn{flex:0 0 auto;border:1px solid var(--line);background:transparent;border-radius:30px;width:40px;height:40px;font-size:1rem;color:var(--muted)}
+.info-btn:hover{border-color:var(--accent);color:var(--accent-deep)}
+.empty-res{grid-column:1/-1;text-align:center;color:var(--muted);font-family:var(--serif);font-style:italic;font-size:1.3rem;padding:50px}
+
+.disclaimer{background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:6px 0 0;font-size:.8rem;color:var(--muted);display:flex;gap:10px;align-items:flex-start}
+.disclaimer b{color:var(--ink)}
+
+.scrim{position:fixed;inset:0;background:rgba(33,31,27,.42);backdrop-filter:blur(2px);z-index:90;opacity:0;pointer-events:none;transition:.3s}
+.scrim.show{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:420px;max-width:92vw;background:var(--bg);z-index:95;transform:translateX(100%);transition:.35s;display:flex;flex-direction:column;box-shadow:-20px 0 60px -30px rgba(0,0,0,.4)}
+.drawer.show{transform:none}
+.dh{display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid var(--line)}
+.dh h3{font-size:1.5rem}
+.dh .x{background:none;border:0;font-size:1.5rem;color:var(--muted)}
+.lines{flex:1;overflow-y:auto;padding:8px 22px}
+.cl{display:flex;gap:13px;padding:14px 0;border-bottom:1px solid var(--line)}
+.cl img{width:60px;height:60px;border-radius:10px;object-fit:cover}
+.cl .ci{flex:1}
+.cl .ci h5{font-family:var(--serif);font-size:1.15rem;font-weight:500}
+.cl .ci .cmods{font-size:.74rem;color:var(--accent-deep);margin:2px 0}
+.cl .ci .p{font-size:.8rem;color:var(--muted)}
+.qty{display:flex;align-items:center;gap:10px;margin-top:6px}
+.qty button{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--paper);font-size:1rem}
+.qty span{min-width:16px;text-align:center}
+.cart-empty{flex:1;display:grid;place-items:center;text-align:center;color:var(--muted);font-family:var(--serif);font-style:italic;font-size:1.3rem;padding:30px}
+.dfoot{border-top:1px solid var(--line);padding:18px 22px 22px;background:var(--paper)}
+.trow{display:flex;justify-content:space-between;font-size:.9rem;color:var(--muted);margin-bottom:6px}
+.trow.tot{font-family:var(--serif);font-size:1.3rem;color:var(--ink);font-weight:600;margin:8px 0 14px}
+.cta{width:100%;background:var(--ink);color:var(--bg);border:0;border-radius:30px;padding:15px;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase}
+.cta:hover{background:var(--accent-deep)}
+
+.modal-scrim{position:fixed;inset:0;background:rgba(33,31,27,.5);backdrop-filter:blur(3px);z-index:120;display:none;align-items:center;justify-content:center;padding:18px}
+.modal-scrim.show{display:flex}
+.modal{background:var(--bg);border-radius:14px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 40px 90px -30px rgba(0,0,0,.5)}
+.mhd{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:2}
+.mhd h3{font-size:1.5rem}
+.mhd .x{background:none;border:0;font-size:1.5rem;color:var(--muted)}
+.mbody{padding:22px 24px 26px}
+.fl{margin-bottom:14px}
+.fl label{display:block;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.fl input{width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:9px;font-family:var(--sans);font-size:.92rem;background:var(--paper)}
+.fl input:focus{outline:0;border-color:var(--accent)}
+.slots{display:flex;gap:8px;flex-wrap:wrap}
+.slot{border:1px solid var(--line);background:var(--paper);border-radius:9px;padding:9px 14px;font-size:.82rem}
+.slot.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.segm{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.segm button{flex:1;border:0;background:var(--paper);padding:12px;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.segm button.active{background:var(--accent);color:#fff}
+.delivery-fields{display:none}
+.delivery-fields.show{display:block}
+
+/* modifier groups */
+.modgroup{margin-bottom:18px}
+.modgroup .gt{font-family:var(--serif);font-size:1.2rem;margin-bottom:4px}
+.modgroup .gh{font-size:.72rem;color:var(--muted);margin-bottom:10px}
+.modopt{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--paper);transition:.15s}
+.modopt:hover{border-color:var(--accent)}
+.modopt.sel{border-color:var(--accent);background:#FBF2E9}
+.modopt input{accent-color:var(--accent);width:18px;height:18px}
+.modopt .ol{flex:1;font-size:.92rem}
+.modopt .op{font-size:.84rem;color:var(--accent-deep);font-family:var(--serif);font-weight:600}
+.modtext{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-family:var(--sans);font-size:.92rem;background:var(--paper)}
+.moderr{color:var(--wine);font-size:.8rem;margin-bottom:10px;display:none}
+.moderr.show{display:block}
+
+/* payment */
+.paybox{border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:8px;background:var(--paper)}
+.applepay{width:100%;background:#000;color:#fff;border:0;border-radius:9px;padding:14px;font-size:1rem;font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px}
+.or{text-align:center;color:var(--muted);font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;margin:14px 0}
+.clv-field{border:1px solid var(--line);border-radius:9px;padding:2px 10px;background:#fff;min-height:46px;margin-bottom:10px;display:flex;align-items:center}
+.clv-row{display:flex;gap:10px}
+.clv-row .clv-field{flex:1}
+.clv-label{font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+.card-err{color:var(--wine);font-size:.82rem;margin:6px 0;min-height:16px}
+.demo-tag{font-size:.7rem;color:var(--muted);background:var(--bg-2);border:1px dashed var(--line);border-radius:8px;padding:8px 10px;margin-top:8px}
+.summary{background:var(--bg-2);border-radius:10px;padding:14px 16px;margin-bottom:18px}
+.summary .sl{display:flex;justify-content:space-between;font-size:.86rem;color:var(--muted);padding:3px 0;gap:12px}
+.summary .sl small{display:block;color:var(--accent-deep)}
+.summary .sl.t{color:var(--ink);font-family:var(--serif);font-weight:600;font-size:1.1rem;border-top:1px solid var(--line);margin-top:6px;padding-top:8px}
+.place{width:100%;background:var(--ink);color:var(--bg);border:0;border-radius:30px;padding:15px;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;margin-top:8px}
+.place:hover{background:var(--accent-deep)}
+.place[disabled]{opacity:.6}
+.success{text-align:center;padding:24px 6px}
+.success .ck{width:80px;height:80px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:2.6rem;margin:0 auto 18px}
+.success h3{font-size:2rem}.success .script{color:var(--accent)}
+.success p{color:var(--muted);margin:8px 0}
+.success .num{font-family:var(--serif);font-size:1.3rem;color:var(--accent-deep);border:1px dashed var(--accent);border-radius:9px;padding:10px;margin:14px 0}
+
+.fab{position:fixed;bottom:22px;right:22px;z-index:80;background:var(--accent);color:#fff;border:0;border-radius:40px;padding:14px 20px;font-weight:500;letter-spacing:.06em;font-size:.82rem;display:flex;align-items:center;gap:9px;box-shadow:0 18px 40px -14px rgba(217,119,46,.7)}
+.fab:hover{background:var(--accent-deep)}
+.fab .dot{width:8px;height:8px;border-radius:50%;background:#7CFC9A;animation:pg 1.8s infinite}
+@keyframes pg{0%,100%{opacity:.4}50%{opacity:1}}
+.chat{position:fixed;bottom:88px;right:22px;width:380px;max-width:calc(100vw - 32px);height:540px;background:var(--bg);border:1px solid var(--line);border-radius:16px;z-index:81;display:none;flex-direction:column;overflow:hidden;box-shadow:0 40px 80px -24px rgba(0,0,0,.45)}
+.chat.show{display:flex}
+.chd{background:var(--ink);color:var(--bg);padding:16px 18px;display:flex;align-items:center;gap:11px}
+.chd .av{width:38px;height:38px;border-radius:50%;background:var(--accent);display:grid;place-items:center;font-family:var(--script);font-size:1.4rem;color:#fff}
+.chd .t{font-family:var(--serif);font-size:1.15rem}
+.chd .s{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+.chd .x{margin-left:auto;background:none;border:0;color:var(--bg);font-size:1.3rem}
+.cbody{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:11px;background:var(--bg-2)}
+.msg{max-width:86%;padding:11px 14px;border-radius:13px;font-size:.88rem;line-height:1.5}
+.msg.bot{background:var(--paper);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:3px}
+.msg.user{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.msg .mini-add{margin-top:8px;background:var(--accent);color:#fff;border:0;border-radius:20px;padding:6px 12px;font-size:.72rem}
+.msg .al{display:block;margin-top:6px;font-size:.74rem;color:var(--wine)}
+.quick{display:flex;gap:7px;flex-wrap:wrap;padding:0 16px 10px;background:var(--bg-2)}
+.quick button{font-size:.72rem;border:1px solid var(--accent);color:var(--accent-deep);background:transparent;border-radius:20px;padding:7px 12px}
+.quick button:hover{background:var(--accent);color:#fff}
+.cin{display:flex;border-top:1px solid var(--line);background:var(--paper)}
+.cin input{flex:1;border:0;padding:14px 16px;font-family:var(--sans);font-size:.88rem;background:transparent}
+.cin input:focus{outline:0}
+.cin button{background:var(--ink);color:var(--bg);border:0;padding:0 20px;font-size:1.1rem}
+.pill{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:rgba(33,31,27,.82);color:var(--gold);font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;padding:3px 11px;border-radius:20px}
+
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.controls{top:60px}}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a href="index-light.html" class="brand">Colette<small>Order · Pickup</small></a>
+    <div class="nav-right">
+      <a href="index-light.html" class="back">← Home</a>
+      <button class="cart-btn" onclick="openCart()">Cart <span class="cc" id="cc">0</span></button>
+    </div>
+  </div>
+</header>
+
+<section class="head">
+  <div class="wrap">
+    <div class="eyebrow">Order Online · Pickup</div>
+    <h1>Order from <span class="script">Colette</span></h1>
+    <p>Baked fresh every morning. Every item has its full description, ingredients and allergens — customise it, and Ask Colette can answer anything before you order.</p>
+  </div>
+</section>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="searchrow">
+      <div class="search"><span style="color:var(--muted)">⌕</span>
+        <input id="search" placeholder="Search the menu…" oninput="render()"></div>
+    </div>
+    <div class="filters" id="catFilters"></div>
+    <div class="filters" id="dietFilters"></div>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="wrap">
+    <div class="disclaimer">
+      <span style="color:var(--accent);font-size:1.1rem">⚠</span>
+      <span><b>Allergen note:</b> ingredient and allergen details help you choose, but our kitchen handles wheat, dairy, eggs, nuts and other allergens. If you have a severe allergy, please confirm with our team before ordering. <i>(Colette to verify all allergen data before launch.)</i></span>
+    </div>
+    <div id="popular"></div>
+    <div id="menu"></div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" onclick="closeCart()"></div>
+<aside class="drawer" id="drawer" aria-label="Your order">
+  <div class="dh"><h3>Your order</h3><button class="x" onclick="closeCart()">×</button></div>
+  <div class="lines" id="lines"></div>
+  <div class="dfoot" id="dfoot"></div>
+</aside>
+
+<div class="modal-scrim" id="mscrim" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+
+<button class="fab" id="fab" onclick="toggleChat()"><span class="dot"></span> Ask Colette</button>
+<div class="chat" id="chat">
+  <div class="pill">AI concierge · knows every ingredient</div>
+  <div class="chd"><div class="av">C</div>
+    <div><div class="t">Ask Colette</div><div class="s">ingredients · allergens · help</div></div>
+    <button class="x" onclick="toggleChat()">×</button></div>
+  <div class="cbody" id="cbody">
+    <div class="msg bot">Bonjour! 🥐 I can tell you what's in any pastry, flag allergens, find gluten-free or nut-free options, or recommend something. What are you curious about?</div>
+  </div>
+  <div class="quick">
+    <button onclick="ask('What is gluten-free?')">Gluten-free</button>
+    <button onclick="ask('Which items are nut-free?')">Nut-free</button>
+    <button onclick="ask('What is in the Sophia?')">What's in the Sophia?</button>
+    <button onclick="ask('What do you recommend?')">Recommend something</button>
+  </div>
+  <div class="cin">
+    <input id="cinput" placeholder="Ask about ingredients, allergens…" onkeydown="if(event.key==='Enter')sendChat()">
+    <button onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   CONFIG
+   - backendBaseURL: your deployed Vercel backend (orders + pay).
+   - cloverPublicKey: Clover Ecommerce PUBLIC token (apiAccessKey).
+       Safe to expose in the browser. The PRIVATE key stays on the backend.
+   - cloverSdkUrl: sandbox by default; production is
+       https://checkout.clover.com/sdk.js
+   - applePayEnabled: set true only AFTER you host the domain-verification
+       file at /.well-known/apple-developer-merchantid-domain-association
+   Leave cloverPublicKey / backendBaseURL blank to run in DEMO mode.
+========================================================= */
+const CONFIG = {
+  backendBaseURL: "https://colette-app-backend.vercel.app",
+  cloverPublicKey: "73878a7d7053f3755c442450074698d2",  // Clover Ecommerce PUBLIC key (safe in browser)
+  cloverSdkUrl: "https://checkout.clover.com/sdk.js",
+  applePayEnabled: false,
+  taxRate: 0.08,
+};
+const PAYMENTS_LIVE = !!CONFIG.cloverPublicKey;
+
+/* =========================================================
+   MENU — clear descriptions, ingredients, allergens, diet tags.
+   ALLERGENS ARE SAFETY-CRITICAL: Colette must verify before launch.
+   allergen keys: gluten, dairy, eggs, nuts, soy, sesame, coconut, alcohol
+   diet tags: vegetarian, gluten-free, nut-free
+========================================================= */
+let MENU = [
+ {id:'plain-croissant',cat:'Viennoiserie',name:'Plain Butter Croissant',price:5.25,img:'plain-croissant',
+  desc:'Our signature — French butter folded into the dough over and over, then baked golden with a shattering, flaky crust and a soft, airy honeycomb inside.',
+  ing:'Wheat flour, French butter, milk, egg, yeast, sugar, salt.',allergens:['gluten','dairy','eggs'],diet:['vegetarian','nut-free']},
+ {id:'twice-baked-almond',cat:'Viennoiserie',name:'Twice-Baked Almond Croissant',price:7.50,img:'twice-baked-almond',
+  desc:'A day-one croissant reborn: soaked in vanilla syrup, filled with rich almond cream, baked again and showered in toasted almonds and powdered sugar.',
+  ing:'Croissant, almond cream (almonds, butter, egg, sugar), vanilla syrup, sliced almonds.',allergens:['gluten','dairy','eggs','nuts'],diet:['vegetarian']},
+ {id:'nutella-croissant',cat:'Viennoiserie',name:'Nutella Croissant',price:6.95,img:'nutella-croissant',
+  desc:'Buttery croissant generously filled with chocolate-hazelnut spread and finished with a dusting of powdered sugar. A crowd favourite.',
+  ing:'Croissant, chocolate-hazelnut spread (hazelnuts, cocoa, milk, soy), powdered sugar.',allergens:['gluten','dairy','eggs','nuts','soy'],diet:['vegetarian']},
+ {id:'apricot-croissant',cat:'Viennoiserie',name:'Apricot Jam Croissant',price:6.50,img:'apricot-croissant',
+  desc:'Flaky croissant with a bright, tangy house apricot jam — not too sweet, with real fruit character.',
+  ing:'Croissant, apricot jam (apricots, sugar, pectin), powdered sugar.',allergens:['gluten','dairy','eggs'],diet:['vegetarian','nut-free']},
+ {id:'kouign-amann',cat:'Viennoiserie',name:'Kouign-Amann',price:6.95,img:'kouign-amann',
+  desc:'The legendary Breton butter pastry — laminated with layers of sugar that caramelize into a crackly, glassy crust around a tender, custardy center.',
+  ing:'Wheat flour, French butter, sugar, yeast, salt.',allergens:['gluten','dairy'],diet:['vegetarian','nut-free']},
+ {id:'gruyere-twist',cat:'Viennoiserie',name:'Sesame Gruyère Twist',price:5.95,img:'gruyere-twist',
+  desc:'A savory hand-twisted laminated pastry layered with aged Gruyère and toasted sesame — crisp, cheesy and deeply satisfying.',
+  ing:'Wheat flour, butter, Gruyère cheese, sesame seeds, egg wash, salt.',allergens:['gluten','dairy','eggs','sesame'],diet:['vegetarian']},
+ {id:'cinnamon-stick',cat:'Viennoiserie',name:'Cinnamon Stick',price:5.50,img:'cinnamon-stick',
+  desc:'Buttery laminated dough rolled in cinnamon sugar and baked until caramelized — a warm, comforting twist on a morning classic.',
+  ing:'Wheat flour, butter, cinnamon, sugar, egg, yeast.',allergens:['gluten','dairy','eggs'],diet:['vegetarian','nut-free']},
+
+ {id:'cake-sophia',cat:'Signature Cakes',name:'Sophia',price:13.99,img:'cake-sophia',
+  desc:'Our showpiece: light chocolate mousse over a vanilla crème brûlée insert, a hazelnut crunchy layer, and cherries soaked in liqueur. Elegant and indulgent.',
+  ing:'Chocolate mousse, vanilla crème brûlée (cream, egg, vanilla), hazelnut crunch, cherries in liqueur, sponge.',allergens:['dairy','eggs','nuts','gluten','alcohol'],diet:['vegetarian']},
+ {id:'cake-valentino',cat:'Signature Cakes',name:'Valentino',price:13.99,img:'cake-valentino',
+  desc:'Dark chocolate mousse with a tart raspberry insert on a moist coconut sponge — a refined balance of bitter, fruity and sweet.',
+  ing:'Dark chocolate mousse, raspberry insert, coconut sponge (egg, sugar, coconut), glaze.',allergens:['dairy','eggs','gluten','coconut','soy'],diet:['vegetarian','nut-free']},
+ {id:'cake-roche',cat:'Signature Cakes',name:'Roche',price:13.99,img:'cake-roche',
+  desc:'For the hazelnut lover — silky hazelnut mousse with house-made praline and soft caramel on a hazelnut sponge, finished with a crunchy shell.',
+  ing:'Hazelnut mousse, hazelnut praline, soft caramel (cream, sugar), hazelnut sponge.',allergens:['dairy','eggs','nuts','gluten'],diet:['vegetarian']},
+ {id:'cake-royal',cat:'Signature Cakes',name:'Royal (Trianon)',price:14.99,img:'cake-royal',
+  desc:'A French classic: dark chocolate mousse over a hazelnut dacquoise and a crunchy praline-feuilletine wafer base. Light yet intensely chocolatey.',
+  ing:'Dark chocolate mousse, hazelnut dacquoise, praline feuilletine (hazelnut, wheat), cocoa.',allergens:['dairy','eggs','nuts','gluten','soy'],diet:['vegetarian']},
+ {id:'cake-raspberry-chocolate',cat:'Signature Cakes',name:'Raspberry Chocolate Mousse',price:12.99,img:'cake-raspberry-chocolate',
+  desc:'Glossy dark chocolate mousse with a bright raspberry center on a vanilla sponge — a beautiful, fruity chocolate dome.',
+  ing:'Dark chocolate mousse, raspberry insert, vanilla sponge (egg, flour, sugar), mirror glaze.',allergens:['dairy','eggs','gluten','soy'],diet:['vegetarian','nut-free']},
+ {id:'cake-chocolate-delice',cat:'Signature Cakes',name:'Le Chocolat',price:14.99,img:'cake-chocolate-delice',
+  desc:'A chocolate-lover’s dream — layers of dark chocolate mousse and crémeux wrapped in delicate chocolate shards. Rich, dramatic, unforgettable.',
+  ing:'Dark chocolate mousse, chocolate crémeux, chocolate sponge, chocolate décor.',allergens:['dairy','eggs','gluten','soy'],diet:['vegetarian','nut-free']},
+
+ {id:'chocolate-tart',cat:'Tarts & Macarons',name:'Chocolate Tart',price:12.99,img:'chocolate-tart',
+  desc:'A buttery sablé shell filled with silky dark chocolate ganache — pure, intense and beautifully simple.',
+  ing:'Sablé pastry (wheat, butter, egg), dark chocolate ganache (chocolate, cream).',allergens:['dairy','eggs','gluten','soy'],diet:['vegetarian','nut-free']},
+ {id:'creme-brulee',cat:'Tarts & Macarons',name:'Crème Brûlée',price:9.00,img:'creme-brulee',
+  desc:'Madagascar vanilla custard under a crackling, torched caramel crust. Naturally gluten-free and endlessly satisfying.',
+  ing:'Cream, egg yolk, Madagascar vanilla, sugar.',allergens:['dairy','eggs'],diet:['vegetarian','gluten-free','nut-free']},
+ {id:'macarons-box',cat:'Tarts & Macarons',name:'Macaron Box · 6',price:20.00,img:'macarons-box',
+  desc:'Six delicate almond-meringue macarons with smooth ganache and fruit fillings — choose your flavours. Naturally gluten-free.',
+  ing:'Almond flour, egg white, sugar; fillings vary (chocolate, fruit purée, butter, cream).',allergens:['nuts','eggs','dairy'],diet:['vegetarian','gluten-free']},
+ {id:'macarons-assortment',cat:'Tarts & Macarons',name:'Macaron Box · 12',price:40.00,img:'macarons-assortment',
+  desc:'A dozen jewel-like macarons in our full range of flavours — the perfect gift, or treat. Naturally gluten-free.',
+  ing:'Almond flour, egg white, sugar; assorted fillings (chocolate, fruit, caramel, pistachio).',allergens:['nuts','eggs','dairy'],diet:['vegetarian','gluten-free']},
+
+ {id:'quiche-mushroom-fontina',cat:'Café & Savory',name:'Mushroom & Fontina Quiche',price:11.00,img:'quiche-mushroom-fontina',
+  desc:'A golden, buttery quiche with earthy mushrooms and melted Fontina in a silky savory custard. Served with a complimentary side salad.',
+  ing:'Pastry (wheat, butter), egg, cream, mushrooms, Fontina cheese.',allergens:['gluten','dairy','eggs'],diet:['vegetarian','nut-free']},
+ {id:'iced-latte-nocciola',cat:'Café & Savory',name:'Latte e Nocciola (Iced Hazelnut Latte)',price:6.75,img:'iced-latte-nocciola',
+  desc:'Our signature iced hazelnut latte — Café Richard espresso and house hazelnut over cold milk. Choose oat or almond milk to make it dairy-free.',
+  ing:'Espresso, milk, hazelnut syrup, ice.',allergens:['dairy','nuts'],diet:['vegetarian','gluten-free']},
+];
+
+/* =========================================================
+   MODIFIERS — options that adjust an item (and its price).
+   type: 'single' (pick one) | 'multi' (pick up to max) | 'text'
+========================================================= */
+const MOD = {
+  milk:{group:'Milk',type:'single',required:true,options:[
+    {label:'Whole milk',price:0},{label:'Oat milk',price:0.75},{label:'Almond milk',price:0.75},{label:'Skim milk',price:0},{label:'Half & half',price:0}]},
+  size:{group:'Size',type:'single',required:true,options:[{label:'Regular',price:0},{label:'Large',price:1.00}]},
+  warm:{group:'Serve it',type:'single',required:false,options:[{label:'Room temperature',price:0},{label:'Warmed',price:0}]},
+  candle:{group:'Add a candle?',type:'single',required:false,options:[{label:'No candle',price:0},{label:'Add a candle',price:1.00}]},
+  message:{group:'Cake message (optional)',type:'text',placeholder:'e.g. Happy Birthday, Sophie!'},
+  flavors6:{group:'Choose up to 6 flavours',hint:'Leave blank and we’ll pick a beautiful assortment.',type:'multi',min:0,max:6,
+    options:['Pistachio','Raspberry','Chocolate','Vanilla','Sea Salt Caramel','Rose','Lemon','Coffee','Yuzu'].map(f=>({label:f,price:0}))},
+  flavors12:{group:'Choose up to 12 flavours',hint:'Leave blank and we’ll pick a beautiful assortment.',type:'multi',min:0,max:12,
+    options:['Pistachio','Raspberry','Chocolate','Vanilla','Sea Salt Caramel','Rose','Lemon','Coffee','Yuzu','Blueberry','Matcha','Hazelnut'].map(f=>({label:f,price:0}))},
+};
+const MODS_BY_ID = {
+  'iced-latte-nocciola':['milk','size'],
+  'plain-croissant':['warm'],'apricot-croissant':['warm'],'kouign-amann':['warm'],'nutella-croissant':['warm'],
+  'twice-baked-almond':['warm'],'cinnamon-stick':['warm'],'gruyere-twist':['warm'],'quiche-mushroom-fontina':['warm'],
+  'macarons-box':['flavors6'],'macarons-assortment':['flavors12'],
+  'cake-sophia':['candle','message'],'cake-valentino':['candle','message'],'cake-roche':['candle','message'],
+  'cake-royal':['candle','message'],'cake-raspberry-chocolate':['candle','message'],'cake-chocolate-delice':['candle','message'],
+};
+function modsFor(id){
+  const m=byId(id);
+  // Prefer REAL Clover modifier groups when the menu has synced from the backend.
+  if(m&&m.cloverGroups&&m.cloverGroups.length){
+    return m.cloverGroups.map(g=>({
+      key:g.id,group:g.name,clover:true,
+      type:(g.maxAllowed===1)?'single':'multi',
+      required:(g.minRequired||0)>0,min:g.minRequired||0,max:g.maxAllowed||0,
+      options:(g.modifiers||[]).map(mod=>({label:mod.name,price:mod.price||0,modId:mod.id}))
+    }));
+  }
+  return (MODS_BY_ID[id]||[]).map(k=>({key:k,...MOD[k]}));
+}
+
+const ALLERGEN_LABEL = {gluten:'Gluten',dairy:'Dairy',eggs:'Eggs',nuts:'Tree nuts',soy:'Soy',sesame:'Sesame',coconut:'Coconut',alcohol:'Alcohol'};
+const DIET_LABEL = {vegetarian:'Vegetarian','gluten-free':'Gluten-free','nut-free':'Nut-free'};
+let CATS = [...new Set(MENU.map(m=>m.cat))];
+const byId = id => MENU.find(m=>m.id===id);
+const val = id => {const e=document.getElementById(id);return e?e.value.trim():'';};
+const norm = s => (s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+/* local enrichment (desc / ingredients / allergens / diet / photo) keyed by normalized name */
+const ENRICH = {}; MENU.forEach(m=>{ ENRICH[norm(m.name)] = {desc:m.desc,ing:m.ing,allergens:m.allergens,diet:m.diet,img:m.img}; });
+function priceLabel(m){ return m.price>0 ? '$'+m.price.toFixed(2) : (modsFor(m.id).length?'Options':'—'); }
+function imgHtml(m){ return m.img ? `<img src="images/${m.img}.jpg" alt="${m.name}" loading="lazy">` : `<div class="ph-ph">${(m.name||'?').trim().charAt(0).toUpperCase()}</div>`; }
+
+/* ---------- state ---------- */
+let cart = [];   // {key,id,qty,mods:[labels],unit}
+let activeCat='All', activeDiets=new Set(), slot='9:15am';
+let orderType='PICKUP', lastAddr='';
+
+/* ---------- filters ---------- */
+function buildFilters(){
+  document.getElementById('catFilters').innerHTML =
+    ['All',...CATS].map(c=>`<button class="chip ${c===activeCat?'active':''}" data-cat="${c}" onclick="setCat('${c}')">${c}</button>`).join('');
+  document.getElementById('dietFilters').innerHTML =
+    Object.keys(DIET_LABEL).map(d=>`<button class="chip diet ${activeDiets.has(d)?'active':''}" data-diet="${d}" onclick="toggleDiet('${d}')">${DIET_LABEL[d]}</button>`).join('');
+}
+buildFilters();
+function setCat(c){activeCat=c;document.querySelectorAll('[data-cat]').forEach(b=>b.classList.toggle('active',b.dataset.cat===c));render();}
+function toggleDiet(d){activeDiets.has(d)?activeDiets.delete(d):activeDiets.add(d);
+  document.querySelector(`[data-diet="${d}"]`).classList.toggle('active');render();}
+
+/* ---------- menu render ---------- */
+function badgesFor(m){
+  const diet=m.diet.map(d=>`<span class="badge diet">${DIET_LABEL[d]}</span>`).join('');
+  const al=m.allergens.length?`<span class="badge al">Contains: ${m.allergens.map(a=>ALLERGEN_LABEL[a]).join(', ')}</span>`:'';
+  return `<div class="badges">${diet}${al}</div>`;
+}
+function card(m){
+  const hasMods=modsFor(m.id).length>0;
+  return `<div class="item">
+    <div class="ph" onclick="showItem('${m.id}')">${imgHtml(m)}</div>
+    <div class="b">
+      <div class="tt"><h4>${m.name}</h4><span class="pr">${priceLabel(m)}</span></div>
+      <div class="desc">${m.desc}</div>${badgesFor(m)}
+      <div class="row">
+        <button class="add" onclick="addToCart('${m.id}')">${hasMods?'Choose options':'Add to order'}</button>
+        <button class="info-btn" title="Details" onclick="showItem('${m.id}')">ⓘ</button>
+      </div></div></div>`;
+}
+function render(){
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  const cats=activeCat==='All'?CATS:[activeCat];
+  let html='',total=0;
+  cats.forEach(cat=>{
+    const items=MENU.filter(m=>m.cat===cat)
+      .filter(m=>activeDiets.size===0||[...activeDiets].every(d=>m.diet.includes(d)))
+      .filter(m=>!q||m.name.toLowerCase().includes(q)||m.desc.toLowerCase().includes(q)||m.ing.toLowerCase().includes(q));
+    if(!items.length)return;
+    total+=items.length;
+    html+=`<div class="catname">${cat}</div><div class="grid">${items.map(card).join('')}</div>`;
+  });
+  document.getElementById('menu').innerHTML=total?html:`<div class="grid"><div class="empty-res">No items match those filters. Try clearing one.</div></div>`;
+  renderPopular();
+}
+render();
+
+/* ---------- live Clover sync (runs only when backend is connected) ----------
+   Matches each item to its Clover item by name, then uses Clover's id, price,
+   availability and REAL modifier groups (ids + prices) for ordering — while
+   keeping our rich descriptions, allergens and photos. Falls back to the local
+   definitions when no backend is set. */
+async function loadClover(){
+  if(!CONFIG.backendBaseURL)return;
+  try{
+    const r=await fetch(CONFIG.backendBaseURL+'/api/menu').then(x=>x.json());
+    if(!r||!r.ok||!r.items||!r.items.length)return;
+    // Build the FULL menu from Clover (every product), enriching with our local
+    // descriptions/allergens/photos by name where we have them.
+    MENU = r.items
+      .filter(ci=>ci.available!==false)
+      .map(ci=>{
+        const e = ENRICH[norm(ci.name)] || {};
+        const price = (typeof ci.price==='number'&&ci.price>0) ? ci.price : (ci.priceCents ? ci.priceCents/100 : 0);
+        return {
+          id: ci.id, name: ci.name, price, cat: ci.category||'Other', available: ci.available!==false,
+          cloverGroups: ci.modifierGroups||[],
+          img: e.img||null, desc: e.desc||'', ing: e.ing||'', allergens: e.allergens||[], diet: e.diet||[],
+        };
+      });
+    CATS = [...new Set(MENU.map(m=>m.cat))];
+    buildFilters();
+    render();
+  }catch(e){console.warn('Clover menu sync skipped:',e);}
+}
+/* ---------- best sellers (from Clover order history) ---------- */
+let POPULAR=[];
+async function loadPopular(){
+  if(!CONFIG.backendBaseURL)return;
+  try{
+    const r=await fetch(CONFIG.backendBaseURL+'/api/popular?days=90').then(x=>x.json());
+    if(r&&r.ok&&Array.isArray(r.items)){POPULAR=r.items;render();}
+  }catch(e){console.warn('popular load skipped',e);}
+}
+function renderPopular(){
+  const host=document.getElementById('popular');if(!host)return;
+  const q=(document.getElementById('search').value||'').trim();
+  if(activeCat!=='All'||activeDiets.size>0||q||!POPULAR.length||!MENU.length){host.innerHTML='';return;}
+  const seen=new Set(),cards=[];
+  for(const p of POPULAR){const m=MENU.find(x=>norm(x.name)===norm(p.name));if(m&&!seen.has(m.id)){seen.add(m.id);cards.push(card(m));}if(cards.length>=8)break;}
+  host.innerHTML=cards.length?`<div class="catname">★ Most popular</div><div class="grid">${cards.join('')}</div>`:'';
+}
+loadClover().then(loadPopular);
+
+/* ---------- item detail ---------- */
+function showItem(id){
+  const m=byId(id),hasMods=modsFor(id).length>0;
+  document.getElementById('modal').innerHTML=`
+    <div class="mhd"><h3>${m.name}</h3><button class="x" onclick="closeModal()">×</button></div>
+    <div class="mbody">
+      ${m.img?`<img src="images/${m.img}.jpg" alt="${m.name}" style="width:100%;border-radius:12px;margin-bottom:16px">`:`<div class="ph-ph" style="height:170px;border-radius:12px;margin-bottom:16px;font-size:3rem">${(m.name||'?').charAt(0).toUpperCase()}</div>`}
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <h3 style="font-size:1.7rem">${m.name}</h3><span style="font-family:var(--serif);font-weight:600;color:var(--accent-deep);font-size:1.3rem">${priceLabel(m)}</span></div>
+      ${m.desc?`<p style="color:var(--muted);margin-bottom:14px">${m.desc}</p>`:''}
+      ${m.ing?`<p style="font-size:.86rem;margin-bottom:6px"><b>Ingredients:</b> ${m.ing}</p>`:''}${badgesFor(m)}
+      <p style="font-size:.76rem;color:var(--muted);margin-top:12px"><i>Allergens are guidance; our kitchen handles common allergens. Please confirm with staff for severe allergies.</i></p>
+      <button class="place" onclick="addToCart('${m.id}')">${hasMods?'Choose options':'Add to order'}${m.price>0?' · $'+m.price.toFixed(2):''}</button>
+    </div>`;
+  openModal();
+}
+function openModal(){document.getElementById('mscrim').classList.add('show');}
+function closeModal(){document.getElementById('mscrim').classList.remove('show');}
+
+/* ---------- modifiers ---------- */
+function addToCart(id){
+  if(modsFor(id).length){openMods(id);} else {addConfigured(id,[],byId(id).price,[]);}
+}
+function openMods(id){
+  const m=byId(id),groups=modsFor(id);
+  let body='';
+  groups.forEach((g,gi)=>{
+    body+=`<div class="modgroup" data-gi="${gi}" data-type="${g.type}" data-key="${g.key}">
+      <div class="gt">${g.group}${g.required?' *':''}</div>${g.hint?`<div class="gh">${g.hint}</div>`:''}`;
+    if(g.type==='text'){
+      body+=`<input class="modtext" id="mod-${gi}" placeholder="${g.placeholder||''}" maxlength="80">`;
+    }else{
+      g.options.forEach((o,oi)=>{
+        const inputType=g.type==='single'?'radio':'checkbox';
+        const checked=(g.type==='single'&&g.required&&oi===0)?'checked':'';
+        body+=`<label class="modopt ${checked?'sel':''}">
+          <input type="${inputType}" name="mod-${gi}" value="${oi}" ${checked}
+            onchange="modPick(${gi},'${g.type}',${g.max||0})">
+          <span class="ol">${o.label}</span>${o.price>0?`<span class="op">+$${o.price.toFixed(2)}</span>`:''}</label>`;
+      });
+    }
+    body+=`</div>`;
+  });
+  document.getElementById('modal').innerHTML=`
+    <div class="mhd"><h3>${m.name}</h3><button class="x" onclick="closeModal()">×</button></div>
+    <div class="mbody">
+      <p style="color:var(--muted);font-size:.86rem;margin-bottom:16px">${m.desc}</p>
+      <div class="moderr" id="moderr"></div>
+      ${body}
+      <button class="place" id="modAdd" onclick="confirmMods('${id}')">Add to order</button>
+    </div>`;
+  updateModPrice(id);
+  openModal();
+}
+function modPick(gi,type,max){
+  const wrap=document.querySelector(`.modgroup[data-gi="${gi}"]`);
+  if(type==='multi'){
+    const checked=wrap.querySelectorAll('input:checked');
+    if(max&&checked.length>max){event.target.checked=false;flashErr(`Choose up to ${max}.`);}
+  }
+  wrap.querySelectorAll('.modopt').forEach(l=>l.classList.toggle('sel',l.querySelector('input').checked));
+  // recompute price using the item id stored on the Add button
+  const id=document.getElementById('modAdd').getAttribute('onclick').match(/'([^']+)'/)[1];
+  updateModPrice(id);
+}
+function collectMods(id){
+  const groups=modsFor(id);let unit=byId(id).price,labels=[],modIds=[];
+  groups.forEach((g,gi)=>{
+    const wrap=document.querySelector(`.modgroup[data-gi="${gi}"]`);
+    if(g.type==='text'){
+      const v=(document.getElementById('mod-'+gi).value||'').trim();
+      if(v)labels.push('“'+v+'”');
+    }else{
+      const checked=[...wrap.querySelectorAll('input:checked')];
+      checked.forEach(inp=>{
+        const o=g.options[+inp.value];unit+=o.price;
+        if(o.modId)modIds.push(o.modId);   // real Clover modifier id (when synced)
+        const isDefaultNoop=(g.type==='single'&&+inp.value===0&&o.price===0&&g.required);
+        if(!isDefaultNoop)labels.push(o.price>0?`${o.label} (+$${o.price.toFixed(2)})`:o.label);
+      });
+    }
+  });
+  return {unit,labels,modIds,groups};
+}
+function updateModPrice(id){
+  const {unit}=collectMods(id);
+  const btn=document.getElementById('modAdd');if(btn)btn.textContent=`Add to order · $${unit.toFixed(2)}`;
+}
+function flashErr(msg){const e=document.getElementById('moderr');if(!e)return;e.textContent=msg;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200);}
+function confirmMods(id){
+  const {unit,labels,modIds,groups}=collectMods(id);
+  // validate required single + multi min
+  for(let gi=0;gi<groups.length;gi++){
+    const g=groups[gi],wrap=document.querySelector(`.modgroup[data-gi="${gi}"]`);
+    if(g.type!=='text'){
+      const n=wrap.querySelectorAll('input:checked').length;
+      if(g.required&&n<1){flashErr('Please choose: '+g.group);return;}
+      if(g.type==='multi'&&g.min&&n<g.min){flashErr(`Choose at least ${g.min} for ${g.group}.`);return;}
+    }
+  }
+  addConfigured(id,labels,unit,modIds);closeModal();openCart();
+}
+
+/* ---------- cart ---------- */
+function lineKey(id,labels){return id+'|'+labels.join('~');}
+function addConfigured(id,labels,unit,modIds){
+  const key=lineKey(id,labels);
+  const ex=cart.find(c=>c.key===key);
+  if(ex)ex.qty++; else cart.push({key,id,qty:1,mods:labels,unit,modIds:modIds||[]});
+  syncCart();flash();
+}
+function changeQty(key,d){const c=cart.find(x=>x.key===key);if(!c)return;c.qty+=d;if(c.qty<=0)cart=cart.filter(x=>x.key!==key);syncCart();renderCart();}
+function syncCart(){document.getElementById('cc').textContent=cart.reduce((s,c)=>s+c.qty,0);}
+function flash(){const b=document.querySelector('.cart-btn');b.animate([{transform:'scale(1)'},{transform:'scale(1.12)'},{transform:'scale(1)'}],{duration:280});}
+function totals(){const sub=cart.reduce((s,c)=>s+c.unit*c.qty,0);const tax=sub*CONFIG.taxRate;return{sub,tax,tot:sub+tax};}
+function openCart(){renderCart();document.getElementById('drawer').classList.add('show');document.getElementById('scrim').classList.add('show');}
+function closeCart(){document.getElementById('drawer').classList.remove('show');document.getElementById('scrim').classList.remove('show');}
+function renderCart(){
+  const lines=document.getElementById('lines'),foot=document.getElementById('dfoot');
+  if(!cart.length){lines.innerHTML=`<div class="cart-empty">Your order is empty 🥐<br>Add something delicious.</div>`;foot.innerHTML='';return;}
+  lines.innerHTML=cart.map(c=>{const m=byId(c.id);return `<div class="cl">
+    <img src="images/${m.img}.jpg" alt="">
+    <div class="ci"><h5>${m.name}</h5>
+      ${c.mods.length?`<div class="cmods">${c.mods.join(' · ')}</div>`:''}
+      <div class="p">$${c.unit.toFixed(2)}</div>
+      <div class="qty"><button onclick="changeQty('${c.key}',-1)">−</button><span>${c.qty}</span><button onclick="changeQty('${c.key}',1)">+</button></div>
+    </div></div>`}).join('');
+  const t=totals();
+  foot.innerHTML=`<div class="trow"><span>Subtotal</span><span>$${t.sub.toFixed(2)}</span></div>
+    <div class="trow"><span>Tax</span><span>$${t.tax.toFixed(2)}</span></div>
+    <div class="trow tot"><span>Total</span><span>$${t.tot.toFixed(2)}</span></div>
+    <button class="cta" onclick="checkout()">Checkout · Pickup</button>`;
+}
+
+/* ---------- checkout ---------- */
+const SLOTS=['9:15am','9:30am','9:45am','10:00am','10:15am','10:30am'];
+function checkout(){
+  if(!cart.length)return;
+  orderType='PICKUP';
+  const t=totals();closeCart();
+  const cardSection = PAYMENTS_LIVE ? `
+    ${CONFIG.applePayEnabled?`<button class="applepay" onclick="applePay()"> Pay with Apple Pay</button><div class="or">— or pay by card —</div>`:''}
+    <p class="clv-label">Card number</p><div class="clv-field" id="cc-number"></div>
+    <div class="clv-row"><div><p class="clv-label">Expiry</p><div class="clv-field" id="cc-date"></div></div>
+      <div><p class="clv-label">CVV</p><div class="clv-field" id="cc-cvv"></div></div>
+      <div><p class="clv-label">Zip</p><div class="clv-field" id="cc-postal"></div></div></div>
+    <div class="card-err" id="card-err"></div>
+    <p style="font-size:.72rem;color:var(--muted)">Secured by Clover — card details never touch our servers.</p>`
+  : `
+    <button class="applepay" onclick="applePay()"> Pay with Apple Pay</button>
+    <div class="or">— or pay by card —</div>
+    <div class="fl"><input placeholder="Card number"></div>
+    <div class="clv-row"><div class="fl" style="flex:1"><input placeholder="MM / YY"></div><div class="fl" style="flex:1"><input placeholder="CVC"></div></div>
+    <div class="demo-tag">Demo mode — set <b>CONFIG.cloverPublicKey</b> to take real card payments via Clover.</div>`;
+  document.getElementById('modal').innerHTML=`
+    <div class="mhd"><h3>Checkout</h3><button class="x" onclick="closeModal()">×</button></div>
+    <div class="mbody">
+      <div class="summary">
+        ${cart.map(c=>{const m=byId(c.id);return `<div class="sl"><span>${c.qty} × ${m.name}${c.mods.length?`<small>${c.mods.join(' · ')}</small>`:''}</span><span>$${(c.unit*c.qty).toFixed(2)}</span></div>`}).join('')}
+        <div class="sl"><span>Tax</span><span>$${t.tax.toFixed(2)}</span></div>
+        <div class="sl t"><span>Total</span><span>$${t.tot.toFixed(2)}</span></div>
+      </div>
+      <div class="fl"><label>Order type</label>
+        <div class="segm"><button type="button" id="ot-pickup" class="active" onclick="setOrderType('PICKUP')">Pickup</button><button type="button" id="ot-delivery" onclick="setOrderType('DELIVERY')">Delivery</button></div></div>
+      <div class="fl"><label>Name</label><input id="ck-name" placeholder="Your name"></div>
+      <div class="fl"><label>Mobile (we'll text when it's ready)</label><input id="ck-phone" type="tel" placeholder="(555) 555-5555"></div>
+      <div class="fl"><label>Email (receipt)</label><input id="ck-email" type="email" placeholder="you@email.com"></div>
+      <div class="fl delivery-fields" id="delivery-block"><label>Delivery address</label>
+        <input id="ck-address" placeholder="Street address, Alpharetta, GA">
+        <div style="font-size:.72rem;color:var(--muted);margin-top:6px">Delivery within ~5 miles · fee calculated at confirmation. Dispatched by our delivery partner (DoorDash Drive / Uber Direct).</div></div>
+      <div class="fl" id="pickup-block"><label id="time-label">Pickup time · 2225 Old Milton Pkwy</label>
+        <div class="slots" id="ck-slots">${SLOTS.map((s,i)=>`<button class="slot ${i===0?'active':''}" onclick="pickSlot('${s}',this)">${s}</button>`).join('')}</div></div>
+      <div class="fl"><label>Payment</label><div class="paybox">${cardSection}</div></div>
+      <button class="place" id="placeBtn" onclick="pay()">Place order · $${t.tot.toFixed(2)}</button>
+    </div>`;
+  openModal();
+  if(PAYMENTS_LIVE)setupClover();
+}
+function pickSlot(s,el){slot=s;document.querySelectorAll('#ck-slots .slot').forEach(b=>b.classList.remove('active'));el.classList.add('active');}
+function setOrderType(t){
+  orderType=t;
+  document.getElementById('ot-pickup').classList.toggle('active',t==='PICKUP');
+  document.getElementById('ot-delivery').classList.toggle('active',t==='DELIVERY');
+  document.getElementById('delivery-block').classList.toggle('show',t==='DELIVERY');
+  document.getElementById('time-label').textContent = t==='DELIVERY' ? 'Requested delivery time' : 'Pickup time · 2225 Old Milton Pkwy';
+}
+
+/* ---------- Clover hosted iframe ---------- */
+let _clover=null,_cardMounted=false;
+function ensureSdk(){
+  return new Promise((res,rej)=>{
+    if(window.Clover)return res();
+    const s=document.createElement('script');s.src=CONFIG.cloverSdkUrl;
+    s.onload=()=>res();s.onerror=()=>rej(new Error('Clover SDK failed to load'));
+    document.head.appendChild(s);
+  });
+}
+async function setupClover(){
+  try{
+    await ensureSdk();
+    _clover=new Clover(CONFIG.cloverPublicKey);
+    const el=_clover.elements();
+    el.create('CARD_NUMBER').mount('#cc-number');
+    el.create('CARD_DATE').mount('#cc-date');
+    el.create('CARD_CVV').mount('#cc-cvv');
+    el.create('CARD_POSTAL_CODE').mount('#cc-postal');
+    _cardMounted=true;
+  }catch(e){
+    const err=document.getElementById('card-err');if(err)err.textContent='Payment form unavailable — please call the café to order.';
+    console.warn(e);
+  }
+}
+function cardError(msg){const e=document.getElementById('card-err');if(e)e.textContent=msg;}
+
+async function pay(){
+  const btn=document.getElementById('placeBtn');if(btn)btn.disabled=true;
+  let source=null;
+  if(PAYMENTS_LIVE && _clover && _cardMounted){
+    try{
+      const r=await _clover.createToken();           // -> { token:'clv_...', errors }
+      if(r && r.errors){cardError(Object.values(r.errors).join(' '));if(btn)btn.disabled=false;return;}
+      source=r.token;
+    }catch(e){cardError('Could not process your card. Please check the details.');if(btn)btn.disabled=false;return;}
+  }
+  await placeOrder(source);
+  if(btn)btn.disabled=false;
+}
+
+function applePay(){
+  if(!CONFIG.applePayEnabled){
+    flashErr2('Apple Pay activates after domain verification — see setup notes. You can pay by card now.');
+    return;
+  }
+  // TODO: Clover Apple Pay element returns a clv_ token via createToken(); then placeOrder(token).
+  // Requires /.well-known/apple-developer-merchantid-domain-association on your live domain.
+  placeOrder('APPLE_PAY_TOKEN_PLACEHOLDER');
+}
+function flashErr2(msg){const e=document.getElementById('card-err');if(e){e.textContent=msg;}else alert(msg);}
+
+async function placeOrder(source){
+  const t=totals();
+  const amountCents=Math.round(t.tot*100);
+  const name=val('ck-name')||'Guest';
+  lastAddr = orderType==='DELIVERY' ? (val('ck-address')||'') : '';
+  if(orderType==='DELIVERY' && !lastAddr){flashErr2('Please enter a delivery address.');const b=document.getElementById('placeBtn');if(b)b.disabled=false;return;}
+  // Each line carries any chosen Clover modifier IDs (filled once the page renders from
+  // /api/menu — see Clover-Modifiers-Setup guide). For now modifiers also ride in the note.
+  const lines=cart.map(c=>({itemId:(byId(c.id).cloverId||c.id),quantity:c.qty,modifierIds:c.modIds||[]}));
+  const where = orderType==='DELIVERY' ? ('DELIVERY to '+lastAddr) : ('pickup '+slot);
+  const note='Web order · '+where+' · '+cart.map(c=>`${c.qty}× ${byId(c.id).name}${c.mods.length?' ['+c.mods.join(', ')+']':''}`).join('; ');
+  if(CONFIG.backendBaseURL){
+    try{
+      const o=await fetch(CONFIG.backendBaseURL+'/api/order',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({lines,customerName:name,note,orderType})}).then(r=>r.json());
+      await fetch(CONFIG.backendBaseURL+'/api/pay',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({amountCents,source:source||'NO_TOKEN',orderId:o.orderId})}).then(r=>r.json());
+      return confirmOrder(o.orderId||genNum());
+    }catch(e){console.warn('Order failed, showing demo confirmation',e);}
+  }
+  confirmOrder(genNum()); // demo
+}
+function genNum(){return 'CO-'+Math.floor(1000+Math.random()*9000);}
+function confirmOrder(num){
+  if(window.track){try{track('purchase',{value:totals().tot,currency:'USD',items:cart.length},'Purchase');}catch(e){}}
+  document.getElementById('modal').innerHTML=`
+    <div class="mhd"><h3>Confirmed</h3><button class="x" onclick="closeModal()">×</button></div>
+    <div class="mbody"><div class="success">
+      <div class="ck">✓</div>
+      <h3>Order <span class="script">confirmée</span></h3>
+      ${orderType==='DELIVERY'
+        ? `<p>Thank you! Your order is being prepared and will be delivered to <b>${lastAddr}</b>.</p>`
+        : `<p>Thank you! Your order is being prepared for pickup at <b>${slot}</b>.</p>`}
+      <div class="num">Order ${num}</div>
+      <p style="font-size:.84rem">${orderType==='DELIVERY'?'We\'ll text you tracking updates from our delivery partner.':'2225 Old Milton Pkwy, Suite 100 · we\'ll text you when it\'s ready.'}</p>
+      <button class="place" onclick="resetOrder()">Done</button>
+    </div></div>`;
+}
+function resetOrder(){cart=[];syncCart();_clover=null;_cardMounted=false;closeModal();}
+
+/* =========================================================
+   ASK COLETTE — ingredient & allergen aware assistant
+========================================================= */
+const chat=document.getElementById('chat'),cbody=document.getElementById('cbody');
+function toggleChat(){chat.classList.toggle('show');}
+function addMsg(html,who){const d=document.createElement('div');d.className='msg '+who;d.innerHTML=html;cbody.appendChild(d);cbody.scrollTop=cbody.scrollHeight;}
+function botType(html){const t=document.createElement('div');t.className='msg bot';t.textContent='…';cbody.appendChild(t);cbody.scrollTop=cbody.scrollHeight;
+  setTimeout(()=>{t.remove();addMsg(html,'bot');},420);}
+function ask(q){addMsg(q,'user');botType(answer(q));}
+function sendChat(){const i=document.getElementById('cinput');const v=i.value.trim();if(!v)return;addMsg(v,'user');i.value='';botType(answer(v));}
+function findItem(q){
+  q=q.toLowerCase();
+  let m=MENU.find(it=>q.includes(it.name.toLowerCase()));if(m)return m;
+  const words=['sophia','valentino','roche','royal','raspberry','chocolate tart','chocolate','crème','creme','brulee','brûlée','macaron','croissant','almond','nutella','kouign','gruyere','quiche','latte','apricot','cinnamon'];
+  const hit=words.find(w=>q.includes(w));
+  if(hit)return MENU.find(it=>(it.name+' '+it.ing).toLowerCase().includes(hit));
+  return null;
+}
+function itemCard(m){
+  return `<b>${m.name}</b> — $${m.price.toFixed(2)}<br>${m.desc}
+    <span class="al">Ingredients: ${m.ing}<br>Contains: ${m.allergens.map(a=>ALLERGEN_LABEL[a]).join(', ')||'—'}</span>
+    <button class="mini-add" onclick="addToCart('${m.id}')">Add to order · $${m.price.toFixed(2)}</button>`;
+}
+const listByDiet=d=>MENU.filter(m=>m.diet.includes(d)).map(m=>'• '+m.name).join('<br>');
+const listWithout=a=>MENU.filter(m=>!m.allergens.includes(a)).map(m=>'• '+m.name).join('<br>');
+function answer(q){
+  const s=q.toLowerCase();
+  const safety='<span class="al">For a severe allergy, please confirm with our team — we bake with shared equipment.</span>';
+  if(s.includes('gluten'))return `These are made <b>gluten-free</b> 🌾:<br>${listByDiet('gluten-free')}<br>${safety}`;
+  if(s.includes('nut')&&(s.includes('free')||s.includes('without')||s.includes('no ')||s.includes('allerg')))
+    return `<b>Nut-free</b> picks (no tree nuts):<br>${listWithout('nuts')}<br>${safety}`;
+  if(s.includes('nut'))
+    return `These <b>contain tree nuts</b>:<br>${MENU.filter(m=>m.allergens.includes('nuts')).map(m=>'• '+m.name).join('<br>')}<br><br>Want the nut-free list instead? Just ask.${safety}`;
+  if(s.includes('dairy')||s.includes('lactose')||s.includes('milk'))
+    return `Lower-dairy options:<br>${MENU.filter(m=>!m.allergens.includes('dairy')).map(m=>'• '+m.name).join('<br>')||'Most items contain dairy.'}<br>Our iced latte can be made with <b>oat or almond milk</b>.${safety}`;
+  if(s.includes('vegan'))
+    return `We don’t have fully vegan pastries right now — most use butter, egg or cream. Ask our team about daily specials.${safety}`;
+  if(s.includes('vegetarian'))
+    return `Almost everything is <b>vegetarian</b> — only the savory items use cheese. All sweet pastries, cakes, tarts and macarons are vegetarian.`;
+  if(s.includes('recommend')||s.includes('best')||s.includes('popular')||s.includes('favorite')||s.includes('favourite'))
+    return `A few favourites 🥐:<br>${itemCard(byId('twice-baked-almond'))}<br><br>${itemCard(byId('cake-sophia'))}`;
+  const m=findItem(s);
+  if(m&&(s.includes('in ')||s.includes('ingredient')||s.includes('contain')||s.includes('what')||s.includes('allerg')||s.includes('tell')))return itemCard(m);
+  if(m)return `Here you go:<br>${itemCard(m)}`;
+  if(s.includes('order')||s.includes('pickup')||s.includes('pay')||s.includes('how'))
+    return `Easy! Tap <b>Add to order</b> (or <b>Choose options</b>) on anything, then the <b>Cart</b> button up top to pick a pickup time and pay with Apple Pay or card. Want me to add something now?`;
+  return `I can tell you what’s in any item, flag allergens, or find gluten-free / nut-free options. Try “what’s in the Valentino?” or “nut-free options”.`;
+}
+</script>
+</body>
+</html>
