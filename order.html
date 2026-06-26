@@ -405,6 +405,7 @@ function imgHtml(m){ return m.img ? `<img src="images/${m.img}.jpg" alt="${m.nam
 let cart = [];   // {key,id,qty,mods:[labels],unit}
 let activeCat='All', activeDiets=new Set(), slot='9:15am';
 let orderType='PICKUP', lastAddr='';
+let POPULAR=[];
 
 /* ---------- filters ---------- */
 function buildFilters(){
@@ -482,7 +483,6 @@ async function loadClover(){
   }catch(e){console.warn('Clover menu sync skipped:',e);}
 }
 /* ---------- best sellers (from Clover order history) ---------- */
-let POPULAR=[];
 async function loadPopular(){
   if(!CONFIG.backendBaseURL)return;
   try{
