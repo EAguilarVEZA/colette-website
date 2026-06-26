@@ -398,6 +398,15 @@ const val = id => {const e=document.getElementById(id);return e?e.value.trim():'
 const norm = s => (s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
 /* local enrichment (desc / ingredients / allergens / diet / photo) keyed by normalized name */
 const ENRICH = {}; MENU.forEach(m=>{ ENRICH[norm(m.name)] = {desc:m.desc,ing:m.ing,allergens:m.allergens,diet:m.diet,img:m.img}; });
+/* map Clover item names (which differ slightly) to our photo set */
+const ALIAS = {
+  plaincroissant:'plainbuttercroissant', apricotcroissant:'apricotjamcroissant',
+  gruyeresesametwist:'sesamegruyeretwist', sesamegruyretwist:'sesamegruyeretwist',
+  mushroomandfontinacheesequiche:'mushroomfontinaquiche', royal:'royaltrianon',
+  cremebruleetartindividual:'cremebrulee', cremebrulee:'cremebrulee',
+  macaronsbox6pcs:'macaronbox6', macaronsbox12pcs:'macaronbox12',
+};
+Object.entries(ALIAS).forEach(([c,k])=>{ if(ENRICH[k]) ENRICH[c]=ENRICH[k]; });
 function priceLabel(m){ return m.price>0 ? '$'+m.price.toFixed(2) : (modsFor(m.id).length?'Options':'—'); }
 function imgHtml(m){ return m.img ? `<img src="images/${m.img}.jpg" alt="${m.name}" loading="lazy">` : `<div class="ph-ph">${(m.name||'?').trim().charAt(0).toUpperCase()}</div>`; }
 
