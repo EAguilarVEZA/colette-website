@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colette — Direction 2 · BLOOM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--white:#FFFFFF;--cream:#FCFCF6;--ink:#15170F;--lime:#C8F560;--lime-s:#A6E84B;--yellow:#FFE352;--peach:#FFF3C9;--grey:#6E7064;
+--disp:'Fredoka',system-ui,sans-serif;--sans:'Nunito',system-ui,sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--cream);color:var(--ink);font-weight:600;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+h1,h2,h3,.fd{font-family:var(--disp)}
+.tag{position:fixed;top:14px;left:14px;z-index:99;background:var(--ink);color:var(--lime);font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:7px 12px;border-radius:30px;font-weight:700;font-family:var(--sans)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+.logo{font-family:var(--disp);font-weight:700;font-size:30px;color:var(--ink)}
+.logo b{color:var(--lime-s)}
+.pill-nav{display:flex;gap:6px;align-items:center;background:var(--white);padding:6px;border-radius:40px;box-shadow:0 6px 20px -10px rgba(0,0,0,.15)}
+.pill-nav a{text-decoration:none;color:var(--ink);font-weight:700;font-size:14px;padding:9px 16px;border-radius:30px}
+.pill-nav a:hover{background:var(--peach)}
+.btn{font-family:var(--disp);font-weight:600;font-size:16px;border:none;cursor:pointer;padding:13px 26px;border-radius:40px;background:var(--ink);color:#fff;transition:.15s;box-shadow:0 6px 0 #0a0b06}
+.btn:active{transform:translateY(3px);box-shadow:0 3px 0 #0a0b06}
+.btn.lime{background:var(--lime);color:var(--ink);box-shadow:0 6px 0 var(--lime-s)}
+.btn.yellow{background:var(--yellow);color:var(--ink);box-shadow:0 6px 0 #E9C92F}
+/* hero */
+.hero{margin:14px 0;background:var(--lime);border-radius:40px;padding:56px 48px;display:grid;grid-template-columns:1fr .9fr;gap:30px;align-items:center;position:relative;overflow:hidden}
+.hero .dot{position:absolute;width:150px;height:150px;border-radius:50%;background:var(--yellow);right:-40px;top:-40px;opacity:.9}
+.hero .dot2{position:absolute;width:90px;height:90px;border-radius:50%;background:var(--white);left:42%;bottom:-30px}
+.hero h1{font-size:clamp(44px,6.5vw,82px);line-height:.95;font-weight:700;position:relative;z-index:2}
+.hero h1 em{font-style:normal;background:var(--white);padding:0 12px;border-radius:14px;display:inline-block;transform:rotate(-2deg)}
+.hero p{font-size:18px;margin:20px 0 26px;max-width:420px;position:relative;z-index:2}
+.hero .acts{display:flex;gap:12px;flex-wrap:wrap;position:relative;z-index:2}
+.hero-img{position:relative;z-index:2}
+.hero-img img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:30px;border:5px solid var(--white)}
+.sticker{position:absolute;background:var(--yellow);font-family:var(--disp);font-weight:600;padding:10px 16px;border-radius:30px;border:3px solid var(--ink);transform:rotate(-9deg);top:-16px;left:-16px;font-size:15px}
+/* features */
+.chips{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:34px 0}
+.chip{background:var(--white);border-radius:30px;padding:12px 22px;font-family:var(--disp);font-weight:500;font-size:16px;box-shadow:0 6px 18px -12px rgba(0,0,0,.2)}
+.chip .e{margin-right:6px}
+/* products */
+.sec{padding:40px 0 20px}
+.sec h2{font-size:clamp(30px,4.5vw,50px);text-align:center;margin-bottom:8px}
+.sec .sub{text-align:center;color:var(--grey);margin-bottom:30px;font-size:17px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.card{background:var(--white);border-radius:28px;overflow:hidden;transition:.2s;box-shadow:0 14px 30px -22px rgba(0,0,0,.3)}
+.card:hover{transform:translateY(-6px)}
+.card .ph{position:relative;aspect-ratio:1;overflow:hidden;margin:10px;border-radius:20px}
+.card .ph img{width:100%;height:100%;object-fit:cover}
+.card .hot{position:absolute;top:10px;left:10px;background:var(--lime);font-family:var(--disp);font-size:12px;padding:5px 11px;border-radius:20px;font-weight:600}
+.card .b{padding:4px 18px 18px;display:flex;align-items:center;justify-content:space-between}
+.card h4{font-family:var(--disp);font-size:21px;font-weight:600}
+.card .pr{font-family:var(--disp);font-weight:600;color:var(--ink)}
+.card .add{width:40px;height:40px;border-radius:50%;background:var(--ink);color:var(--lime);border:none;font-size:22px;cursor:pointer;display:grid;place-items:center}
+/* cta */
+.join{margin:40px 0;background:var(--yellow);border-radius:40px;padding:48px;text-align:center}
+.join h3{font-size:clamp(26px,4vw,44px)}
+.join p{margin:10px 0 22px;font-size:18px}
+footer{text-align:center;padding:30px;color:var(--grey);font-weight:700;font-size:13px}
+@media(max-width:880px){.hero{grid-template-columns:1fr;padding:40px 28px}.hero-img{order:-1}.grid{grid-template-columns:1fr 1fr}}
+</style></head>
+<body>
+<div class="tag">Direction 2 · BLOOM — playful &amp; poppy</div>
+<div class="wrap">
+  <nav>
+    <div class="logo">Col<b>e</b>tte</div>
+    <div class="pill-nav"><a>Menu</a><a>Rewards</a><a>Visit</a><a style="background:var(--lime)">Order →</a></div>
+  </nav>
+  <section class="hero">
+    <div class="dot"></div><div class="dot2"></div>
+    <div>
+      <h1>A little <em>treat</em><br>makes the day.</h1>
+      <p>Fresh French pastries, bright mornings, and a café that feels like a hug. Order ahead, skip the line, earn treats.</p>
+      <div class="acts"><button class="btn">Order Pickup</button><button class="btn yellow">Browse Menu</button></div>
+    </div>
+    <div class="hero-img">
+      <div class="sticker">Fresh daily!</div>
+      <img src="https://colette-website.vercel.app/images/macarons-box.jpg" alt="">
+    </div>
+  </section>
+  <div class="chips">
+    <div class="chip"><span class="e">🥐</span>Baked at 6am</div>
+    <div class="chip"><span class="e">🎟️</span>10% off first order</div>
+    <div class="chip"><span class="e">⭐</span>Earn rewards</div>
+    <div class="chip"><span class="e">🚗</span>Pickup &amp; delivery</div>
+  </div>
+  <section class="sec">
+    <h2>Crowd favourites</h2>
+    <div class="sub">The ones everyone keeps coming back for</div>
+    <div class="grid">
+      <div class="card"><div class="ph"><span class="hot">★ Best seller</span><img src="https://colette-website.vercel.app/images/twice-baked-almond.jpg"></div><div class="b"><div><h4>Almond Croissant</h4><div class="pr">$7.50</div></div><button class="add">+</button></div></div>
+      <div class="card"><div class="ph"><span class="hot">New</span><img src="https://colette-website.vercel.app/images/cake-valentino.jpg"></div><div class="b"><div><h4>Valentino</h4><div class="pr">$13.99</div></div><button class="add">+</button></div></div>
+      <div class="card"><div class="ph"><img src="https://colette-website.vercel.app/images/iced-latte-nocciola.jpg"></div><div class="b"><div><h4>Hazelnut Latte</h4><div class="pr">$6.75</div></div><button class="add">+</button></div></div>
+    </div>
+  </section>
+  <div class="join">
+    <h3>Join the Colette club 🍰</h3>
+    <p>10% off your first order + first dibs on new drops, by text &amp; email.</p>
+    <button class="btn lime">Claim 10% off</button>
+  </div>
+</div>
+<footer>Colette French Pastries · Alpharetta, GA · Direction 2 of 3</footer>
+</body></html>

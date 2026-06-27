@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colette — Direction 3 · ATELIER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--white:#FFFFFF;--paper:#FCFCFA;--ink:#161812;--grey:#79796F;--lime:#C9F03A;--lime-deep:#7CA80F;--yellow:#FFE24A;--line:#ECEBE4;
+--serif:'Fraunces',Georgia,serif;--sans:'Inter',system-ui,sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--white);color:var(--ink);font-weight:300;line-height:1.6;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+h1,h2,h3{font-family:var(--serif);font-weight:400;line-height:1.05}
+.tag{position:fixed;top:14px;left:14px;z-index:99;background:var(--ink);color:var(--lime);font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:7px 12px;border-radius:30px;font-weight:600}
+.wrap{max-width:1200px;margin:0 auto;padding:0 40px}
+nav{display:flex;align-items:center;justify-content:space-between;padding:28px 0}
+.logo{font-family:var(--serif);font-size:26px;letter-spacing:.5px}
+.logo .d{color:var(--lime-deep)}
+.nav-links{display:flex;gap:38px;align-items:center}
+.nav-links a{text-decoration:none;color:var(--ink);font-size:14px;letter-spacing:.04em}
+.nav-links a:hover{color:var(--lime-deep)}
+.btn{font-family:var(--sans);font-weight:500;font-size:13px;letter-spacing:.14em;text-transform:uppercase;padding:14px 28px;border-radius:2px;border:1px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer;transition:.25s}
+.btn:hover{background:transparent;color:var(--ink)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:var(--lime);border-color:var(--lime)}
+.eyebrow{font-size:12px;letter-spacing:.4em;text-transform:uppercase;color:var(--lime-deep);font-weight:500;display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:30px;height:7px;background:var(--lime);border-radius:4px}
+/* hero */
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:center;padding:50px 0 70px}
+.hero h1{font-size:clamp(52px,7vw,96px);margin:24px 0 0;letter-spacing:-1px}
+.hero h1 em{font-style:italic;position:relative}
+.hero h1 em::after{content:"";position:absolute;left:0;right:0;bottom:8%;height:34%;background:var(--yellow);z-index:-1;opacity:.85}
+.hero p{font-size:18px;color:var(--grey);max-width:430px;margin:28px 0 36px}
+.hero .acts{display:flex;gap:14px;flex-wrap:wrap}
+.hero-img{position:relative}
+.hero-img img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:3px}
+.hero-img .frame{position:absolute;inset:-14px -14px auto auto;width:60%;height:60%;border:1px solid var(--lime-deep);border-radius:3px;z-index:-1}
+.hero-img .dot{position:absolute;left:-18px;bottom:34px;width:64px;height:64px;border-radius:50%;background:var(--lime)}
+.hero-img .cap{position:absolute;left:20px;bottom:20px;background:rgba(255,255,255,.94);backdrop-filter:blur(4px);padding:12px 18px;border-radius:2px}
+.hero-img .cap b{font-family:var(--serif);font-style:italic;font-size:17px;font-weight:400}
+.hero-img .cap small{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--grey)}
+.rule{display:flex;align-items:center;gap:20px;color:var(--grey)}
+.rule::before,.rule::after{content:"";flex:1;height:1px;background:var(--line)}
+.rule span{font-size:12px;letter-spacing:.34em;text-transform:uppercase}
+/* products */
+.sec{padding:70px 0}
+.sec-head{text-align:center;max-width:560px;margin:0 auto 50px}
+.sec-head h2{font-size:clamp(34px,5vw,54px);margin:14px 0 0}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:40px}
+.prod .ph{aspect-ratio:4/5;overflow:hidden;background:var(--paper);margin-bottom:16px;position:relative}
+.prod .ph img{width:100%;height:100%;object-fit:cover;transition:1s}
+.prod:hover .ph img{transform:scale(1.05)}
+.prod .ph .n{position:absolute;top:12px;left:12px;width:26px;height:26px;border-radius:50%;background:var(--lime);display:grid;place-items:center;font-size:12px;font-weight:600;font-family:var(--sans)}
+.prod .ln{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:8px}
+.prod h4{font-family:var(--serif);font-size:24px;font-weight:400}
+.prod .pr{font-family:var(--serif);font-size:18px;color:var(--lime-deep)}
+.prod .ds{color:var(--grey);font-size:14px;margin-top:8px}
+/* cta band */
+.band{background:var(--ink);color:#fff;padding:80px 0;text-align:center}
+.band .eyebrow{color:var(--lime);justify-content:center}
+.band h3{color:#fff;font-size:clamp(32px,5vw,52px);margin:16px 0}
+.band em{font-style:italic;color:var(--lime)}
+.band p{color:rgba(255,255,255,.7);max-width:440px;margin:0 auto 28px}
+.band .btn{background:var(--lime);color:var(--ink);border-color:var(--lime)}
+.band .btn:hover{background:transparent;color:var(--lime)}
+footer{padding:36px 0;text-align:center;color:var(--grey);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+@media(max-width:880px){.hero{grid-template-columns:1fr;gap:40px}.hero-img{order:-1}.grid{grid-template-columns:1fr 1fr}}
+</style></head>
+<body>
+<div class="tag">Direction 3 · ATELIER — refined &amp; fresh</div>
+<div class="wrap">
+  <nav>
+    <div class="logo">Colette<span class="d">.</span></div>
+    <div class="nav-links"><a>Our Story</a><a>Menu</a><a>Rewards</a><a>Visit</a><button class="btn ghost">Order Now</button></div>
+  </nav>
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Modern French Patisserie</div>
+      <h1>Paris, made <em>fresh</em> in Alpharetta.</h1>
+      <p>French-trained chefs and an in-house artist. Bread baked at dawn, pastries built like little sculptures — with a bright, green-fresh spirit.</p>
+      <div class="acts"><button class="btn">Order Pickup</button><button class="btn ghost">Explore the Menu</button></div>
+    </div>
+    <div class="hero-img">
+      <div class="frame"></div><div class="dot"></div>
+      <img src="https://colette-website.vercel.app/images/cake-sophia.jpg" alt="">
+      <div class="cap"><b>Sophia</b><small>Signature cake</small></div>
+    </div>
+  </section>
+  <div class="rule"><span>Croissants · Macarons · Cakes · Crêpes · Café Richard Paris</span></div>
+  <section class="sec">
+    <div class="sec-head"><div class="eyebrow" style="justify-content:center">La Carte</div><h2>A taste of the menu</h2></div>
+    <div class="grid">
+      <div class="prod"><div class="ph"><span class="n">01</span><img src="https://colette-website.vercel.app/images/twice-baked-almond.jpg"></div><div class="ln"><h4>Twice-Baked Almond</h4><span class="pr">$7.50</span></div><div class="ds">Almond cream, baked twice, toasted almonds.</div></div>
+      <div class="prod"><div class="ph"><span class="n">02</span><img src="https://colette-website.vercel.app/images/chocolate-tart.jpg"></div><div class="ln"><h4>Chocolate Tart</h4><span class="pr">$12.99</span></div><div class="ds">Dark chocolate ganache, buttery sablé.</div></div>
+      <div class="prod"><div class="ph"><span class="n">03</span><img src="https://colette-website.vercel.app/images/macarons-box.jpg"></div><div class="ln"><h4>Macaron Box</h4><span class="pr">$20</span></div><div class="ds">Six house macarons, rotating flavours.</div></div>
+    </div>
+  </section>
+</div>
+<div class="band"><div class="wrap">
+  <div class="eyebrow">Welcome to the table</div>
+  <h3>Get <em>10%</em> off your first order</h3>
+  <p>Join for a one-time welcome offer and first look at new pastries — by email &amp; text.</p>
+  <button class="btn">Join the list</button>
+</div></div>
+<div class="wrap"><footer>Colette French Pastries · Alpharetta, GA · Direction 3 of 3</footer></div>
+</body></html>
