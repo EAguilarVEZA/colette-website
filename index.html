@@ -465,7 +465,7 @@ footer{background:var(--ink);color:var(--cream);padding:80px 0 36px}
         <div class="perk"><div class="pc">✦</div><div><h4>Ask Colette, our AI concierge</h4><p>"A box of 6 macarons and two lattes for pickup at 9." Done — it knows the menu and reorders your favorites.</p></div></div>
         <div class="perk"><div class="pc">✉</div><div><h4>Members-only drops</h4><p>New flavors, seasonal cakes and promos, by app &amp; text before anyone else.</p></div></div>
       </div>
-      <button class="btn orange" onclick="openModal()">Join &amp; get 10% off</button>
+      <button class="btn orange" onclick="openModal()">Join &amp; get 15% off</button>
     </div>
     <div class="phone">
       <div class="notch"></div>
@@ -489,14 +489,18 @@ footer{background:var(--ink);color:var(--cream);padding:80px 0 36px}
 <section class="eband" id="join">
   <div class="wrap">
     <div class="eyebrow">Welcome to the table</div>
-    <h2>Get 10% off your first order</h2>
+    <h2>Get 15% off your first order</h2>
     <p>Join our list for a one-time welcome offer, early access to new pastries, and the occasional sweet surprise by email &amp; text.</p>
     <form class="eform" onsubmit="return inlineJoin(event)">
-      <input type="email" placeholder="Your email address" required>
-      <input type="tel" placeholder="Mobile (for text offers)">
-      <button class="btn orange" type="submit">Claim 10% Off</button>
+      <input type="email" id="b-email" placeholder="Your email address" required>
+      <input type="tel" id="b-phone" placeholder="Mobile (for text offers)">
+      <button class="btn orange" type="submit">Claim 15% Off</button>
     </form>
-    <p style="font-size:.72rem;margin-top:14px;color:var(--ink-soft)">No spam, just pastries. Unsubscribe anytime.</p>
+    <div style="margin-top:12px;font-size:.8rem;text-align:left;max-width:520px">
+      <label class="consent-line"><input type="checkbox" id="b-emailok"> Yes, email me offers &amp; new-pastry news.</label>
+      <label class="consent-line"><input type="checkbox" id="b-smsok"> Yes, text me offers (required to add your mobile).</label>
+    </div>
+    <p style="font-size:.72rem;margin-top:10px;color:var(--ink-soft)">You must opt in to receive messages. Msg &amp; data rates may apply. Reply STOP to unsubscribe. One welcome offer per customer.</p>
   </div>
 </section>
 
@@ -554,6 +558,10 @@ footer{background:var(--ink);color:var(--cream);padding:80px 0 36px}
   </div>
 </div>
 
+<style>
+.consent-line{display:flex;gap:8px;align-items:flex-start;font-size:.82rem;line-height:1.35;margin:8px 0;color:var(--ink-soft);cursor:pointer;text-align:left}
+.consent-line input{margin-top:3px;flex:0 0 auto}
+</style>
 <!-- WELCOME MODAL -->
 <div class="overlay" id="overlay">
   <div class="modal">
@@ -561,13 +569,15 @@ footer{background:var(--ink);color:var(--cream);padding:80px 0 36px}
     <div class="mimg"></div>
     <div class="mbody" id="modalBody">
       <div class="eyebrow">A little welcome gift</div>
-      <h3><span class="script">10%</span> off your first order</h3>
+      <h3><span class="script">15%</span> off your first order</h3>
       <p>Join the Colette list for a one-time welcome offer, first look at new pastries, and members-only drops by email &amp; text.</p>
       <form onsubmit="return submitModal(event)">
-        <input type="email" placeholder="Email address" required>
-        <input type="tel" placeholder="Mobile number (for text offers)">
-        <button class="btn orange" type="submit" style="width:100%;justify-content:center">Send my 10% code</button>
-        <div class="fine">By joining you agree to receive marketing emails &amp; texts from Colette. Msg &amp; data rates may apply. Unsubscribe anytime.</div>
+        <input type="email" id="m-email" placeholder="Email address" required>
+        <input type="tel" id="m-phone" placeholder="Mobile number (for text offers)">
+        <label class="consent-line"><input type="checkbox" id="m-emailok"> Yes, email me offers &amp; new-pastry news.</label>
+        <label class="consent-line"><input type="checkbox" id="m-smsok"> Yes, text me offers (required to add your mobile).</label>
+        <button class="btn orange" type="submit" style="width:100%;justify-content:center">Send my 15% code</button>
+        <div class="fine">You must opt in above to receive messages. Msg &amp; data rates may apply. Reply STOP to unsubscribe from texts, or use the unsubscribe link in any email. One welcome offer per customer.</div>
       </form>
     </div>
   </div>
@@ -701,26 +711,52 @@ function closeModal(){overlay.classList.remove('show')}
 overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal()});
 let shown=false;
 setTimeout(()=>{if(!shown){shown=true;openModal()}},9000);
-function submitModal(e){
+const LEAD_API='https://colette-app-backend.vercel.app/api/lead';
+async function captureLead(o){
+  try{
+    const r=await fetch(LEAD_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)}).then(x=>x.json());
+    return r||{ok:false};
+  }catch(e){console.warn('lead capture failed',e);return {ok:false,error:'network'};}
+}
+async function submitModal(e){
   e.preventDefault();
-  /* TRACK: email lead (fires only after consent) */
-  if(window.track){window.track('generate_lead',{currency:'USD',value:10,method:'welcome_modal',event_id:(window.coletteEventId&&window.coletteEventId())},{event:'Lead',params:{content_name:'Welcome 10% Modal'}});}
-  document.getElementById('modalBody').innerHTML=`
-    <div class="success">
-      <div class="eyebrow">You're in 🎉</div>
-      <h3 style="margin:10px 0">Merci!</h3>
-      <p>Here's your one-time welcome code. Show it at the café or use it at checkout.</p>
-      <div class="code">COLETTE10</div>
-      <p style="font-size:.8rem">We'll also text & email you first when new pastries drop.</p>
-    </div>`;
+  const email=(document.getElementById('m-email').value||'').trim();
+  const phone=(document.getElementById('m-phone').value||'').trim();
+  const emailConsent=document.getElementById('m-emailok').checked;
+  const smsConsent=document.getElementById('m-smsok').checked;
+  if(!emailConsent && !smsConsent){alert('Please tick a box so we know how you\'d like to hear from us.');return false;}
+  if(phone && !smsConsent){alert('Please tick "text me" to add your mobile, or remove the number.');return false;}
+  const btn=e.target.querySelector('button');if(btn){btn.disabled=true;btn.textContent='Sending…';}
+  const r=await captureLead({email,phone,emailConsent,smsConsent,source:'welcome_modal'});
+  if(window.track && r.ok && !r.alreadyClaimed){window.track('generate_lead',{currency:'USD',value:15,method:'welcome_modal',event_id:(window.coletteEventId&&window.coletteEventId())},{event:'Lead',params:{content_name:'Welcome 15% Modal'}});}
+  const body=document.getElementById('modalBody');
+  if(r.ok && r.alreadyClaimed){
+    body.innerHTML=`<div class="success"><div class="eyebrow">Welcome back 👋</div><h3 style="margin:10px 0">You're already on the list!</h3><p>Looks like you've already claimed your welcome offer. Keep an eye on your inbox — new pastry drops are coming.</p></div>`;
+  }else if(r.ok){
+    body.innerHTML=`<div class="success"><div class="eyebrow">You're in 🎉</div><h3 style="margin:10px 0">Merci!</h3><p>Here's your one-time welcome code. Show it at the café or use it at checkout.</p><div class="code">${r.code||'COLETTE15'}</div><p style="font-size:.8rem">We'll be in touch first when new pastries drop.</p></div>`;
+  }else{
+    body.innerHTML=`<div class="success"><h3 style="margin:10px 0">Hmm — that didn't go through.</h3><p>Please try again in a moment.</p></div>`;
+  }
   return false;
 }
-function inlineJoin(e){
+async function inlineJoin(e){
   e.preventDefault();
-  /* TRACK: email lead (fires only after consent) */
-  if(window.track){window.track('generate_lead',{currency:'USD',value:10,method:'inline_email_band',event_id:(window.coletteEventId&&window.coletteEventId())},{event:'Lead',params:{content_name:'Welcome 10% Inline'}});}
   const f=e.target;
-  f.innerHTML='<p style="margin:0;font-family:var(--serif);font-size:1.4rem;color:var(--orange-deep)">Merci! Your code <b>COLETTE10</b> is on its way 🥐</p>';
+  const email=(document.getElementById('b-email').value||'').trim();
+  const phone=(document.getElementById('b-phone').value||'').trim();
+  const emailConsent=document.getElementById('b-emailok').checked;
+  const smsConsent=document.getElementById('b-smsok').checked;
+  if(!emailConsent && !smsConsent){alert('Please tick a box so we know how you\'d like to hear from us.');return false;}
+  if(phone && !smsConsent){alert('Please tick "text me" to add your mobile, or remove the number.');return false;}
+  const r=await captureLead({email,phone,emailConsent,smsConsent,source:'inline_email_band'});
+  if(window.track && r.ok && !r.alreadyClaimed){window.track('generate_lead',{currency:'USD',value:15,method:'inline_email_band',event_id:(window.coletteEventId&&window.coletteEventId())},{event:'Lead',params:{content_name:'Welcome 15% Inline'}});}
+  if(r.ok && r.alreadyClaimed){
+    f.innerHTML='<p style="margin:0;font-family:var(--serif);font-size:1.3rem;color:var(--orange-deep)">You\'re already on the list — merci! 🥐</p>';
+  }else if(r.ok){
+    f.innerHTML=`<p style="margin:0;font-family:var(--serif);font-size:1.3rem;color:var(--orange-deep)">Merci! Your code <b>${r.code||'COLETTE15'}</b> is on its way 🥐</p>`;
+  }else{
+    f.innerHTML='<p style="margin:0;color:#a00">That didn\'t go through — please try again.</p>';
+  }
   return false;
 }
 
