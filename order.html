@@ -766,12 +766,17 @@ async function placeOrder(source){
   const note='Web order · '+where+' · '+cart.map(c=>`${c.qty}× ${byId(c.id).name}${c.mods.length?' ['+c.mods.join(', ')+']':''}`).join('; ');
   if(CONFIG.backendBaseURL){
     try{
-      const o=await fetch(CONFIG.backendBaseURL+'/api/order',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({lines,customerName:name,note,orderType})}).then(r=>r.json());
-      await fetch(CONFIG.backendBaseURL+'/api/pay',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({amountCents,source:source||'NO_TOKEN',orderId:o.orderId})}).then(r=>r.json());
-      return confirmOrder(o.orderId||genNum());
-    }catch(e){console.warn('Order failed, showing demo confirmation',e);}
+      // One atomic call: create the Clover order → charge the card → print at the store.
+      const r=await fetch(CONFIG.backendBaseURL+'/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({lines,source:source||'NO_TOKEN',amountCents,customerName:name,note,orderType})}).then(x=>x.json());
+      if(!r||!r.ok){throw new Error((r&&r.error)||'checkout failed');}
+      return confirmOrder(r.orderId||genNum(), r.printed);
+    }catch(e){
+      console.warn('Checkout failed',e);
+      flashErr2('Sorry — payment could not be completed. Please try again.');
+      const b=document.getElementById('placeBtn');if(b)b.disabled=false;
+      return;
+    }
   }
   confirmOrder(genNum()); // demo
 }
