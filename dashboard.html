@@ -59,8 +59,11 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
   </div>
 
   <div class="card" id="ordercard">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
-      <h3 style="margin:0">🥖 Order for <span id="orderday">…</span> <span class="pill" id="orderwhen"></span></h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0">🥖 Order for
+        <select id="orderdow" onchange="loadOrderPlan()" style="font-size:1rem;padding:5px 8px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-weight:600"></select>
+        <span class="pill" id="orderwhen"></span>
+      </h3>
       <span class="muted" id="ordernote" style="font-size:.78rem"></span>
     </div>
     <p class="muted" style="font-size:.82rem;margin:6px 0 10px">Recommended from a blend of recent same-weekday sales, full-year weekday average, and last year — with a safety buffer. Adjust any quantity, then approve.</p>
@@ -93,25 +96,40 @@ function thisMonth(){const n=new Date();const et=new Date(n.toLocaleString('en-U
 
 // ----- Alon order recommendation + approval -----
 const DOWN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-let ORDER_PLAN=null, ORDER_DOW=null;
+let ORDER_PLAN=null, ORDER_DOW=null, ORDER_DATE_ISO=null;
+const pad=n=>String(n).padStart(2,'0');
+const isoOf=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 function nextOrderTarget(){
-  // ET "now"; find the next day we place an order for: skip Monday (closed) and
-  // Sunday (standing order already in Alon's).
+  // Default = 2 days ahead (your cutoff is noon the prior day), skipping Monday (closed).
   const et=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
-  for(let i=1;i<=8;i++){ const d=new Date(et.getTime()+i*86400000); const w=d.getDay(); if(w===1||w===0) continue; return {dow:w, date:d}; }
-  return {dow:2,date:new Date(et.getTime()+2*86400000)};
+  let d=new Date(et.getTime()+2*86400000);
+  if(d.getDay()===1) d=new Date(et.getTime()+3*86400000);
+  return {dow:d.getDay(), date:d};
+}
+function ensureDaySelector(){
+  const sel=$('orderdow'); if(!sel||sel.dataset.filled) return;
+  const et=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+  const def=nextOrderTarget(); let opts='';
+  for(let i=1;i<=9;i++){ const d=new Date(et.getTime()+i*86400000); if(d.getDay()===1) continue; // skip Monday (closed)
+    const iso=isoOf(d); const lbl=DOWN[d.getDay()]+' '+d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+(d.getDay()===0?' (standing)':'');
+    opts+=`<option value="${iso}|${d.getDay()}"${d.toDateString()===def.date.toDateString()?' selected':''}>${lbl}</option>`; }
+  sel.innerHTML=opts; sel.dataset.filled='1';
 }
 async function loadOrderPlan(){
-  const t=nextOrderTarget(); ORDER_DOW=t.dow;
-  $('orderday').textContent=DOWN[t.dow];
-  $('orderwhen').textContent='deliver '+t.date.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' · order by 11am prior day';
+  ensureDaySelector();
+  const sel=$('orderdow'); let dow, dateObj;
+  if(sel&&sel.value){ const [iso,dw]=sel.value.split('|'); dow=Number(dw); dateObj=new Date(iso+'T12:00:00'); ORDER_DATE_ISO=iso; }
+  else { const t=nextOrderTarget(); dow=t.dow; dateObj=t.date; ORDER_DATE_ISO=isoOf(dateObj); }
+  ORDER_DOW=dow;
+  $('orderwhen').textContent='deliver '+dateObj.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' · order by noon prior day'+(dow===0?' · Sunday = standing order':'');
+  $('orderrows').innerHTML='<tr><td class="muted" colspan="5">Loading recommendation…</td></tr>';
   try{
-    const r=await fetch(BACKEND+'/api/ops?action=reorder-plan&dow='+t.dow+'&t='+Date.now()).then(x=>x.json());
+    const r=await fetch(BACKEND+'/api/ops?action=reorder-plan&dow='+dow+'&t='+Date.now()).then(x=>x.json());
     if(!r||!r.ok) throw new Error(r&&r.error||'plan unavailable');
     ORDER_PLAN=r;
     $('ordernote').textContent=r.note||'';
     $('orderrows').innerHTML=(r.items||[]).map(i=>`<tr>
-      <td>${i.product}</td>
+      <td>${i.product}${i.cadence?' <span class="pill">prep</span>':(i.derivedFrom?' <span class="pill">from toast</span>':(i.madeInto?' <span class="pill">+variants</span>':''))}</td>
       <td class="right muted">${i.recent}</td><td class="right muted">${i.yearAvg}</td><td class="right muted">${i.yoy}</td>
       <td class="right"><input type="number" min="0" value="${i.suggested}" data-code="${i.code}" data-name="${i.product}" style="width:56px;text-align:right;padding:5px;border:1px solid var(--line);border-radius:8px"></td>
     </tr>`).join('')||'<tr><td class="muted" colspan="5">No items.</td></tr>';
@@ -129,7 +147,7 @@ async function placeOrder(){
   const btn=$('approveBtn'); btn.disabled=true; $('ordermsg').textContent='Placing…';
   try{
     const r=await fetch(BACKEND+'/api/ops?action=place-order',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'place-order',targetDay:DOWN[ORDER_DOW],lines})}).then(x=>x.json());
+      body:JSON.stringify({action:'place-order',targetDay:DOWN[ORDER_DOW],targetDate:ORDER_DATE_ISO,lines})}).then(x=>x.json());
     if(!r||!r.ok) throw new Error(r&&r.error||'failed');
     if(r.placed){$('ordermsg').innerHTML='<span class=good>✓ Order sent to Alon\'s for '+DOWN[ORDER_DOW]+'</span>';}
     else{$('ordermsg').innerHTML='<span class=good>✓ Approved</span> <span class=muted>'+(r.note||'')+'</span>';}
