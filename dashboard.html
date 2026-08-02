@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Colette — Growth Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"></script>
+<style>
+:root{--gold:#c99a3b;--ink:#2a2118;--cream:#f7f1e7;--card:#fffdf9;--line:#e7dcc7;--muted:#7a6a52;--good:#2f8f4e;--bad:#c0492b}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:24px 18px 60px}
+h1{font-family:Georgia,serif;font-size:1.7rem;margin:0}
+.sub{color:var(--muted);font-size:.9rem;margin:4px 0 20px}
+.goal{background:var(--ink);color:var(--cream);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+.goal .big{font-size:2.1rem;font-weight:700}
+.bar{height:14px;background:rgba(247,241,231,.18);border-radius:10px;overflow:hidden;margin:12px 0 6px}
+.bar > i{display:block;height:100%;background:var(--gold)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.kpi .l{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.kpi .v{font-size:1.55rem;font-weight:700;margin-top:4px}
+.kpi .d{font-size:.78rem;margin-top:3px;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:18px}
+.card h3{margin:0 0 12px;font-family:Georgia,serif;font-weight:600}
+.chart-box{position:relative;height:260px}
+.actions li{margin:8px 0;line-height:1.5}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+td,th{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
+.right{text-align:right}
+.muted{color:var(--muted)}.good{color:var(--good)}.bad{color:var(--bad)}
+.reload{background:var(--gold);color:#1a1206;border:none;border-radius:20px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:.85rem}
+.err{background:#fff3ee;border:1px solid #f0c9ba;color:#8a3b22;padding:12px 14px;border-radius:12px;font-size:.88rem}
+.pill{display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:20px;background:#eee7d6;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+    <div><h1>Colette — Growth Dashboard</h1><div class="sub">Goal: <b>$100,000 / month</b> · progress toward doubling · <span id="asof" class="muted"></span></div></div>
+    <button class="reload" onclick="load()">↻ Reload</button>
+  </div>
+
+  <div id="err" class="err" style="display:none"></div>
+
+  <div class="goal">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap">
+      <div><div style="font-size:.8rem;opacity:.8">This month</div><div class="big" id="mtd">—</div></div>
+      <div style="text-align:right"><div style="font-size:.8rem;opacity:.8">Goal</div><div class="big">$100K</div></div>
+    </div>
+    <div class="bar"><i id="goalbar" style="width:0%"></i></div>
+    <div style="display:flex;justify-content:space-between;font-size:.8rem;opacity:.85"><span id="pct">0%</span><span id="proj"></span></div>
+  </div>
+
+  <div class="grid">
+    <div class="kpi"><div class="l">Yesterday</div><div class="v" id="yest">—</div><div class="d" id="yestd">vs ~$3,850 target</div></div>
+    <div class="kpi"><div class="l">Avg order (AOV)</div><div class="v" id="aov">—</div><div class="d">target $43+</div></div>
+    <div class="kpi"><div class="l">Orders (30d)</div><div class="v" id="orders">—</div><div class="d muted" id="ordd"></div></div>
+    <div class="kpi"><div class="l">Repeat rate</div><div class="v" id="repeat">—</div><div class="d">target 25–30%</div></div>
+  </div>
+
+  <div class="card"><h3>Daily revenue (last 30 days)</h3><div class="chart-box"><canvas id="chart"></canvas></div></div>
+
+  <div class="card"><h3>Today's suggested actions</h3><ul class="actions" id="actions"><li class="muted">Loading…</li></ul></div>
+
+  <div class="card"><h3>Top sellers <span class="pill">last 30 days</span></h3><table><thead><tr><th>Item</th><th class="right">Units</th><th class="right">Revenue</th></tr></thead><tbody id="top"><tr><td class="muted" colspan="3">Loading…</td></tr></tbody></table></div>
+
+  <div class="sub">Data: live from Clover via the Colette backend. Daily target ≈ $3,850 (over ~26 open days). Repeat rate = customers with 2+ orders in the window.</div>
+</div>
+
+<script>
+const BACKEND='https://colette-app-backend.vercel.app';
+const $=id=>document.getElementById(id);
+const money=n=>'$'+(Math.round(n)).toLocaleString();
+const DAILY_TARGET=100000/26;
+let chart;
+
+function monthKey(d){return d.slice(0,7);} // YYYY-MM
+function thisMonth(){const n=new Date();const et=new Date(n.toLocaleString('en-US',{timeZone:'America/New_York'}));return et.toISOString().slice(0,7);}
+
+async function load(){
+  $('err').style.display='none';
+  try{
+    const [m,p]=await Promise.all([
+      fetch(BACKEND+'/api/ops?action=metrics&days=35').then(r=>r.json()),
+      fetch(BACKEND+'/api/popular?days=30').then(r=>r.json()).catch(()=>({items:[]}))
+    ]);
+    if(!m||!m.ok) throw new Error((m&&m.error)||'metrics unavailable');
+    render(m,p);
+    $('asof').textContent='updated '+new Date().toLocaleString();
+  }catch(e){
+    $('err').style.display='block';
+    $('err').textContent='Could not load live data yet: '+e.message+'. (The metrics endpoint goes live once the backend is deployed.)';
+  }
+}
+
+function render(m,p){
+  const daily=m.daily||[];
+  const mk=thisMonth();
+  const mtd=daily.filter(d=>monthKey(d.date)===mk).reduce((s,d)=>s+d.revenue,0);
+  const pct=Math.min(100,Math.round(mtd/100000*100));
+  $('mtd').textContent=money(mtd);
+  $('goalbar').style.width=pct+'%';
+  $('pct').textContent=pct+'% of $100K';
+  // projection: MTD / days elapsed this month * ~26 open days
+  const dayNum=Number(new Date().toLocaleString('en-US',{timeZone:'America/New_York',day:'numeric'}));
+  const proj=dayNum>0?Math.round(mtd/dayNum* 30):0;
+  $('proj').textContent='projected '+money(proj)+'/mo';
+
+  // yesterday
+  const last=daily[daily.length-1];
+  if(last){
+    $('yest').textContent=money(last.revenue);
+    const diff=last.revenue-DAILY_TARGET;
+    $('yestd').innerHTML=(diff>=0?'<span class=good>▲ ':'<span class=bad>▼ ')+money(Math.abs(diff))+(diff>=0?' over':' under')+' target</span>';
+  }
+  $('aov').textContent='$'+(m.aov||0).toFixed(2);
+  $('orders').textContent=(m.totalOrders||0).toLocaleString();
+  $('ordd').textContent='~'+Math.round((m.totalOrders||0)/(m.days||35))+'/day';
+  $('repeat').textContent=(m.repeatRate||0)+'%';
+
+  // chart (last 30)
+  const d30=daily.slice(-30);
+  const labels=d30.map(d=>d.date.slice(5));
+  const vals=d30.map(d=>d.revenue);
+  if(chart)chart.destroy();
+  chart=new Chart($('chart'),{type:'bar',data:{labels,datasets:[{label:'Revenue',data:vals,backgroundColor:'#c99a3b'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v}}}}});
+
+  // actions (simple rules)
+  const acts=[];
+  if(m.aov && m.aov<40) acts.push('AOV is $'+m.aov.toFixed(2)+' (target $43+) → push the coffee-bag / "add a coffee" upsell and crêpe add-ons today.');
+  if((m.repeatRate||0)<20) acts.push('Repeat rate '+ (m.repeatRate||0)+'% is the biggest lever → make sure the Winback flow is on and send a "we miss you" SMS to 30-day lapsers.');
+  if(last && last.revenue<DAILY_TARGET) acts.push('Yesterday ('+money(last.revenue)+') was under the ~'+money(DAILY_TARGET)+' pace → run a crêpe Reel + a lunch SMS, and boost the leads ad set today.');
+  // weakest weekday
+  const byDow={};d30.forEach(d=>{const w=new Date(d.date+'T12:00:00').getDay();byDow[w]=(byDow[w]||0)+d.revenue;});
+  const names=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let weak=null,min=Infinity;Object.entries(byDow).forEach(([w,v])=>{if(v<min){min=v;weak=w;}});
+  if(weak!==null) acts.push('Weakest day recently is <b>'+names[weak]+'</b> → schedule a '+names[weak]+'-only combo/offer to smooth demand.');
+  acts.push('Keep the Order Direct & Save push live everywhere (café price + flat $7.99 delivery + points).');
+  $('actions').innerHTML=acts.map(a=>'<li>'+a+'</li>').join('');
+
+  // top sellers
+  const items=(p&&p.items)||[];
+  $('top').innerHTML=items.length?items.slice(0,12).map(i=>`<tr><td>${i.name}</td><td class="right">${i.count}</td><td class="right">${money((i.revenue||0)/100)}</td></tr>`).join(''):'<tr><td class="muted" colspan="3">No data yet.</td></tr>';
+}
+load();
+</script>
+</body>
+</html>
