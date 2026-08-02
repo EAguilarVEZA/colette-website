@@ -441,6 +441,17 @@ function badgesFor(m){
 }
 function card(m){
   const hasMods=modsFor(m.id).length>0;
+  if(m.soldOut){
+    return `<div class="item" style="opacity:.55;position:relative">
+      <div class="ph" style="filter:grayscale(1)">${imgHtml(m)}<div style="position:absolute;top:10px;left:10px;background:#8a8a8a;color:#fff;font-size:.66rem;font-weight:700;letter-spacing:.05em;padding:3px 9px;border-radius:20px;text-transform:uppercase">Sold out today</div></div>
+      <div class="b">
+        <div class="tt"><h4>${m.name}</h4><span class="pr">${priceLabel(m)}</span></div>
+        <div class="desc">${m.desc}</div>${badgesFor(m)}
+        <div class="row">
+          <button class="add" disabled style="opacity:.5;cursor:not-allowed">Sold out</button>
+          <button class="info-btn" title="Details" onclick="showItem('${m.id}')">ⓘ</button>
+        </div></div></div>`;
+  }
   return `<div class="item">
     <div class="ph" onclick="showItem('${m.id}')">${imgHtml(m)}</div>
     <div class="b">
@@ -476,10 +487,12 @@ render();
 async function loadClover(){
   if(!CONFIG.backendBaseURL)return;
   try{
-    const r=await fetch(CONFIG.backendBaseURL+'/api/menu').then(x=>x.json());
+    const r=await fetch(CONFIG.backendBaseURL+'/api/menu?stock=1').then(x=>x.json());
     if(!r||!r.ok||!r.items||!r.items.length)return;
     // Build the FULL menu from Clover (every product), enriching with our local
-    // descriptions/allergens/photos by name where we have them.
+    // descriptions/allergens/photos by name where we have them. Items staff mark
+    // unavailable in Clover are hidden; daily-tracked items at zero stock stay
+    // visible but flagged "Sold out".
     MENU = r.items
       .filter(ci=>ci.available!==false)
       .map(ci=>{
@@ -487,6 +500,7 @@ async function loadClover(){
         const price = (typeof ci.price==='number'&&ci.price>0) ? ci.price : (ci.priceCents ? ci.priceCents/100 : 0);
         return {
           id: ci.id, name: ci.name, price, cat: ci.category||'Other', available: ci.available!==false,
+          soldOut: ci.soldOut===true,
           cloverGroups: ci.modifierGroups||[],
           img: photoFor(ci.name)||e.img||null, desc: e.desc||'', ing: e.ing||'', allergens: e.allergens||[], diet: e.diet||[],
         };
@@ -526,7 +540,7 @@ function showItem(id){
       ${m.desc?`<p style="color:var(--muted);margin-bottom:14px">${m.desc}</p>`:''}
       ${m.ing?`<p style="font-size:.86rem;margin-bottom:6px"><b>Ingredients:</b> ${m.ing}</p>`:''}${badgesFor(m)}
       <p style="font-size:.76rem;color:var(--muted);margin-top:12px"><i>Allergens are guidance; our kitchen handles common allergens. Please confirm with staff for severe allergies.</i></p>
-      <button class="place" onclick="addToCart('${m.id}')">${hasMods?'Choose options':'Add to order'}${m.price>0?' · $'+m.price.toFixed(2):''}</button>
+      ${m.soldOut?`<button class="place" disabled style="opacity:.5;cursor:not-allowed">Sold out today</button>`:`<button class="place" onclick="addToCart('${m.id}')">${hasMods?'Choose options':'Add to order'}${m.price>0?' · $'+m.price.toFixed(2):''}</button>`}
     </div>`;
   openModal();
 }
@@ -535,6 +549,7 @@ function closeModal(){document.getElementById('mscrim').classList.remove('show')
 
 /* ---------- modifiers ---------- */
 function addToCart(id){
+  if(byId(id).soldOut)return; // sold out today
   if(modsFor(id).length){openMods(id);} else {addConfigured(id,[],byId(id).price,[]);}
 }
 function openMods(id){
@@ -628,7 +643,8 @@ function addConfigured(id,labels,unit,modIds){
 function changeQty(key,d){const c=cart.find(x=>x.key===key);if(!c)return;c.qty+=d;if(c.qty<=0)cart=cart.filter(x=>x.key!==key);syncCart();renderCart();}
 function syncCart(){document.getElementById('cc').textContent=cart.reduce((s,c)=>s+c.qty,0);}
 function flash(){const b=document.querySelector('.cart-btn');b.animate([{transform:'scale(1)'},{transform:'scale(1.12)'},{transform:'scale(1)'}],{duration:280});}
-function totals(){const sub=cart.reduce((s,c)=>s+c.unit*c.qty,0);const tax=sub*CONFIG.taxRate;return{sub,tax,tot:sub+tax};}
+const DELIVERY_FEE=7.99; // flat delivery fee (order-direct); DoorDash Drive costs us $9.75, we subsidize the rest.
+function totals(){const sub=cart.reduce((s,c)=>s+c.unit*c.qty,0);const tax=sub*CONFIG.taxRate;const del=orderType==='DELIVERY'?DELIVERY_FEE:0;return{sub,tax,del,tot:sub+tax+del};}
 function openCart(){renderCart();document.getElementById('drawer').classList.add('show');document.getElementById('scrim').classList.add('show');}
 function closeCart(){document.getElementById('drawer').classList.remove('show');document.getElementById('scrim').classList.remove('show');}
 function renderCart(){
@@ -671,19 +687,16 @@ function checkout(){
   document.getElementById('modal').innerHTML=`
     <div class="mhd"><h3>Checkout</h3><button class="x" onclick="closeModal()">×</button></div>
     <div class="mbody">
-      <div class="summary">
-        ${cart.map(c=>{const m=byId(c.id);return `<div class="sl"><span>${c.qty} × ${m.name}${c.mods.length?`<small>${c.mods.join(' · ')}</small>`:''}</span><span>$${(c.unit*c.qty).toFixed(2)}</span></div>`}).join('')}
-        <div class="sl"><span>Tax</span><span>$${t.tax.toFixed(2)}</span></div>
-        <div class="sl t"><span>Total</span><span>$${t.tot.toFixed(2)}</span></div>
-      </div>
+      <div class="summary" id="ck-summary">${summaryRows()}</div>
       <div class="fl"><label>Order type</label>
         <div class="segm"><button type="button" id="ot-pickup" class="active" onclick="setOrderType('PICKUP')">Pickup</button><button type="button" id="ot-delivery" onclick="setOrderType('DELIVERY')">Delivery</button></div></div>
       <div class="fl"><label>Name</label><input id="ck-name" placeholder="Your name"></div>
       <div class="fl"><label>Mobile (we'll text when it's ready)</label><input id="ck-phone" type="tel" placeholder="(555) 555-5555"></div>
       <div class="fl"><label>Email (receipt)</label><input id="ck-email" type="email" placeholder="you@email.com"></div>
+      <div class="fl"><label>Promo code (optional)</label><input id="ck-promo" placeholder="e.g. COLETTEBOGO"><div style="font-size:.72rem;color:var(--muted);margin-top:6px">BOGO crêpe: add two crêpes and enter <b>COLETTEBOGO</b> — one free, once per customer.</div></div>
       <div class="fl delivery-fields" id="delivery-block"><label>Delivery address</label>
         <input id="ck-address" placeholder="Street address, Alpharetta, GA">
-        <div style="font-size:.72rem;color:var(--muted);margin-top:6px">Delivery within ~5 miles · fee calculated at confirmation. Dispatched by our delivery partner (DoorDash Drive / Uber Direct).</div></div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:6px">Delivery within ~5 miles · <b>flat $7.99</b> — same café prices, no app markup. Dispatched by our delivery partner (DoorDash Drive).</div></div>
       <div class="fl" id="pickup-block"><label id="time-label">Pickup time · 2225 Old Milton Pkwy</label>
         <div class="slots" id="ck-slots">${SLOTS.map((s,i)=>`<button class="slot ${i===0?'active':''}" onclick="pickSlot('${s}',this)">${s}</button>`).join('')}</div></div>
       <div class="fl"><label>Payment</label><div class="paybox">${cardSection}</div></div>
@@ -693,12 +706,24 @@ function checkout(){
   if(PAYMENTS_LIVE)setupClover();
 }
 function pickSlot(s,el){slot=s;document.querySelectorAll('#ck-slots .slot').forEach(b=>b.classList.remove('active'));el.classList.add('active');}
+function summaryRows(){
+  const t=totals();
+  return cart.map(c=>{const m=byId(c.id);return `<div class="sl"><span>${c.qty} × ${m.name}${c.mods.length?`<small>${c.mods.join(' · ')}</small>`:''}</span><span>$${(c.unit*c.qty).toFixed(2)}</span></div>`}).join('')
+    + `<div class="sl"><span>Tax</span><span>$${t.tax.toFixed(2)}</span></div>`
+    + (t.del?`<div class="sl"><span>Delivery (flat)</span><span>$${t.del.toFixed(2)}</span></div>`:'')
+    + `<div class="sl t"><span>Total</span><span>$${t.tot.toFixed(2)}</span></div>`;
+}
+function refreshCheckoutTotals(){
+  const s=document.getElementById('ck-summary'); if(s)s.innerHTML=summaryRows();
+  const b=document.getElementById('placeBtn'); if(b)b.textContent='Place order · $'+totals().tot.toFixed(2);
+}
 function setOrderType(t){
   orderType=t;
   document.getElementById('ot-pickup').classList.toggle('active',t==='PICKUP');
   document.getElementById('ot-delivery').classList.toggle('active',t==='DELIVERY');
   document.getElementById('delivery-block').classList.toggle('show',t==='DELIVERY');
   document.getElementById('time-label').textContent = t==='DELIVERY' ? 'Requested delivery time' : 'Pickup time · 2225 Old Milton Pkwy';
+  refreshCheckoutTotals();
 }
 
 /* ---------- Clover hosted iframe ---------- */
@@ -767,9 +792,12 @@ async function placeOrder(source){
   if(CONFIG.backendBaseURL){
     try{
       // One atomic call: create the Clover order → charge the card → print at the store.
+      const promoCode=(val('ck-promo')||'').trim();
+      const deliveryFeeCents=orderType==='DELIVERY'?Math.round(DELIVERY_FEE*100):0;
       const r=await fetch(CONFIG.backendBaseURL+'/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({lines,source:source||'NO_TOKEN',amountCents,customerName:name,note,orderType})}).then(x=>x.json());
+        body:JSON.stringify({lines,source:source||'NO_TOKEN',amountCents,customerName:name,note,orderType,deliveryFeeCents,promoCode,email:(val('ck-email')||'').trim(),phone:(val('ck-phone')||'').trim()})}).then(x=>x.json());
       if(!r||!r.ok){throw new Error((r&&r.error)||'checkout failed');}
+      if(promoCode && !r.bogoApplied && r.bogoReason){ flashErr2(r.bogoReason); }
       return confirmOrder(r.orderId||genNum(), r.printed);
     }catch(e){
       console.warn('Checkout failed',e);
