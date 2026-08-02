@@ -75,6 +75,18 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
     </div>
   </div>
 
+  <div class="card" id="liveorders">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0">📥 Live Orders <span class="pill">override</span></h3>
+      <div style="display:flex;gap:6px;align-items:center">
+        <input id="adminkey" type="password" placeholder="admin key" style="padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:.82rem;width:120px">
+        <button class="reload" onclick="loadLiveOrders()" style="padding:7px 14px;font-size:.82rem">Load</button>
+      </div>
+    </div>
+    <p class="muted" style="font-size:.8rem;margin:6px 0 10px">Recent orders with customer contact. Sold-out lines are flagged so you can text a swap. Refunds are done in Clover (money stays a manual step).</p>
+    <div id="liverows"><div class="muted" style="font-size:.85rem">Enter your admin key and click Load.</div></div>
+  </div>
+
   <div class="card" id="stockcard">
     <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
       <h3 style="margin:0">⏳ Running out early <span class="pill">order more?</span></h3>
@@ -179,8 +191,40 @@ async function loadStockout(){
   }catch(e){ $('stockrows').innerHTML='<tr><td class="muted" colspan="5">Could not load (heavy query): '+e.message+'</td></tr>'; }
 }
 
+function textCustomer(phone, sold){
+  const key=$('adminkey').value.trim();
+  const suggested=`Bonjour from Colette! We're out of ${sold||'an item on your order'} today — may we swap it for something similar or refund it? Reply here and we'll take care of it. Merci!`;
+  const msg=prompt('Text to send the customer:', suggested);
+  if(msg===null) return;
+  fetch(BACKEND+'/api/ops?action=notify-customer',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({action:'notify-customer',phone,message:msg})})
+    .then(r=>r.json()).then(r=>{ alert(r.sent?'✓ Text sent to customer':'Not sent: '+(r.reason||r.error||'error')+((r.reason||'').includes('not configured')?'\n\nCopy to send manually:\n'+msg:'')); })
+    .catch(e=>alert('Error: '+e.message));
+}
+async function loadLiveOrders(){
+  const key=$('adminkey').value.trim(); if(!key){$('liverows').innerHTML='<div class="muted" style="font-size:.85rem">Enter your admin key first.</div>';return;}
+  try{ localStorage.setItem('colette_admin_key',key); }catch(e){}
+  $('liverows').innerHTML='<div class="muted" style="font-size:.85rem">Loading…</div>';
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=recent-orders&days=3&t='+Date.now(),{headers:{'x-colette-secret':key}}).then(x=>x.json());
+    if(!r||!r.ok) throw new Error(r&&r.error||'unauthorized');
+    const orders=r.orders||[];
+    $('liverows').innerHTML=orders.length?orders.map(o=>{
+      const t=o.createdTime?new Date(o.createdTime).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';
+      const items=o.lines.map(l=>l.soldOut?`<span class="bad">⚠ ${l.name}</span>`:l.name).join(', ')||'—';
+      const sold=(o.lines.filter(l=>l.soldOut).map(l=>l.name).join(', ')).replace(/'/g,'');
+      const btn=o.phone?`<button onclick="textCustomer('${o.phone}','${sold}')" style="background:${o.hasSoldOut?'var(--gold)':'none'};color:${o.hasSoldOut?'#1a1206':'inherit'};border:1px solid var(--line);border-radius:16px;padding:5px 12px;cursor:pointer;font-size:.78rem">Text customer</button>`:'<span class="muted" style="font-size:.75rem">no phone on file</span>';
+      return `<div style="border:1px solid ${o.hasSoldOut?'#f0c9ba':'var(--line)'};border-radius:10px;padding:10px 12px;margin-bottom:8px;background:${o.hasSoldOut?'#fff7f3':'transparent'}">
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${o.customer||o.orderType||'Order'}</b><span class="muted" style="font-size:.78rem">${t} · ${money(o.total)}</span></div>
+        <div style="font-size:.85rem;margin:4px 0">${items}</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${btn}${o.hasSoldOut?'<span class="muted" style="font-size:.74rem">· refund/edit in Clover if needed</span>':''}</div>
+      </div>`;
+    }).join(''):'<div class="muted" style="font-size:.85rem">No orders in the last 3 days.</div>';
+  }catch(e){ $('liverows').innerHTML='<div class="bad" style="font-size:.85rem">Could not load: '+e.message+' — check your admin key.</div>'; }
+}
+
 async function load(){
   $('err').style.display='none';
+  try{ const k=localStorage.getItem('colette_admin_key'); if(k&&$('adminkey'))$('adminkey').value=k; }catch(e){}
   loadOrderPlan();
   loadStockout();
   try{
