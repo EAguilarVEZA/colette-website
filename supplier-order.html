@@ -38,10 +38,11 @@ a{color:#8a6a1f}
     <table><thead><tr><th>Item</th><th>Item #</th><th class="right">Unit $</th><th class="right">Qty</th></tr></thead>
     <tbody id="costco-rows"></tbody></table>
     <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-      <button class="btn" onclick="copyOrder('costco')">Copy Costco order</button>
-      <button class="btn ghost" onclick="openAll('costco')">Open items on Costco</button>
-      <span class="small muted">Then: hand to Claude to build the cart → you review + place.</span>
+      <button class="btn" onclick="sendCostco()">🥐 Send to Costco</button>
+      <button class="btn ghost" onclick="window.open('https://www.costcobusinessdelivery.com/OrderByItemsDisplayViewBD','_blank')">Open Costco order page</button>
+      <button class="btn ghost" onclick="copyOrder('costco')">Copy list</button>
     </div>
+    <div class="small muted" id="costco-status" style="margin-top:8px">1) Set quantities → <b>Send to Costco</b>. 2) <b>Open Costco order page</b> → click the gold “Fill Costco cart” button that appears. 3) Review &amp; place the order.</div>
     <div id="out"></div>
   </div>
 
@@ -297,6 +298,16 @@ function copyOrder(){
   navigator.clipboard.writeText(txt).catch(()=>{});
 }
 function openAll(){ lines().slice(0,8).forEach(l=>window.open('https://www.costcobusinessdelivery.com/s?keyword='+l.id,'_blank')); }
+// Send the Costco order to the Chrome extension (which fills the cart on Costco).
+let EXT=false;
+window.addEventListener('colette-ext-ready',()=>{EXT=true; const s=document.getElementById('costco-status'); if(s)s.innerHTML='✓ Extension detected. Set quantities → <b>Send to Costco</b> → <b>Open Costco order page</b> → click the gold “Fill Costco cart” button.';});
+function sendCostco(){
+  const ls=lines(); const s=document.getElementById('costco-status');
+  if(!ls.length){ if(s)s.textContent='Set some quantities first.'; return; }
+  if(!EXT){ if(s)s.innerHTML='⚠ Extension not detected. Install the “Colette Supplier Order Filler” extension first (then reload this page). For now, use “Copy list”.'; return; }
+  window.dispatchEvent(new CustomEvent('colette-send',{detail:{supplier:'costco',lines:ls.map(l=>({id:l.id,qty:l.q,name:l.n}))}}));
+  if(s)s.innerHTML='Sent '+ls.length+' items ✓ — now <b>Open Costco order page</b> and click the gold “Fill Costco cart” button.';
+}
 function renderRD(){
   document.getElementById('rd-rows').innerHTML=RD.map((it,i)=>`<tr>
     <td class="itemname">${it.n}</td>
