@@ -54,8 +54,9 @@ a{color:#8a6a1f}
     <table><thead><tr><th>Item</th><th>SKU</th><th class="right">Unit $</th><th class="right">Qty</th></tr></thead>
     <tbody id="rd-rows"></tbody></table>
     <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-      <button class="btn" onclick="copyRD()">Copy RD order</button>
+      <button class="btn" onclick="sendRD()">🥖 Send to RD</button>
       <button class="btn ghost" onclick="window.open('https://member.restaurantdepot.com/store/jetro-restaurant-depot/buy_it_again','_blank')">Open RD store</button>
+      <button class="btn ghost" onclick="copyRD()">Copy list</button>
     </div>
     <div id="rd-out"></div>
   </div>
@@ -65,8 +66,9 @@ a{color:#8a6a1f}
     </div>
     <table><thead><tr><th>Item</th><th class="right">Qty</th></tr></thead><tbody id="ic-rows"></tbody></table>
     <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-      <button class="btn" onclick="copyIC()">Copy Publix/Instacart order</button>
+      <button class="btn" onclick="sendIC()">🥬 Send to Publix</button>
       <button class="btn ghost" onclick="window.open('https://www.instacart.com/store/publix/storefront','_blank')">Open Publix on Instacart</button>
+      <button class="btn ghost" onclick="copyIC()">Copy list</button>
     </div>
     <div id="ic-out"></div>
   </div>
@@ -325,6 +327,22 @@ function copyRD(){
   const ls=[...document.querySelectorAll('#rd-rows input')].map(inp=>{const it=RD[inp.dataset.r];const q=parseInt(inp.value||'0',10);return {it,q};}).filter(x=>x.q>0);
   const txt='RESTAURANT DEPOT ORDER\n'+ls.map(x=>`${x.q} × ${x.it.n} (SKU ${x.it.id})`).join('\n');
   const out=document.getElementById('rd-out'); out.style.display='block'; out.textContent=txt; navigator.clipboard.writeText(txt).catch(()=>{});
+}
+function sendRD(){
+  const ls=[...document.querySelectorAll('#rd-rows input')].map(inp=>{const it=RD[inp.dataset.r];return {name:it.n, qty:parseInt(inp.value||'0',10)};}).filter(x=>x.qty>0);
+  const s=document.getElementById('rd-out'); s.style.display='block';
+  if(!ls.length){s.textContent='Set some quantities first.';return;}
+  if(!EXT){s.textContent='⚠ Install the Colette extension first (then reload). For now use “Copy list”.';return;}
+  window.dispatchEvent(new CustomEvent('colette-send',{detail:{supplier:'rd',lines:ls}}));
+  s.textContent='Sent '+ls.length+' items ✓ — Open RD store → click the gold “Fill Restaurant Depot cart” button.';
+}
+function sendIC(){
+  const ls=[...document.querySelectorAll('#ic-rows input')].map(inp=>{const it=IC[inp.dataset.c];return {name:it.n, qty:parseInt(inp.value||'0',10)};}).filter(x=>x.qty>0);
+  const s=document.getElementById('ic-out'); s.style.display='block';
+  if(!ls.length){s.textContent='Set some quantities first.';return;}
+  if(!EXT){s.textContent='⚠ Install the Colette extension first (then reload). For now use “Copy list”.';return;}
+  window.dispatchEvent(new CustomEvent('colette-send',{detail:{supplier:'instacart',lines:ls}}));
+  s.textContent='Sent '+ls.length+' items ✓ — Open Publix on Instacart → click the gold “Fill Publix cart” button.';
 }
 function renderIC(){
   document.getElementById('ic-rows').innerHTML=IC.map((it,i)=>`<tr>
