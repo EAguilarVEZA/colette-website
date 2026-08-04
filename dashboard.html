@@ -52,7 +52,7 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
   </div>
 
   <div class="grid">
-    <div class="kpi"><div class="l">Yesterday</div><div class="v" id="yest">—</div><div class="d" id="yestd">vs ~$3,850 target</div></div>
+    <div class="kpi"><div class="l">Today (so far)</div><div class="v" id="yest">—</div><div class="d" id="yestd">vs ~$3,850 target</div></div>
     <div class="kpi"><div class="l">Avg order (AOV)</div><div class="v" id="aov">—</div><div class="d">target $43+</div></div>
     <div class="kpi"><div class="l">Orders (30d)</div><div class="v" id="orders">—</div><div class="d muted" id="ordd"></div></div>
     <div class="kpi"><div class="l">Repeat rate</div><div class="v" id="repeat">—</div><div class="d">target 25–30%</div></div>
@@ -254,13 +254,14 @@ function render(m,p){
   const proj=dayNum>0?Math.round(mtd/dayNum* 30):0;
   $('proj').textContent='projected '+money(proj)+'/mo';
 
-  // yesterday
-  const last=daily[daily.length-1];
-  if(last){
-    $('yest').textContent=money(last.revenue);
-    const diff=last.revenue-DAILY_TARGET;
-    $('yestd').innerHTML=(diff>=0?'<span class=good>▲ ':'<span class=bad>▼ ')+money(Math.abs(diff))+(diff>=0?' over':' under')+' target</span>';
-  }
+  // TODAY (live) — look up today's ET date in the daily series; $0 if no sales yet.
+  const todayISO=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+  const tISO=todayISO.getFullYear()+'-'+String(todayISO.getMonth()+1).padStart(2,'0')+'-'+String(todayISO.getDate()).padStart(2,'0');
+  const todayRow=daily.find(d=>d.date===tISO);
+  const todayRev=todayRow?todayRow.revenue:0;
+  $('yest').textContent=money(todayRev);
+  const diff=todayRev-DAILY_TARGET;
+  $('yestd').innerHTML=(todayRow?(todayRow.orders+' orders · '):'no sales yet · ')+(diff>=0?'<span class=good>▲ '+money(Math.abs(diff))+' over</span>':'<span class=muted>'+money(Math.abs(diff))+' to target</span>');
   $('aov').textContent='$'+(m.aov||0).toFixed(2);
   $('orders').textContent=(m.totalOrders||0).toLocaleString();
   $('ordd').textContent='~'+Math.round((m.totalOrders||0)/(m.days||35))+'/day';
