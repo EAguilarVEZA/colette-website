@@ -274,7 +274,21 @@ const RD=[
   {n:'Coffee Percolator, 100 cup',id:'840146',p:190.16,q:0},
 ];
 // Instacart / Publix — bought by name (search on Instacart; prices vary).
-const IC=['Guacamole','Avocados','Arugula','Spring Mix','Whole Milk','Almond Milk','2% Milk','Oat Milk','Greek Yogurt','Shallot Onions','Strawberries','Evian Water','Mozzarella Slices','Gouda Cheese'].map(n=>({n,q:0}));
+const IC=[
+  'Hass Avocado',
+  'Wholly Guacamole Chunky Bowl, 7.5 OZ',
+  'Fresh Attitude Arugula, Prewashed',
+  'GreenWise Organic Spring Mix 16 oz',
+  'Publix Milk, Whole 1 gal',
+  'Publix Milk, Reduced Fat, 2% Milkfat 1 gal',
+  'Chobani Extra Creamy Oatmilk 52 fl oz',
+  'Almond Breeze Unsweetened Original Almondmilk 96 fl oz',
+  'Shallot 1 each',
+  'Strawberries 1 each',
+  'evian Natural Spring Water 11.2 fl oz',
+  'BelGioioso Fresh Mozzarella Cheese Sliced 8 oz',
+  'Sargento Gouda Sliced Cheese, 10 slices 7 oz',
+].map(n=>({n,q:0}));
 const money=n=>'$'+n.toFixed(2);
 function render(){
   renderRD();
@@ -329,7 +343,7 @@ function copyRD(){
   const out=document.getElementById('rd-out'); out.style.display='block'; out.textContent=txt; navigator.clipboard.writeText(txt).catch(()=>{});
 }
 function sendRD(){
-  const ls=[...document.querySelectorAll('#rd-rows input')].map(inp=>{const it=RD[inp.dataset.r];return {name:it.n, qty:parseInt(inp.value||'0',10)};}).filter(x=>x.qty>0);
+  const ls=[...document.querySelectorAll('#rd-rows input')].map(inp=>{const it=RD[inp.dataset.r];return {name:it.n, qty:parseInt(inp.value||'0',10), url:it.url||''};}).filter(x=>x.qty>0);
   const s=document.getElementById('rd-out'); s.style.display='block';
   if(!ls.length){s.textContent='Set some quantities first.';return;}
   if(!EXT){s.textContent='⚠ Install the Colette extension first (then reload). For now use “Copy list”.';return;}
@@ -337,7 +351,7 @@ function sendRD(){
   s.textContent='Sent '+ls.length+' items ✓ — Open RD store → click the gold “Fill Restaurant Depot cart” button.';
 }
 function sendIC(){
-  const ls=[...document.querySelectorAll('#ic-rows input')].map(inp=>{const it=IC[inp.dataset.c];return {name:it.n, qty:parseInt(inp.value||'0',10)};}).filter(x=>x.qty>0);
+  const ls=[...document.querySelectorAll('#ic-rows input')].map(inp=>{const it=IC[inp.dataset.c];return {name:it.n, qty:parseInt(inp.value||'0',10), url:it.url||''};}).filter(x=>x.qty>0);
   const s=document.getElementById('ic-out'); s.style.display='block';
   if(!ls.length){s.textContent='Set some quantities first.';return;}
   if(!EXT){s.textContent='⚠ Install the Colette extension first (then reload). For now use “Copy list”.';return;}
