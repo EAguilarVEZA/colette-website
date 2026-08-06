@@ -276,20 +276,21 @@ const RD=[
 // Instacart / Publix. Each item can carry an exact product `url` (100% precise —
 // adds the RIGHT item every time). Items without a url fall back to name search.
 // Paste Publix product URLs here (the retailerSlug=publix links) as you gather them.
+const P='https://www.instacart.com/products/', S='?retailerSlug=publix';
 const IC=[
-  {n:'Hass Avocado', url:''},
-  {n:'Wholly Guacamole Chunky Bowl, 7.5 OZ', url:'https://www.instacart.com/products/20225955-wholly-guacamole-chunky-guacamole-7-5-oz?retailerSlug=publix'},
-  {n:'Fresh Attitude Arugula, Prewashed', url:''},
-  {n:'GreenWise Organic Spring Mix 16 oz', url:''},
-  {n:'Publix Milk, Whole 1 gal', url:''},
-  {n:'Publix Milk, Reduced Fat, 2% Milkfat 1 gal', url:''},
-  {n:'Chobani Extra Creamy Oatmilk 52 fl oz', url:''},
-  {n:'Almond Breeze Unsweetened Original Almondmilk 96 fl oz', url:''},
-  {n:'Shallot 1 each', url:''},
-  {n:'Strawberries 1 each', url:''},
-  {n:'evian Natural Spring Water 11.2 fl oz', url:''},
-  {n:'BelGioioso Fresh Mozzarella Cheese Sliced 8 oz', url:''},
-  {n:'Sargento Gouda Sliced Cheese, 10 slices 7 oz', url:''},
+  {n:'Hass Avocado', url:P+'3251376-hass-avocado-each'+S},
+  {n:'Wholly Guacamole Chunky Bowl, 7.5 OZ', url:P+'20225955-wholly-guacamole-chunky-guacamole-7-5-oz'+S},
+  {n:'Fresh Attitude Arugula, Prewashed', url:P+'242214-fresh-attitude-arugula-5-oz'+S},
+  {n:'GreenWise Organic Spring Mix 16 oz', url:P+'3322351-greenwise-organic-spring-mix-16-oz'+S},
+  {n:'Publix Milk, Whole 1 gal', url:P+'324942-publix-milk-whole-1-ea'+S},
+  {n:'Publix Milk, Reduced Fat, 2% Milkfat 1 gal', url:P+'18066278-publix-milk-reduced-fat-2-milkfat-1-ea'+S},
+  {n:'Chobani Extra Creamy Oatmilk 52 fl oz', url:P+'20941373-chobani-oat-plain-extra-creamy-52-fl-oz'+S},
+  {n:'Almond Breeze Unsweetened Original Almondmilk 96 fl oz', url:P+'1377249-almond-breeze-unsweetened-original-almondmilk-96-fl-oz'+S},
+  {n:'Shallot 1 each', url:P+'3253951-shallot-each'+S},
+  {n:'Strawberries 1 each', url:P+'25856362-strawberries-package'+S},
+  {n:'evian Natural Spring Water 11.2 fl oz', url:P+'16480048-evian-natural-spring-water-330-ml'+S},
+  {n:'BelGioioso Fresh Mozzarella Cheese Sliced 8 oz', url:P+'96152-belgioioso-fresh-mozzarella-cheese-sliced-8-oz'+S},
+  {n:'Sargento Gouda Sliced Cheese, 10 slices 7 oz', url:P+'77159-sargento-sliced-gouda-natural-cheese-7-oz'+S},
 ].map(x=>({n:x.n, url:x.url||'', q:0}));
 const money=n=>'$'+n.toFixed(2);
 function render(){
@@ -326,9 +327,14 @@ function sendCostco(){
   window.dispatchEvent(new CustomEvent('colette-send',{detail:{supplier:'costco',lines:ls.map(l=>({id:l.id,qty:l.q,name:l.n}))}}));
   if(s)s.innerHTML='Sent '+ls.length+' items ✓ — now <b>Open Costco order page</b> and click the gold “Fill Costco cart” button.';
 }
+// RD exact product links: SKU → Instacart product id (harvested from RD "Buy It Again").
+// The full product URL is RDBASE + id (slug is optional — the id alone resolves).
+const RDBASE='https://member.restaurantdepot.com/store/jetro-restaurant-depot/products/';
+const RDID={12607:2641365,13523:19191449,13689:51268588,15837:3215362,17587:19432379,19725:19120621,20012:71197533,20354:70531260,20730:192120,20869:1854970,23167:22076292,23265:39238748,23751:21350944,23819:19434012,24670:213858,29211:19441029,29332:17314404,30012:3223123,30013:3342013,31323:2705384,32292:51264557,35996:19306044,38600:16971680,39010:1969525,40000:19437591,40680:69871335,40909:18604140,41117:17616125,41428:3251376,42534:16767877,42693:3255401,42740:19438286,42741:19443159,42794:21207339,42837:19435140,50521:19827311,50534:70532076,50857:19434112,50866:19187498,51017:51267648,52252:19189511,53063:28148600,53790:29817786,54074:19187555,55129:1964180,55131:2810349,55134:19269011,57678:3255289,59659:19188409,60515:19187658,60601:39243368,60630:19432996,61568:19188200,61569:19188174,61571:19189885,62516:19191295,62569:17445990,62611:51267477,65395:19190753,65960:19187518,69002:303810,70008:71197258,72855:70533492,72965:71198736,75168:25408904,75169:25409054,77419:71197424,79072:19191073,80070:19189162,80349:21842764,82869:19469904,82960:71302072,93003:19187937,120012:3072734,160041:51265668,380006:19188368,441541:2736842,441544:2736840,441750:3222144,450083:19432311,450109:2596189,650291:19189594,650293:49583574,650327:17090438,760131:20133641,760443:19190096,760492:29822155,760969:19448380,760974:19451758,761585:51265954,761631:17336525,761632:17336611,761634:51266188,761635:18174072,761747:43474963,761748:34309667,761752:34309489,761753:40464862,761756:34368440,761757:43051983,771452:51269248,771547:19190510,840146:73584842,970132:19187397,1070506:19187871,1090042:19190224,1120244:64709612,1120258:21307613,1120259:21307592,1140046:19191927,1140241:19187076,1140440:25855843,1160010:19190114,1160019:19188518,1180015:51269184,1180133:51269323,1190089:19563195,1220182:3093233,1220414:42891365,1220432:32676247,1310034:21736300,1440120:2657862,1440402:19189303,1440420:572452,1440437:196981,1440709:19191649,1440779:18653988,1440980:29491218,1490014:19434023,1520065:19981072,2010010:18038163,2020431:30847659,2040016:19437833,2060032:19913658,2070027:21214890,2070050:21214915,2070478:22024112,2070515:24472234,2070940:19189183,2070942:19188086,2071072:19188587,2071073:19190395,2071074:19188787,2071077:19188392,2071078:19189982,2071079:19191258,2071094:3261527,2100098:19191108,2100100:3261652,2130071:51265240,2130073:51269826,2130074:51268493,2150070:19510742,2170097:30787034,2170099:19191092,2170100:19189263,2170102:19190037,2170113:28145164,2170115:44252075,2190086:22027833,2230156:1937872,2270047:19432669,2280059:51264385,2320055:156494,2410217:51266219,2410218:51265062,2410222:51270123,2560223:20029986,2570037:51269294,3090024:51269089,3190004:51263949,3290084:51264368};
+const rdUrl=it=>RDID[it.id]?RDBASE+RDID[it.id]:(it.url||'');
 function renderRD(){
   document.getElementById('rd-rows').innerHTML=RD.map((it,i)=>`<tr>
-    <td class="itemname">${it.n}</td>
+    <td class="itemname">${it.n} ${rdUrl(it)?'<span title="Exact product link — adds the right item" style="color:#2e7d32">✓ link</span>':'<span title="No exact link" class="muted">—</span>'}</td>
     <td class="muted">${it.id}</td>
     <td class="right muted">${money(it.p)}</td>
     <td class="right"><input type="number" min="0" value="${it.q}" data-r="${i}" onchange="calcRD()"></td>
@@ -345,7 +351,7 @@ function copyRD(){
   const out=document.getElementById('rd-out'); out.style.display='block'; out.textContent=txt; navigator.clipboard.writeText(txt).catch(()=>{});
 }
 function sendRD(){
-  const ls=[...document.querySelectorAll('#rd-rows input')].map(inp=>{const it=RD[inp.dataset.r];return {name:it.n, qty:parseInt(inp.value||'0',10), url:it.url||''};}).filter(x=>x.qty>0);
+  const ls=[...document.querySelectorAll('#rd-rows input')].map(inp=>{const it=RD[inp.dataset.r];return {name:it.n, qty:parseInt(inp.value||'0',10), url:rdUrl(it)};}).filter(x=>x.qty>0);
   const s=document.getElementById('rd-out'); s.style.display='block';
   if(!ls.length){s.textContent='Set some quantities first.';return;}
   if(!EXT){s.textContent='⚠ Install the Colette extension first (then reload). For now use “Copy list”.';return;}
