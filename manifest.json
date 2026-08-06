@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Colette Supplier Order Filler",
+  "version": "1.9.0",
+  "description": "One-click fills the Costco (and later RD/Instacart) cart from the Colette supplier order sheet.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://colette-website.vercel.app/*",
+    "https://www.costcobusinessdelivery.com/*",
+    "https://member.restaurantdepot.com/*",
+    "https://www.instacart.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://colette-website.vercel.app/supplier-order.html*"],
+      "js": ["colette.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.costcobusinessdelivery.com/OrderByItems*"],
+      "js": ["costco.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://member.restaurantdepot.com/*"],
+      "js": ["instacart.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.instacart.com/store/publix/*",
+        "https://www.instacart.com/products/*"
+      ],
+      "js": ["instacart.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
