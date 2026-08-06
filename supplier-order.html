@@ -16,7 +16,11 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}
 td,th{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
 th{color:var(--muted);font-weight:600;font-size:.74rem;text-transform:uppercase}
 .right{text-align:right}.muted{color:var(--muted)}
-input[type=number]{width:60px;text-align:right;padding:6px;border:1px solid var(--line);border-radius:8px;font-size:.95rem}
+input[type=number]{width:48px;text-align:center;padding:6px;border:1px solid var(--line);border-radius:8px;font-size:.95rem}
+.stepper{display:inline-flex;align-items:center;gap:6px;justify-content:flex-end}
+.stepper button{width:30px;height:30px;border:1px solid var(--line);background:var(--cream);border-radius:8px;font-size:1.1rem;font-weight:700;line-height:1;cursor:pointer;color:#1a1206;padding:0}
+.stepper button:hover{background:var(--gold)}
+.stepper input{width:44px}
 .btn{background:var(--gold);color:#1a1206;border:none;border-radius:22px;padding:11px 22px;font-weight:700;cursor:pointer;font-size:.95rem}
 .btn.ghost{background:none;border:1px solid var(--line);color:var(--ink)}
 .small{font-size:.8rem}
@@ -293,24 +297,38 @@ const IC=[
   {n:'Sargento Gouda Sliced Cheese, 10 slices 7 oz', url:P+'77159-sargento-sliced-gouda-natural-cheese-7-oz'+S},
 ].map(x=>({n:x.n, url:x.url||'', q:0}));
 const money=n=>'$'+n.toFixed(2);
-function render(){
-  renderRD();
-  renderIC();
+// Everything starts at ZERO — staff enter what they need.
+COSTCO.forEach(it=>it.q=0); RD.forEach(it=>it.q=0); IC.forEach(it=>it.q=0);
+// One source of truth: the arrays. The stepper +/- and the number box both write
+// straight into the array, and Send reads from the array — so what you see is what
+// gets ordered, on all three suppliers.
+const ARR={costco:COSTCO, rd:RD, ic:IC};
+function stepper(a,i,q){
+  return `<div class="stepper">
+    <button type="button" onclick="bump('${a}',${i},-1)">−</button>
+    <input type="number" min="0" value="${q}" oninput="setQ('${a}',${i},this.value)">
+    <button type="button" onclick="bump('${a}',${i},1)">+</button>
+  </div>`;
+}
+function setQ(a,i,v){ ARR[a][i].q=Math.max(0,parseInt(v||'0',10)||0); recalcFor(a); }
+function bump(a,i,d){ ARR[a][i].q=Math.max(0,(ARR[a][i].q||0)+d); renderFor(a); }
+function renderFor(a){ a==='costco'?renderCostco():a==='rd'?renderRD():renderIC(); }
+function recalcFor(a){ if(a==='costco')calc(); else if(a==='rd')calcRD(); }
+function render(){ renderCostco(); renderRD(); renderIC(); }
+function renderCostco(){
   document.getElementById('costco-rows').innerHTML=COSTCO.map((it,i)=>`<tr>
     <td class="itemname">${it.n}</td>
     <td class="muted">${it.id}</td>
     <td class="right muted">${money(it.p)}</td>
-    <td class="right"><input type="number" min="0" value="${it.q}" data-i="${i}" onchange="calc()"></td>
+    <td class="right">${stepper('costco',i,it.q)}</td>
   </tr>`).join('');
   calc();
 }
 function calc(){
-  let tot=0; document.querySelectorAll('#costco-rows input').forEach(inp=>{const it=COSTCO[inp.dataset.i]; tot+=it.p*(parseInt(inp.value||'0',10));});
+  const tot=COSTCO.reduce((s,it)=>s+it.p*(it.q||0),0);
   document.getElementById('costco-total').textContent='Est. total '+money(tot)+(tot<250?' · below $250 (surcharge applies)':' ✓');
 }
-function lines(){
-  return [...document.querySelectorAll('#costco-rows input')].map(inp=>{const it=COSTCO[inp.dataset.i];const q=parseInt(inp.value||'0',10);return {...it,q};}).filter(l=>l.q>0);
-}
+function lines(){ return COSTCO.filter(it=>it.q>0); }
 function copyOrder(){
   const txt='COSTCO ORDER\n'+lines().map(l=>`${l.q} × ${l.n} (item ${l.id})`).join('\n');
   const out=document.getElementById('out'); out.style.display='block'; out.textContent=txt;
@@ -337,21 +355,21 @@ function renderRD(){
     <td class="itemname">${it.n} ${rdUrl(it)?'<span title="Exact product link — adds the right item" style="color:#2e7d32">✓ link</span>':'<span title="No exact link" class="muted">—</span>'}</td>
     <td class="muted">${it.id}</td>
     <td class="right muted">${money(it.p)}</td>
-    <td class="right"><input type="number" min="0" value="${it.q}" data-r="${i}" onchange="calcRD()"></td>
+    <td class="right">${stepper('rd',i,it.q)}</td>
   </tr>`).join('');
   calcRD();
 }
 function calcRD(){
-  let tot=0; document.querySelectorAll('#rd-rows input').forEach(inp=>{const it=RD[inp.dataset.r]; tot+=it.p*(parseInt(inp.value||'0',10));});
+  const tot=RD.reduce((s,it)=>s+it.p*(it.q||0),0);
   document.getElementById('rd-total').textContent='Est. total '+money(tot);
 }
 function copyRD(){
-  const ls=[...document.querySelectorAll('#rd-rows input')].map(inp=>{const it=RD[inp.dataset.r];const q=parseInt(inp.value||'0',10);return {it,q};}).filter(x=>x.q>0);
-  const txt='RESTAURANT DEPOT ORDER\n'+ls.map(x=>`${x.q} × ${x.it.n} (SKU ${x.it.id})`).join('\n');
+  const ls=RD.filter(it=>it.q>0);
+  const txt='RESTAURANT DEPOT ORDER\n'+ls.map(x=>`${x.q} × ${x.n} (SKU ${x.id})`).join('\n');
   const out=document.getElementById('rd-out'); out.style.display='block'; out.textContent=txt; navigator.clipboard.writeText(txt).catch(()=>{});
 }
 function sendRD(){
-  const ls=[...document.querySelectorAll('#rd-rows input')].map(inp=>{const it=RD[inp.dataset.r];return {name:it.n, qty:parseInt(inp.value||'0',10), url:rdUrl(it)};}).filter(x=>x.qty>0);
+  const ls=RD.filter(it=>it.q>0).map(it=>({name:it.n, qty:it.q, url:rdUrl(it)}));
   const s=document.getElementById('rd-out'); s.style.display='block';
   if(!ls.length){s.textContent='Set some quantities first.';return;}
   if(!EXT){s.textContent='⚠ Install the Colette extension first (then reload). For now use “Copy list”.';return;}
@@ -359,7 +377,7 @@ function sendRD(){
   s.textContent='Sent '+ls.length+' items ✓ — Open RD store → click the gold “Fill Restaurant Depot cart” button.';
 }
 function sendIC(){
-  const ls=[...document.querySelectorAll('#ic-rows input')].map(inp=>{const it=IC[inp.dataset.c];return {name:it.n, qty:parseInt(inp.value||'0',10), url:it.url||''};}).filter(x=>x.qty>0);
+  const ls=IC.filter(it=>it.q>0).map(it=>({name:it.n, qty:it.q, url:it.url||''}));
   const s=document.getElementById('ic-out'); s.style.display='block';
   if(!ls.length){s.textContent='Set some quantities first.';return;}
   if(!EXT){s.textContent='⚠ Install the Colette extension first (then reload). For now use “Copy list”.';return;}
@@ -369,12 +387,12 @@ function sendIC(){
 function renderIC(){
   document.getElementById('ic-rows').innerHTML=IC.map((it,i)=>`<tr>
     <td class="itemname">${it.n} ${it.url?'<span title="Exact product link — adds the right item" style="color:#2e7d32">✓ link</span>':'<span title="No exact link yet — falls back to search" class="muted">search</span>'}</td>
-    <td class="right"><input type="number" min="0" value="0" data-c="${i}"></td>
+    <td class="right">${stepper('ic',i,it.q)}</td>
   </tr>`).join('');
 }
 function copyIC(){
-  const ls=[...document.querySelectorAll('#ic-rows input')].map(inp=>{const it=IC[inp.dataset.c];const q=parseInt(inp.value||'0',10);return {it,q};}).filter(x=>x.q>0);
-  const txt='PUBLIX / INSTACART ORDER\n'+ls.map(x=>`${x.q} × ${x.it.n}`).join('\n');
+  const ls=IC.filter(it=>it.q>0);
+  const txt='PUBLIX / INSTACART ORDER\n'+ls.map(x=>`${x.q} × ${x.n}`).join('\n');
   const out=document.getElementById('ic-out'); out.style.display='block'; out.textContent=txt; navigator.clipboard.writeText(txt).catch(()=>{});
 }
 render();
