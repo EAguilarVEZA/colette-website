@@ -273,22 +273,24 @@ const RD=[
   {n:'Alpine Soap/Sanitizer Dispenser White',id:'3190004',p:37.53,q:0},
   {n:'Coffee Percolator, 100 cup',id:'840146',p:190.16,q:0},
 ];
-// Instacart / Publix — bought by name (search on Instacart; prices vary).
+// Instacart / Publix. Each item can carry an exact product `url` (100% precise —
+// adds the RIGHT item every time). Items without a url fall back to name search.
+// Paste Publix product URLs here (the retailerSlug=publix links) as you gather them.
 const IC=[
-  'Hass Avocado',
-  'Wholly Guacamole Chunky Bowl, 7.5 OZ',
-  'Fresh Attitude Arugula, Prewashed',
-  'GreenWise Organic Spring Mix 16 oz',
-  'Publix Milk, Whole 1 gal',
-  'Publix Milk, Reduced Fat, 2% Milkfat 1 gal',
-  'Chobani Extra Creamy Oatmilk 52 fl oz',
-  'Almond Breeze Unsweetened Original Almondmilk 96 fl oz',
-  'Shallot 1 each',
-  'Strawberries 1 each',
-  'evian Natural Spring Water 11.2 fl oz',
-  'BelGioioso Fresh Mozzarella Cheese Sliced 8 oz',
-  'Sargento Gouda Sliced Cheese, 10 slices 7 oz',
-].map(n=>({n,q:0}));
+  {n:'Hass Avocado', url:''},
+  {n:'Wholly Guacamole Chunky Bowl, 7.5 OZ', url:'https://www.instacart.com/products/20225955-wholly-guacamole-chunky-guacamole-7-5-oz?retailerSlug=publix'},
+  {n:'Fresh Attitude Arugula, Prewashed', url:''},
+  {n:'GreenWise Organic Spring Mix 16 oz', url:''},
+  {n:'Publix Milk, Whole 1 gal', url:''},
+  {n:'Publix Milk, Reduced Fat, 2% Milkfat 1 gal', url:''},
+  {n:'Chobani Extra Creamy Oatmilk 52 fl oz', url:''},
+  {n:'Almond Breeze Unsweetened Original Almondmilk 96 fl oz', url:''},
+  {n:'Shallot 1 each', url:''},
+  {n:'Strawberries 1 each', url:''},
+  {n:'evian Natural Spring Water 11.2 fl oz', url:''},
+  {n:'BelGioioso Fresh Mozzarella Cheese Sliced 8 oz', url:''},
+  {n:'Sargento Gouda Sliced Cheese, 10 slices 7 oz', url:''},
+].map(x=>({n:x.n, url:x.url||'', q:0}));
 const money=n=>'$'+n.toFixed(2);
 function render(){
   renderRD();
@@ -360,7 +362,7 @@ function sendIC(){
 }
 function renderIC(){
   document.getElementById('ic-rows').innerHTML=IC.map((it,i)=>`<tr>
-    <td class="itemname">${it.n}</td>
+    <td class="itemname">${it.n} ${it.url?'<span title="Exact product link — adds the right item" style="color:#2e7d32">✓ link</span>':'<span title="No exact link yet — falls back to search" class="muted">search</span>'}</td>
     <td class="right"><input type="number" min="0" value="0" data-c="${i}"></td>
   </tr>`).join('');
 }
