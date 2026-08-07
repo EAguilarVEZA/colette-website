@@ -27,12 +27,19 @@ input[type=number]{width:48px;text-align:center;padding:6px;border:1px solid var
 a{color:#8a6a1f}
 #out{white-space:pre-wrap;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:12px;font-family:ui-monospace,Menlo,monospace;font-size:.82rem;display:none}
 .itemname{font-weight:600}
+#load-banner{display:none;background:#e8f3e8;border:1px solid #b6d7b6;border-radius:12px;padding:14px 16px;margin-bottom:18px;color:#25502a}
+#submit-bar{position:sticky;bottom:0;background:var(--cream);border-top:2px solid var(--gold);margin:22px -20px -20px;padding:14px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 -4px 14px rgba(0,0,0,.06)}
+#submit-bar input{width:120px;text-align:center;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:1rem}
+#submit-bar .btn{font-size:1rem}
+#submit-status{font-size:.9rem}
+.owner-only{display:none}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>🛒 Supplier Order Sheet</h1>
-  <div class="sub">Enter how many of each you need, then <b>Copy order</b> (or hit Build cart) and send it to place. Quantities are pre-filled with your typical order — adjust as needed.</div>
+  <div class="sub">Enter how many of each you need for Costco, Restaurant Depot, and Publix, then enter your PIN and press <b>Submit order to Colette AI Assistant</b>. The assistant notifies the owner and the order gets placed.</div>
+  <div id="load-banner"></div>
 
   <div class="card">
     <div class="suphead">
@@ -76,9 +83,18 @@ a{color:#8a6a1f}
     </div>
     <div id="ic-out"></div>
   </div>
+
+  <div id="submit-bar">
+    <b>Ready?</b>
+    <span class="small muted">Enter your PIN, then submit — the Colette AI Assistant takes it from here.</span>
+    <input id="emp-pin" type="tel" inputmode="numeric" placeholder="Your PIN" maxlength="8" autocomplete="off">
+    <button class="btn" onclick="submitOrder()">📤 Submit order to Colette AI Assistant</button>
+    <span id="submit-status"></span>
+  </div>
 </div>
 
 <script>
+const BACKEND='https://colette-app-backend.vercel.app';
 // Costco catalog (seeded from order #1303811516). qty = typical order.
 const COSTCO=[
   {n:'Kirkland Fully-Cooked Bacon, 1 lb',id:'1601187',p:14.09,q:4},
@@ -395,6 +411,54 @@ function copyIC(){
   const txt='PUBLIX / INSTACART ORDER\n'+ls.map(x=>`${x.q} × ${x.n}`).join('\n');
   const out=document.getElementById('ic-out'); out.style.display='block'; out.textContent=txt; navigator.clipboard.writeText(txt).catch(()=>{});
 }
+
+// ---- Employee submit → notify Edgar ----
+// Gather non-zero quantities keyed by a stable id: Costco item#, RD SKU, Publix index.
+function gatherOrders(){
+  const c={},r={},i={};
+  COSTCO.forEach(it=>{ if(it.q>0) c[it.id]=it.q; });
+  RD.forEach(it=>{ if(it.q>0) r[it.id]=it.q; });
+  IC.forEach((it,idx)=>{ if(it.q>0) i[idx]=it.q; });
+  return {c,r,i};
+}
+async function submitOrder(){
+  const s=document.getElementById('submit-status');
+  const pin=(document.getElementById('emp-pin').value||'').trim();
+  const {c,r,i}=gatherOrders();
+  const total=Object.keys(c).length+Object.keys(r).length+Object.keys(i).length;
+  if(!total){ s.style.color='#a33'; s.textContent='Set some quantities first.'; return; }
+  if(!pin){ s.style.color='#a33'; s.textContent='Enter your PIN.'; return; }
+  s.style.color='#666'; s.textContent='Submitting…';
+  try{
+    const resp=await fetch(BACKEND+'/api/ops?action=submit-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin,c,r,i})});
+    const d=await resp.json().catch(()=>({}));
+    if(!resp.ok||!d.ok){ s.style.color='#a33'; s.textContent=d.error==='Invalid PIN'?'PIN not recognized — check with Edgar.':('Could not submit: '+(d.error||resp.status)); return; }
+    s.style.color='#2e7d32'; s.textContent=`✓ Order sent to the Colette AI Assistant (from ${d.employee}). It’ll be placed shortly.`;
+    document.getElementById('emp-pin').value='';
+  }catch(e){ s.style.color='#a33'; s.textContent='Network error — try again.'; }
+}
+
+// ---- Owner mode: pre-fill quantities from a submitted order link (?load=) ----
+function decodeLoad(){
+  const p=new URLSearchParams(location.search).get('load');
+  if(!p) return null;
+  try{ const j=p.replace(/-/g,'+').replace(/_/g,'/'); return JSON.parse(decodeURIComponent(escape(atob(j)))); }catch(e){ try{ return JSON.parse(atob(p)); }catch(_){ return null; } }
+}
+function applyLoad(pl){
+  if(!pl) return false;
+  const byId=(arr,map)=>{ Object.entries(map||{}).forEach(([id,q])=>{ const it=arr.find(x=>String(x.id)===String(id)); if(it) it.q=+q||0; }); };
+  byId(COSTCO,pl.c); byId(RD,pl.r);
+  Object.entries(pl.i||{}).forEach(([idx,q])=>{ if(IC[idx]) IC[idx].q=+q||0; });
+  const when=pl.t?new Date(pl.t).toLocaleString('en-US',{timeZone:'America/New_York'}):'';
+  const b=document.getElementById('load-banner');
+  b.style.display='block';
+  b.innerHTML=`📥 <b>Order from ${pl.e||'staff'}</b>${when?' · '+when+' ET':''} — quantities are pre-filled below. Use <b>Send to…</b> on each supplier, then the gold <b>Fill</b> button, to place it.`;
+  document.getElementById('submit-bar').style.display='none';
+  return true;
+}
+
+const _pl=decodeLoad();
+if(_pl) applyLoad(_pl);
 render();
 </script>
 </body>
