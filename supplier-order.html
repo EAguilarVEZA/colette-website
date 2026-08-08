@@ -464,6 +464,9 @@ function applyLoad(pl){
 
 const _pl=decodeLoad();
 if(_pl) applyLoad(_pl);
+// When embedded in the Colette Ops shell, the employee's PIN is passed in so
+// they don't retype it (the field stays editable).
+(function prefillPin(){ try{ const p=new URLSearchParams(location.search).get('pin'); if(p&&document.getElementById('emp-pin')) document.getElementById('emp-pin').value=p; }catch(e){} })();
 render();
 </script>
 </body>
