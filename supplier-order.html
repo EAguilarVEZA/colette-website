@@ -33,6 +33,11 @@ a{color:#8a6a1f}
 #submit-bar .btn{font-size:1rem}
 #submit-status{font-size:.9rem}
 .owner-only{display:none}
+/* Employees see only quantities + submit. The Send/Open/Fill controls appear
+   only in owner mode (opened via a submitted-order link). */
+.owner-actions{display:none}
+body.owner-mode .owner-actions{display:flex}
+body.owner-mode #submit-bar{display:none}
 </style>
 </head>
 <body>
@@ -48,12 +53,12 @@ a{color:#8a6a1f}
     </div>
     <table><thead><tr><th>Item</th><th>Item #</th><th class="right">Unit $</th><th class="right">Qty</th></tr></thead>
     <tbody id="costco-rows"></tbody></table>
-    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <div class="owner-actions" style="margin-top:14px;gap:10px;flex-wrap:wrap;align-items:center">
       <button class="btn" onclick="sendCostco()">🥐 Send to Costco</button>
       <button class="btn ghost" onclick="window.open('https://www.costcobusinessdelivery.com/OrderByItemsDisplayViewBD','_blank')">Open Costco order page</button>
       <button class="btn ghost" onclick="copyOrder('costco')">Copy list</button>
     </div>
-    <div class="small muted" id="costco-status" style="margin-top:8px">1) Set quantities → <b>Send to Costco</b>. 2) <b>Open Costco order page</b> → click the gold “Fill Costco cart” button that appears. 3) Review &amp; place the order.</div>
+    <div class="small muted owner-actions" id="costco-status" style="margin-top:8px">1) Set quantities → <b>Send to Costco</b>. 2) <b>Open Costco order page</b> → click the gold “Fill Costco cart” button that appears. 3) Review &amp; place the order.</div>
     <div id="out"></div>
   </div>
 
@@ -64,7 +69,7 @@ a{color:#8a6a1f}
     </div>
     <table><thead><tr><th>Item</th><th>SKU</th><th class="right">Unit $</th><th class="right">Qty</th></tr></thead>
     <tbody id="rd-rows"></tbody></table>
-    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <div class="owner-actions" style="margin-top:14px;gap:10px;flex-wrap:wrap;align-items:center">
       <button class="btn" onclick="sendRD()">🥖 Send to RD</button>
       <button class="btn ghost" onclick="window.open('https://member.restaurantdepot.com/store/jetro-restaurant-depot/buy_it_again','_blank')">Open RD store</button>
       <button class="btn ghost" onclick="copyRD()">Copy list</button>
@@ -76,7 +81,7 @@ a{color:#8a6a1f}
       <div><h3>Instacart / Publix</h3><div class="small muted">Publix delivery via Instacart · search by name (prices vary)</div></div>
     </div>
     <table><thead><tr><th>Item</th><th class="right">Qty</th></tr></thead><tbody id="ic-rows"></tbody></table>
-    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <div class="owner-actions" style="margin-top:14px;gap:10px;flex-wrap:wrap;align-items:center">
       <button class="btn" onclick="sendIC()">🥬 Send to Publix</button>
       <button class="btn ghost" onclick="window.open('https://www.instacart.com/store/publix/storefront','_blank')">Open Publix on Instacart</button>
       <button class="btn ghost" onclick="copyIC()">Copy list</button>
@@ -453,7 +458,7 @@ function applyLoad(pl){
   const b=document.getElementById('load-banner');
   b.style.display='block';
   b.innerHTML=`📥 <b>Order from ${pl.e||'staff'}</b>${when?' · '+when+' ET':''} — quantities are pre-filled below. Use <b>Send to…</b> on each supplier, then the gold <b>Fill</b> button, to place it.`;
-  document.getElementById('submit-bar').style.display='none';
+  document.body.classList.add('owner-mode'); // reveal Send/Open/Fill controls
   return true;
 }
 
