@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colette · Team Profiles &amp; Tracks</title>
+<style>
+  :root{
+    --bg:#f6f1e8; --surface:#fcfcfb; --ink:#2b2118; --ink-2:#6b5d4f; --ink-3:#9a8b7a; --line:#e7ddcd;
+    --edgar:#5B5BD6; --melisa:#D6409F; --marco:#C96A11; --jonathan:#0E9888; --arya:#6E56CF;
+    --auto:#1a7f4e; --auto-bg:#e3f3ea;
+    --soon:#9a6700; --soon-bg:#fdf0d5;
+    --ai:#3451b2;   --ai-bg:#e6ebfb;
+    --manual:#6b5d4f; --manual-bg:#f0eadf;
+    --new:#8f3bbf;  --new-bg:#f4e9fb;
+    --teal:#0c6d7d; --teal-bg:#e0f3f6;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, #fbe3d0 0%, transparent 55%),
+      radial-gradient(900px 500px at -10% 110%, #ead9f0 0%, transparent 50%),
+      var(--bg);
+    color:var(--ink); min-height:100vh; padding:clamp(12px,3vw,40px);
+  }
+  .slide{max-width:1240px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:28px;
+    box-shadow:0 24px 60px rgba(43,33,24,.12),0 2px 6px rgba(43,33,24,.06);padding:clamp(20px,4vw,48px)}
+  header{margin-bottom:20px}
+  .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+  h1{font-family:Georgia,'Times New Roman',serif;font-size:clamp(26px,4.4vw,42px);font-weight:700;margin-top:2px}
+  h1 .accent{color:var(--marco);font-style:italic}
+  .subtitle{color:var(--ink-2);font-size:clamp(13px,1.6vw,15px);max-width:680px;line-height:1.5;margin-top:6px}
+
+  .band{margin-top:20px;border:1px solid var(--line);border-radius:var(--radius);padding:18px;background:#fdfbf7}
+  .band > h2{font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);
+    display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .band .lede{font-size:12px;color:var(--ink-3);margin-bottom:14px;line-height:1.5}
+
+  /* core playbook */
+  .core{background:linear-gradient(180deg,#fbf6ec,#fdfbf7)}
+  .core-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+  .core-col{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+  .core-col .chead{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;margin-bottom:8px;
+    padding-bottom:7px;border-bottom:1px dashed var(--line)}
+  .core-col .time{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;
+    padding:2px 8px;margin-left:auto}
+  .t-open{background:var(--soon-bg);color:var(--soon)}
+  .t-day{background:var(--auto-bg);color:var(--auto)}
+  .t-close{background:var(--ai-bg);color:var(--ai)}
+  .core-col ul{list-style:none;display:flex;flex-direction:column;gap:6px}
+  .core-col li{font-size:12px;line-height:1.45;color:var(--ink);display:flex;gap:7px}
+  .core-col li::before{content:"·";color:var(--marco);font-weight:800}
+  .everyone{display:inline-flex;align-items:center;gap:7px;background:var(--manual-bg);border-radius:999px;
+    padding:5px 13px;font-size:11.5px;font-weight:800;color:var(--manual);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+
+  /* profiles */
+  .profiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr));gap:14px;margin-top:20px}
+  .profile{border:1px solid var(--line);border-radius:var(--radius);background:#fff;overflow:hidden;display:flex;flex-direction:column}
+  .p-head{padding:15px 17px 13px;color:#fff}
+  .p-head .role{font-family:Georgia,serif;font-size:19px;font-weight:700;line-height:1.2}
+  .p-head .tag{font-size:11px;font-weight:700;opacity:.92;margin-top:3px;letter-spacing:.03em}
+  .p-body{padding:14px 17px 16px;display:flex;flex-direction:column;gap:11px;flex:1}
+  .p-sec .lab{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
+  .p-sec .txt{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+  .track{border:1px solid var(--line);border-left:4px solid var(--tcol,#ccc);border-radius:10px;padding:9px 12px;margin-bottom:6px;background:#fdfbf7}
+  .track .tname{font-size:12.5px;font-weight:800;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .track .tdesc{font-size:11.5px;color:var(--ink-2);line-height:1.45;margin-top:2px}
+  .cad-chip{font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;
+    padding:2px 8px;background:var(--new-bg);color:var(--new);margin-left:auto;white-space:nowrap}
+  .base-chip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;border-radius:999px;
+    padding:3px 9px;background:var(--manual-bg);color:var(--manual);text-transform:uppercase;letter-spacing:.04em}
+
+  /* cadence pipeline */
+  .pipe{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+  .pstep{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;position:relative;overflow:hidden}
+  .pstep::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--marco)}
+  .pstep .wk{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--marco);margin-bottom:3px}
+  .pstep .pname{font-size:13px;font-weight:800}
+  .pstep .pdesc{font-size:11.5px;color:var(--ink-2);line-height:1.45;margin-top:3px}
+
+  /* future tracks */
+  .future-tracks{display:flex;flex-wrap:wrap;gap:8px}
+  .ft{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px dashed var(--ink-3);border-radius:999px;
+    padding:6px 13px;font-size:12px;font-weight:700;color:var(--ink-2)}
+
+  footer{margin-top:18px;display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center;color:var(--ink-3);font-size:11.5px}
+  .star{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.05em;background:#fdf0d5;color:#9a6700;
+    border-radius:999px;padding:1px 6px;vertical-align:2px;text-transform:uppercase}
+  .fr{background:linear-gradient(180deg,#eef3fb,#fdfbf7);border-color:#c9d6ec}
+  .fr h2{color:#2a4d8f}
+  .fr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+  .fr-card{background:#fff;border:1px solid #dbe4f2;border-radius:12px;padding:12px 14px}
+  .fr-card .fname{font-size:13px;font-weight:800;display:flex;align-items:center;gap:7px;margin-bottom:4px}
+  .fr-card .fdesc{font-size:11.5px;color:var(--ink-2);line-height:1.5}
+</style>
+</head>
+<body>
+<div class="slide">
+
+  <header>
+    <div class="kicker">Colette · Team Profiles &amp; Innovation Tracks</div>
+    <h1>Everyone runs the store. <span class="accent">Each one</span> moves it forward.</h1>
+    <p class="subtitle">Four people, one shared playbook — every person can open, serve, and close. On top of that base, each role owns 1–2 <b>concentration tracks</b> with a monthly cadence, so something new hits the counter every month and marketing always has something to promote.</p>
+  </header>
+
+  <!-- ============ SHARED CORE ============ -->
+  <div class="band core">
+    <h2>☕ The shared core — everyone masters this</h2>
+    <div class="lede">The base of every profile. Cross-training means any two people can run the store on any shift.</div>
+    <div class="everyone">👥 All four team members</div>
+    <div class="core-grid">
+      <div class="core-col">
+        <div class="chead">🌅 Opening <span class="time t-open">Start of day</span></div>
+        <ul>
+          <li>Set up all food &amp; displays</li>
+          <li>Set up cleaning buckets</li>
+          <li>Equipment on — ovens, display cases, grill</li>
+          <li>Music on, open signs on</li>
+          <li>Umbrellas open (visible from the road), chairs &amp; tables set outside</li>
+          <li>5-min team huddle — today's specials, 86'd items, who's where <span class="star">★ new</span></li>
+          <li>Taste the first espresso &amp; check the case looks photo-ready <span class="star">★ new</span></li>
+        </ul>
+      </div>
+      <div class="core-col">
+        <div class="chead">🤝 Front &amp; service <span class="time t-day">All day</span></div>
+        <ul>
+          <li>Welcome every customer</li>
+          <li>Register — take orders, pack to-go, serve tables</li>
+          <li>Serve viennoiserie, bread &amp; desserts</li>
+          <li>Make crêpes; warm sandwiches &amp; quiches; prepare salads</li>
+          <li>Made-to-order: toasts, soup, parfaits</li>
+        </ul>
+      </div>
+      <div class="core-col">
+        <div class="chead">☕ Drinks <span class="time t-day">All day</span></div>
+        <ul>
+          <li>All coffee drinks — the heart of the shop</li>
+          <li>Special coolers &amp; drinks, orange juice</li>
+          <li>Keep the cold self-serve stocked &amp; fronted</li>
+        </ul>
+      </div>
+      <div class="core-col">
+        <div class="chead">🍳 Kitchen prep <span class="time t-day">All day</span></div>
+        <ul>
+          <li>Sauces &amp; creams for sandwiches and salads</li>
+          <li>Build sandwiches in advance, ready to warm</li>
+          <li>Clean as you go — dishes, restroom, fold boxes, silverware, put-away</li>
+        </ul>
+      </div>
+      <div class="core-col">
+        <div class="chead">🌙 Closing <span class="time t-close">End of day</span></div>
+        <ul>
+          <li>Food away; displays, tables, floors &amp; equipment cleaned</li>
+          <li>Coffee machine &amp; bathroom cleaned</li>
+          <li>Curtains down, umbrellas closed, chairs up</li>
+          <li>All equipment off — ovens, crêpe grill…</li>
+          <li>Verify key refrigerators are running before leaving</li>
+          <li>Log what got tossed — waste tells us what to bake less of <span class="star">★ new</span></li>
+          <li>Day-old plan — discount basket, staff take-home or donation <span class="star">★ new</span></li>
+        </ul>
+      </div>
+      <div class="core-col">
+        <div class="chead">📲 Systems <span class="time t-day">Weekly</span></div>
+        <ul>
+          <li>Weekly buying list — via the app</li>
+          <li>Schedule — AI system, approve your shifts</li>
+          <li>Inventory — mostly automated, spot-check counts</li>
+        </ul>
+      </div>
+      <div class="core-col">
+        <div class="chead">💶 Cash &amp; care <span class="time t-close">Daily</span> <span class="star">★ new</span></div>
+        <ul>
+          <li>Count the opening float; reconcile the till at close</li>
+          <li>Deposit prepped &amp; sales vs. goal glanced daily</li>
+          <li>Backflush the espresso machine nightly; clean grinder weekly</li>
+          <li>Weekly deep-clean rotation — one zone per day (case glass, patio, fridge coils…)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PROFILES ============ -->
+  <div class="profiles">
+
+    <!-- Profile 1 -->
+    <div class="profile">
+      <div class="p-head" style="background:linear-gradient(135deg,#C96A11,#a8540c)">
+        <div class="role">Beverage &amp; Coffee Lead</div>
+        <div class="tag">The bar is theirs — quality today, new drinks tomorrow</div>
+      </div>
+      <div class="p-body">
+        <div class="p-sec"><span class="base-chip">☕ Shared core +</span></div>
+        <div class="p-sec">
+          <div class="lab">Concentration tracks</div>
+          <div class="track" style="--tcol:var(--marco)">
+            <div class="tname">🥤 Coffee &amp; drink creation <span class="cad-chip">1 new / month</span></div>
+            <div class="tdesc">Ideate, test and launch a new drink monthly — refreshers, seasonal lattes, specials. Owns tasting notes &amp; recipes.</div>
+          </div>
+          <div class="track" style="--tcol:var(--marco)">
+            <div class="tname">🎯 Bar quality &amp; calibration</div>
+            <div class="tdesc">Espresso dialed in daily, milk technique, machine care schedule — every cup as good as the last one.</div>
+          </div>
+        </div>
+        <div class="p-sec">
+          <div class="lab">Also owns</div>
+          <div class="txt">Drink recipe cards so anyone can make every drink · hands the monthly drink to marketing for promotion</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile 2 -->
+    <div class="profile">
+      <div class="p-head" style="background:linear-gradient(135deg,#D6409F,#ad2f7e)">
+        <div class="role">Pastry &amp; Sweets Lead</div>
+        <div class="tag">In-house creations that Karl can't cap</div>
+      </div>
+      <div class="p-body">
+        <div class="p-sec"><span class="base-chip">☕ Shared core +</span></div>
+        <div class="p-sec">
+          <div class="lab">Concentration tracks</div>
+          <div class="track" style="--tcol:var(--melisa)">
+            <div class="tname">🧁 New pastry track <span class="cad-chip">1 new / month</span></div>
+            <div class="tdesc">A new in-house item monthly — like the store-made tiramisu. Recipe, cost, and how-to documented so others can produce it.</div>
+          </div>
+          <div class="track" style="--tcol:var(--melisa)">
+            <div class="tname">🍨 Ice cream flavor track <span class="cad-chip">1 new / month</span></div>
+            <div class="tdesc">A new flavor or preparation monthly — seasonal fruit, affogato-style pairings, sundae specials.</div>
+          </div>
+        </div>
+        <div class="p-sec">
+          <div class="lab">Also owns</div>
+          <div class="txt">Works with the new bakery-skilled hire · keeps the pastry case story fresh — what's new, what's classic</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile 3 -->
+    <div class="profile">
+      <div class="p-head" style="background:linear-gradient(135deg,#0E9888,#0a6e62)">
+        <div class="role">Savory Kitchen Lead</div>
+        <div class="tag">The food that makes Colette different</div>
+      </div>
+      <div class="p-body">
+        <div class="p-sec"><span class="base-chip">☕ Shared core +</span></div>
+        <div class="p-sec">
+          <div class="lab">Concentration tracks</div>
+          <div class="track" style="--tcol:var(--jonathan)">
+            <div class="tname">🥪 New kitchen items <span class="cad-chip">1 new / month</span></div>
+            <div class="tdesc">New savory items — sandwiches, quiches, soups, seasonal salads — that supplement what we sell and set us apart from every café around.</div>
+          </div>
+          <div class="track" style="--tcol:var(--jonathan)">
+            <div class="tname">🛡️ Quality &amp; food safety</div>
+            <div class="tdesc">Prep standards, portioning, fridge temperature logs, dating &amp; rotation — plus an allergen card at the counter (nuts, gluten, dairy) so any team member can answer with confidence. <span class="star">★ new</span></div>
+          </div>
+        </div>
+        <div class="p-sec">
+          <div class="lab">Also owns</div>
+          <div class="txt">Prep par levels (how much to make each morning) · the weekend-dinner menu development with Edgar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile 4 -->
+    <div class="profile">
+      <div class="p-head" style="background:linear-gradient(135deg,#6E56CF,#5540a8)">
+        <div class="role">Experience &amp; Training Lead</div>
+        <div class="tag">Curates the visit — and levels up the team</div>
+      </div>
+      <div class="p-body">
+        <div class="p-sec"><span class="base-chip">☕ Shared core +</span></div>
+        <div class="p-sec">
+          <div class="lab">Concentration tracks</div>
+          <div class="track" style="--tcol:var(--arya)">
+            <div class="tname">✨ Customer experience</div>
+            <div class="tdesc">Music, table settings, patio, display styling, service standards — walks the store as a customer weekly and fixes what breaks the magic.</div>
+          </div>
+          <div class="track" style="--tcol:var(--arya)">
+            <div class="tname">🎓 Training &amp; cross-training <span class="cad-chip">Refresh monthly</span></div>
+            <div class="tdesc">Owns the checklists for opening, closing, drinks &amp; register. Trains everyone on each month's new items before launch day.</div>
+          </div>
+        </div>
+        <div class="p-sec">
+          <div class="lab">Also owns</div>
+          <div class="txt">Launch-day readiness — signage &amp; team briefing for each new item · collects customer feedback for the other tracks</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ FRENCH TOUCH ============ -->
+  <div class="band fr">
+    <h2>🇫🇷 The French touch — sell the story, not just the food <span class="star">★ Consultant's additions</span></h2>
+    <div class="lede">You're not competing with other coffee shops on caffeine — you're selling twenty minutes in France. These cost almost nothing and are what people remember, photograph, and tell friends about.</div>
+    <div class="fr-grid">
+      <div class="fr-card">
+        <div class="fname">👋 « Bonjour ! » standard</div>
+        <div class="fdesc">Every guest greeted in French within seconds of the door — and « Merci, à bientôt ! » on the way out. The accent <i>is</i> the ambiance.</div>
+      </div>
+      <div class="fr-card">
+        <div class="fname">🗣️ Product storytelling</div>
+        <div class="fdesc">Every team member can pronounce the viennoiserie correctly and tell one line of story — the butter, the layers, the how-it's-made. Train it like a drink recipe.</div>
+      </div>
+      <div class="fr-card">
+        <div class="fname">🖤 L'ardoise — the chalkboard</div>
+        <div class="fdesc">A hand-written daily board: today's special, the month's new item, a drink pairing. Changes daily, photographs beautifully, costs a stick of chalk.</div>
+      </div>
+      <div class="fr-card">
+        <div class="fname">🕓 Le goûter — own 3–5 pm</div>
+        <div class="fdesc">France's sacred afternoon snack becomes your slow-hours play: a pastry + coffee pairing at a set price. Turns the dead daypart into a ritual — and bridges into the new dinner hours.</div>
+      </div>
+      <div class="fr-card">
+        <div class="fname">🥐 Pairing suggestions</div>
+        <div class="fdesc">Gentle upsell built into service: "a macaron with that cappuccino?" Suggested pairings on the board and register — ticket size rises without pressure.</div>
+      </div>
+      <div class="fr-card">
+        <div class="fname">📅 The French holiday calendar</div>
+        <div class="fdesc">Galette des Rois in January, crêpes for La Chandeleur in February, Bastille Day in July, bûche de Noël in December — a year of built-in launches the tracks and marketing can plan around.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MONTHLY PIPELINE ============ -->
+  <div class="band">
+    <h2>🔁 Every track runs the same monthly pipeline</h2>
+    <div class="lede">This is the fix for "no consistency, no cadence, no planning, no connection to marketing." Tracks are staggered so <b>something new launches every month</b> — without everything landing at once.</div>
+    <div class="pipe">
+      <div class="pstep">
+        <div class="wk">Week 1</div>
+        <div class="pname">💡 Ideate</div>
+        <div class="pdesc">Pick the month's candidate — from customer feedback, seasons, trends.</div>
+      </div>
+      <div class="pstep">
+        <div class="wk">Week 2</div>
+        <div class="pname">🧪 Test &amp; taste</div>
+        <div class="pdesc">Make it, cost it, team tastes it. Kill it or green-light it.</div>
+      </div>
+      <div class="pstep">
+        <div class="wk">Week 3</div>
+        <div class="pname">🎓 Train &amp; prep</div>
+        <div class="pdesc">Recipe card written, everyone trained, supplies ordered via the apps.</div>
+      </div>
+      <div class="pstep">
+        <div class="wk">Week 4</div>
+        <div class="pname">🚀 Launch + promote</div>
+        <div class="pdesc">Hits the counter — and Jared's engine promotes it: email, text &amp; social, automatically.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ FUTURE TRACKS ============ -->
+  <div class="band">
+    <h2>🌱 Future tracks — on the bench, not assigned yet</h2>
+    <div class="lede">Good ideas from the café world worth adding later — once the first tracks have their rhythm. One rule: <b>no role carries more than two tracks.</b></div>
+    <div class="future-tracks">
+      <span class="ft">🎪 Community &amp; events — tastings, coffee classes, local partnerships</span>
+      <span class="ft">🛍️ Retail &amp; merch — beans, gift boxes, branded items</span>
+      <span class="ft">💳 Loyalty &amp; regulars — know the names, reward the habit</span>
+      <span class="ft">📸 Content capture — photos of new items feeding the social engine</span>
+      <span class="ft">🍂 Seasonal menus — French holiday calendar planned a month ahead</span>
+      <span class="ft">🎂 Catering &amp; pre-orders — cakes, holiday boxes, office catering — a whole revenue line <span class="star">★ new</span></span>
+      <span class="ft">⭐ Reviews &amp; reputation — respond to every Google/Yelp review within 48h <span class="star">★ new</span></span>
+    </div>
+  </div>
+
+  <footer>
+    <div>Roles are hats, not walls — assign each to the person whose strengths fit, and rotate if it's not working.</div>
+    <div>Colette · Team Profiles &amp; Tracks · Aug 2026</div>
+  </footer>
+
+</div>
+</body>
+</html>
