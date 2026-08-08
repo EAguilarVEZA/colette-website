@@ -52,7 +52,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
       <button class="switch" onclick="showAdmin()">I’m the admin →</button>
     </div>
     <div id="pane-admin" style="display:none">
-      <input id="adminkey" type="password" placeholder="Admin key" autocomplete="off" style="letter-spacing:normal">
+      <input id="admin-id" placeholder="ID" autocomplete="off" style="letter-spacing:normal">
+      <input id="admin-pw" type="password" placeholder="Password" autocomplete="off" style="letter-spacing:normal">
       <button class="go" onclick="loginAdmin()">Sign in →</button>
       <div class="msg" id="admin-msg"></div>
       <button class="switch" onclick="showStaff()">← Staff PIN</button>
@@ -107,15 +108,15 @@ async function loginStaff(){
   }catch(e){ m.className='msg err'; m.textContent='Network error — try again.'; }
 }
 async function loginAdmin(){
-  const key=($('adminkey').value||'').trim(); const m=$('admin-msg'); m.className='msg';
-  if(!key){ m.className='msg err'; m.textContent='Enter the admin key.'; return; }
+  const id=($('admin-id').value||'').trim(); const pw=($('admin-pw').value||''); const m=$('admin-msg'); m.className='msg';
+  if(!id||!pw){ m.className='msg err'; m.textContent='Enter your ID and password.'; return; }
   m.textContent='Checking…';
   try{
-    const r=await fetch(BACKEND+'/api/ops?action=auth-check',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({})});
+    const r=await fetch(BACKEND+'/api/ops?action=auth-check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminId:id,adminPassword:pw})});
     const d=await r.json().catch(()=>({}));
-    if(!r.ok||!d.ok){ m.className='msg err'; m.textContent=d.error||'Key not accepted.'; return; }
-    try{ localStorage.setItem('colette_admin_key',key); }catch(e){} // dashboard iframe reads this
-    saveSession({role:'admin',name:'Admin'}); enterApp();
+    if(!r.ok||!d.ok){ m.className='msg err'; m.textContent=d.error||'Not recognized.'; return; }
+    if(d.key){ try{ localStorage.setItem('colette_admin_key',d.key); }catch(e){} } // dashboard uses this behind the scenes
+    saveSession({role:'admin',name:d.name||'Admin'}); enterApp();
   }catch(e){ m.className='msg err'; m.textContent='Network error — try again.'; }
 }
 function logout(){ try{ localStorage.removeItem('colette_ops_session'); }catch(e){} SESSION=null; location.reload(); }
@@ -175,7 +176,7 @@ function activate(id){
   if(s && s.role){ SESSION=s; enterApp(); }
   else { $('login').style.display='flex'; }
   $('pin').addEventListener('keydown',e=>{ if(e.key==='Enter') loginStaff(); });
-  $('adminkey').addEventListener('keydown',e=>{ if(e.key==='Enter') loginAdmin(); });
+  $('admin-pw').addEventListener('keydown',e=>{ if(e.key==='Enter') loginAdmin(); });
 })();
 </script>
 </body>
