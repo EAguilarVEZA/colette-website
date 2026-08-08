@@ -63,7 +63,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 <!-- ============ APP ============ -->
 <div class="top">
   <div class="brand">🥐 Colette <span>Ops</span></div>
-  <div class="who"><span id="whoami"></span><button onclick="logout()">Sign out</button></div>
+  <div class="who">
+    <button id="notif" onclick="openOrders()" title="Orders submitted by staff, waiting to place" style="display:none;position:relative;background:none;border:none;cursor:pointer;font-size:1.2rem">🔔<span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-6px;background:var(--wine);color:#fff;font-size:.6rem;min-width:16px;height:16px;border-radius:9px;line-height:16px;padding:0 3px">0</span></button>
+    <span id="whoami"></span><button onclick="logout()">Sign out</button>
+  </div>
 </div>
 <div class="tabbar" id="tabbar"></div>
 <div class="frames" id="frames"></div>
@@ -77,7 +80,7 @@ const $=id=>document.getElementById(id);
 // About/Team point to pages you add to this same site (upload the two HTMLs).
 const TABS=[
   {id:'schedule', label:'📅 Schedule',      roles:['employee','admin'], src:SCHEDULER},
-  {id:'week',     label:'🗓️ Week Coverage', roles:['employee','admin'], src:SCHEDULER+'?view=week'},
+  {id:'week',     label:'🗓️ Week Coverage', roles:['admin'], src:'/week.html?role=admin'},
   {id:'order',    label:'🛒 Order Supplies',roles:['employee','admin'], src:'/supplier-order.html'},
   {id:'dash',     label:'📊 Dashboard',     roles:['admin'],            src:'/dashboard.html'},
   {id:'about',    label:'✨ About Colette',  roles:['employee','admin'], src:'/colette-la-difference_1.html'},

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colette — Weekly Coverage</title>
+<style>
+:root{--paper:#faf6ef;--cream:#f3ead9;--ink:#241d16;--muted:#8a7c68;--line:#e3d7c3;--gold:#c99a3b;--gold-deep:#8a6a1f;--wine:#7c2d3a;--green:#2e7d32}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--paper);color:var(--ink);padding:16px}
+h1{font-size:1.3rem;margin:0}
+.bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.nav{display:flex;align-items:center;gap:8px}
+.nav button{background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-weight:700;cursor:pointer;color:var(--ink)}
+.range{font-weight:700;min-width:180px;text-align:center}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:#fff}
+table{border-collapse:collapse;width:100%;min-width:820px;font-size:.86rem}
+th,td{border:1px solid var(--line);padding:8px;text-align:center;vertical-align:top}
+thead th{background:var(--cream);position:sticky;top:0}
+th.today,td.today{background:#fbf4e4}
+.name{text-align:left;font-weight:700;white-space:nowrap;background:var(--cream)}
+.name .rate{display:block;font-weight:500;color:var(--muted);font-size:.76rem}
+.cell{cursor:pointer;min-width:92px}
+.cell .shift{font-weight:700;color:var(--gold-deep)}
+.cell .off{color:var(--muted)}
+.cell:hover{background:#fbf4e4}
+tfoot td{background:var(--cream);font-weight:700}
+.rowtot{background:var(--cream);font-weight:700;white-space:nowrap}
+.muted{color:var(--muted)}
+.small{font-size:.8rem}
+.add{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.add input{padding:8px;border:1px solid var(--line);border-radius:8px}
+.add .btn{background:var(--gold);color:#1a1206;border:none;border-radius:20px;padding:9px 16px;font-weight:700;cursor:pointer}
+.totals{display:flex;gap:18px;flex-wrap:wrap;margin:12px 2px;font-weight:700}
+.totals .k{color:var(--muted);font-weight:600;font-size:.8rem;display:block}
+/* editor modal */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:30;padding:16px}
+.ov.on{display:flex}
+.ed{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:320px;border:1px solid var(--line)}
+.ed h3{margin:0 0 4px}
+.ed .who{color:var(--muted);font-size:.85rem;margin-bottom:14px}
+.ed label{display:block;font-size:.8rem;color:var(--muted);margin:8px 0 3px}
+.ed input{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:1rem}
+.ed .row{display:flex;gap:10px}
+.ed .row>div{flex:1}
+.ed .acts{display:flex;gap:8px;margin-top:16px}
+.ed .acts button{flex:1;border-radius:20px;padding:10px;font-weight:700;cursor:pointer;border:1px solid var(--line);background:#fff}
+.ed .acts .save{background:var(--gold);border-color:var(--gold);color:#1a1206}
+.ed .acts .off{color:var(--wine)}
+.readonly .cell{cursor:default}
+.readonly .add,.readonly .ed .acts .save{display:none}
+</style>
+</head>
+<body>
+<div class="bar">
+  <h1>🗓️ Weekly Coverage</h1>
+  <div class="nav">
+    <button onclick="shiftWeek(-1)">← Prev</button>
+    <span class="range" id="range"></span>
+    <button onclick="shiftWeek(1)">Next →</button>
+    <button onclick="thisWeek()">This week</button>
+  </div>
+</div>
+
+<div class="wrap"><table id="grid"></table></div>
+
+<div class="totals">
+  <div><span class="k">Week hours</span><span id="tot-hours">0</span></div>
+  <div><span class="k">Week labor</span><span id="tot-pay">$0</span></div>
+  <div class="small muted" id="save-note" style="align-self:center"></div>
+</div>
+
+<div class="add" id="addrow">
+  <input id="new-name" placeholder="Add staff name">
+  <input id="new-rate" type="number" step="0.01" min="0" placeholder="Hourly $" style="width:110px">
+  <button class="btn" onclick="addStaff()">+ Add staff</button>
+</div>
+
+<!-- Shift editor -->
+<div class="ov" id="ov">
+  <div class="ed">
+    <h3>Set shift</h3>
+    <div class="who" id="ed-who"></div>
+    <div class="row">
+      <div><label>Start</label><input type="time" id="ed-start" value="06:00"></div>
+      <div><label>End</label><input type="time" id="ed-end" value="14:00"></div>
+    </div>
+    <div class="acts">
+      <button class="off" onclick="clearShift()">Off</button>
+      <button onclick="closeEd()">Cancel</button>
+      <button class="save" onclick="saveShift()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+// Seed staff (Edgar's team). Persisted + editable; stored in localStorage.
+const SEED=[{name:'Melisa',rate:17},{name:'Marco',rate:16.68},{name:'Jonathan',rate:15},{name:'Arya',rate:15}];
+const $=id=>document.getElementById(id);
+const isAdmin=(new URLSearchParams(location.search).get('role')||'admin')==='admin'; // shell passes ?role
+let staff=loadStaff(), shifts=loadShifts(), weekStart=mondayOf(new Date()), edKey=null;
+
+function loadStaff(){ try{ const s=JSON.parse(localStorage.getItem('colette_staff')||'null'); if(s&&s.length) return s; }catch(e){} localStorage.setItem('colette_staff',JSON.stringify(SEED)); return SEED.slice(); }
+function saveStaff(){ localStorage.setItem('colette_staff',JSON.stringify(staff)); note('Saved'); }
+function loadShifts(){ try{ return JSON.parse(localStorage.getItem('colette_shifts')||'{}'); }catch(e){ return {}; } }
+function saveShifts(){ localStorage.setItem('colette_shifts',JSON.stringify(shifts)); note('Saved'); }
+function note(t){ const n=$('save-note'); n.textContent='✓ '+t+' locally'; setTimeout(()=>n.textContent='',1500); }
+
+function mondayOf(d){ d=new Date(d); const g=(d.getDay()+6)%7; d.setDate(d.getDate()-g); d.setHours(0,0,0,0); return d; }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function iso(d){ return d.toISOString().slice(0,10); }
+function fmtD(d){ return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function keyOf(name,dateISO){ return name+'|'+dateISO; }
+function to12(t){ if(!t) return ''; let [h,m]=t.split(':').map(Number); const ap=h<12?'a':'p'; let hh=h%12; if(hh===0)hh=12; return hh+(m?(':'+String(m).padStart(2,'0')):'')+ap; }
+function hoursBetween(a,b){ const [ah,am]=a.split(':').map(Number),[bh,bm]=b.split(':').map(Number); let mins=(bh*60+bm)-(ah*60+am); if(mins<0)mins+=24*60; return mins/60; }
+
+function shiftWeek(n){ weekStart=addDays(weekStart,7*n); render(); }
+function thisWeek(){ weekStart=mondayOf(new Date()); render(); }
+
+function render(){
+  document.body.classList.toggle('readonly',!isAdmin);
+  const days=DOW.map((_,i)=>addDays(weekStart,i));
+  $('range').textContent=fmtD(days[0])+' – '+fmtD(days[6]);
+  const todayISO=iso(mondayOf(new Date()))===iso(weekStart)?iso(new Date()):null;
+  let head='<thead><tr><th class="name">Staff</th>'+days.map((d,i)=>`<th class="${iso(d)===iso(new Date())?'today':''}">${DOW[i]}<br><span class="muted small">${fmtD(d)}</span></th>`).join('')+'<th class="rowtot">Week</th></tr></thead>';
+  let dayH=new Array(7).fill(0), dayN=new Array(7).fill(0), weekHours=0, weekPay=0;
+  let body='<tbody>';
+  staff.forEach((p,pi)=>{
+    let rowHours=0;
+    body+=`<tr><td class="name">${p.name}<span class="rate">$${(+p.rate).toFixed(2)}/hr</span></td>`;
+    days.forEach((d,i)=>{
+      const sh=shifts[keyOf(p.name,iso(d))];
+      let inner='<span class="off">—</span>';
+      if(sh){ const h=hoursBetween(sh.start,sh.end); rowHours+=h; dayH[i]+=h; dayN[i]++; inner=`<span class="shift">${to12(sh.start)}–${to12(sh.end)}</span><br><span class="muted small">${h.toFixed(1)}h</span>`; }
+      body+=`<td class="cell ${iso(d)===iso(new Date())?'today':''}" onclick="openEd('${p.name}','${iso(d)}')">${inner}</td>`;
+    });
+    const pay=rowHours*(+p.rate); weekHours+=rowHours; weekPay+=pay;
+    body+=`<td class="rowtot">${rowHours.toFixed(1)}h<br><span class="muted small">$${pay.toFixed(0)}</span></td></tr>`;
+  });
+  body+='</tbody>';
+  let foot='<tfoot><tr><td class="name">Coverage</td>'+dayH.map((h,i)=>`<td>${dayN[i]} ppl<br><span class="muted small">${h.toFixed(1)}h</span></td>`).join('')+`<td class="rowtot">${weekHours.toFixed(1)}h</td></tr></tfoot>`;
+  $('grid').innerHTML=head+body+foot;
+  $('tot-hours').textContent=weekHours.toFixed(1)+' h';
+  $('tot-pay').textContent='$'+weekPay.toFixed(0);
+}
+
+function openEd(name,dateISO){
+  if(!isAdmin) return;
+  edKey={name,dateISO};
+  $('ed-who').textContent=name+' · '+new Date(dateISO+'T00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+  const sh=shifts[keyOf(name,dateISO)];
+  $('ed-start').value=sh?sh.start:'06:00'; $('ed-end').value=sh?sh.end:'14:00';
+  $('ov').classList.add('on');
+}
+function closeEd(){ $('ov').classList.remove('on'); edKey=null; }
+function saveShift(){ if(!edKey) return; const s=$('ed-start').value,e=$('ed-end').value; if(!s||!e){ return; } shifts[keyOf(edKey.name,edKey.dateISO)]={start:s,end:e}; saveShifts(); closeEd(); render(); }
+function clearShift(){ if(!edKey) return; delete shifts[keyOf(edKey.name,edKey.dateISO)]; saveShifts(); closeEd(); render(); }
+function addStaff(){ const n=($('new-name').value||'').trim(); const r=parseFloat($('new-rate').value||'0'); if(!n){ return; } staff.push({name:n,rate:isNaN(r)?0:r}); saveStaff(); $('new-name').value=''; $('new-rate').value=''; render(); }
+
+$('ov').addEventListener('click',e=>{ if(e.target===$('ov')) closeEd(); });
+render();
+</script>
+</body>
+</html>
