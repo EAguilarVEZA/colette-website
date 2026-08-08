@@ -462,12 +462,50 @@ function applyLoad(pl){
   return true;
 }
 
+// Admin (owner) mode: load the orders employees submitted, pre-fill, and show
+// only the Send/Open controls (no AI-submit). Triggered by ?owner=1.
+function applyPendingOrder(o){
+  COSTCO.forEach(x=>x.q=0); RD.forEach(x=>x.q=0); IC.forEach(x=>x.q=0);
+  const m=(o&&o.orders)||{};
+  Object.entries(m.c||{}).forEach(([id,q])=>{const it=COSTCO.find(x=>String(x.id)===String(id)); if(it) it.q=+q||0;});
+  Object.entries(m.r||{}).forEach(([id,q])=>{const it=RD.find(x=>String(x.id)===String(id)); if(it) it.q=+q||0;});
+  Object.entries(m.i||{}).forEach(([idx,q])=>{ if(IC[idx]) IC[idx].q=+q||0; });
+  render();
+}
+function selPending(){ const i=+document.getElementById('pend-sel').value; applyPendingOrder((window.__PEND||[])[i]); }
+async function markPlacedCurrent(){
+  const sel=document.getElementById('pend-sel'); const i=sel?+sel.value:0; const o=(window.__PEND||[])[i];
+  if(!o||!o.id) return;
+  const key=(function(){try{return localStorage.getItem('colette_admin_key')||'';}catch(e){return '';}})();
+  try{ await fetch(BACKEND+'/api/ops?action=resolve-order',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({id:o.id})}); }catch(e){}
+  ownerAuto();
+}
+async function ownerAuto(){
+  document.body.classList.add('owner-mode');
+  const key=(function(){try{return localStorage.getItem('colette_admin_key')||'';}catch(e){return '';}})();
+  const b=document.getElementById('load-banner'); b.style.display='block'; b.textContent='Loading submitted orders…';
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=pending-orders&t='+Date.now(),{headers:{'x-colette-secret':key}});
+    const d=await r.json().catch(()=>({}));
+    const orders=(d&&d.orders)||[];
+    window.__PEND=orders;
+    if(!orders.length){ b.innerHTML='No submitted orders waiting. You can still place an order manually below.'; return; }
+    const opts=orders.map((o,i)=>`<option value="${i}">${o.employee} · ${new Date(o.at).toLocaleString('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})} · ${o.totalItems} items</option>`).join('');
+    b.innerHTML='📥 <b>Order submitted by staff</b> — review below, then Send to each supplier. '
+      +'<select id="pend-sel" onchange="selPending()" style="margin:6px 8px;padding:6px;border:1px solid var(--line);border-radius:8px">'+opts+'</select>'
+      +'<button onclick="markPlacedCurrent()" style="background:none;border:1px solid var(--line);border-radius:16px;padding:6px 12px;cursor:pointer">✓ Mark placed</button>';
+    applyPendingOrder(orders[0]);
+  }catch(e){ b.innerHTML='Could not load submitted orders — make sure you signed in as admin.'; }
+}
+
 const _pl=decodeLoad();
 if(_pl) applyLoad(_pl);
+const _ownerParam=new URLSearchParams(location.search).get('owner')==='1';
 // When embedded in the Colette Ops shell, the employee's PIN is passed in so
 // they don't retype it (the field stays editable).
 (function prefillPin(){ try{ const p=new URLSearchParams(location.search).get('pin'); if(p&&document.getElementById('emp-pin')) document.getElementById('emp-pin').value=p; }catch(e){} })();
 render();
+if(_ownerParam && !_pl) ownerAuto();
 </script>
 </body>
 </html>

@@ -122,8 +122,12 @@ async function loginAdmin(){
 function logout(){ try{ localStorage.removeItem('colette_ops_session'); }catch(e){} SESSION=null; location.reload(); }
 
 function srcFor(t){
-  // Pass the employee PIN into the supplier tab so staff don't re-enter it.
-  if(t.id==='order' && SESSION && SESSION.role==='employee' && SESSION.pin) return t.src+'?pin='+encodeURIComponent(SESSION.pin);
+  if(t.id==='order' && SESSION){
+    // Admin sees the orders employees submitted (owner mode: Send/Open only, no AI-submit).
+    if(SESSION.role==='admin') return t.src+'?owner=1';
+    // Employees get their PIN passed in so they don't re-enter it.
+    if(SESSION.role==='employee' && SESSION.pin) return t.src+'?pin='+encodeURIComponent(SESSION.pin);
+  }
   return t.src;
 }
 function enterApp(){
