@@ -75,6 +75,15 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
     </div>
   </div>
 
+  <div class="card" id="pendingorders">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0">🧾 Supplier orders to place <span class="pill" id="pending-count">—</span></h3>
+      <button class="reload" onclick="loadPending()" style="padding:7px 14px;font-size:.82rem">Refresh</button>
+    </div>
+    <p class="muted" style="font-size:.8rem;margin:6px 0 10px">Orders your staff submitted, waiting for you to place. Open one to load its quantities pre-filled, then use the gold Fill buttons. Mark it placed when done. (Uses the admin key below.)</p>
+    <div id="pendingrows"><div class="muted" style="font-size:.85rem">Enter your admin key and click Refresh.</div></div>
+  </div>
+
   <div class="card" id="liveorders">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
       <h3 style="margin:0">📥 Live Orders <span class="pill">override</span></h3>
@@ -201,6 +210,36 @@ function textCustomer(phone, sold){
     .then(r=>r.json()).then(r=>{ alert(r.sent?'✓ Text sent to customer':'Not sent: '+(r.reason||r.error||'error')+((r.reason||'').includes('not configured')?'\n\nCopy to send manually:\n'+msg:'')); })
     .catch(e=>alert('Error: '+e.message));
 }
+async function loadPending(){
+  const key=$('adminkey').value.trim(); if(!key){$('pendingrows').innerHTML='<div class="muted" style="font-size:.85rem">Enter your admin key (in Live Orders) first.</div>';return;}
+  try{ localStorage.setItem('colette_admin_key',key); }catch(e){}
+  $('pendingrows').innerHTML='<div class="muted" style="font-size:.85rem">Loading…</div>';
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=pending-orders&t='+Date.now(),{headers:{'x-colette-secret':key}}).then(x=>x.json());
+    if(!r||!r.ok) throw new Error(r&&r.error||'unauthorized');
+    const orders=r.orders||[];
+    $('pending-count').textContent=orders.length;
+    $('pendingrows').innerHTML=orders.length?orders.map(o=>{
+      const t=o.at?new Date(o.at).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';
+      const c=o.counts||{};
+      return `<div style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${o.employee||'Staff'}</b><span class="muted" style="font-size:.78rem">${t}</span></div>
+        <div style="font-size:.85rem;margin:5px 0">Costco ${c.costco||0} · Restaurant Depot ${c.rd||0} · Publix ${c.ic||0} items</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <a href="${o.link}" target="_blank" style="background:var(--gold);color:#1a1206;border-radius:16px;padding:6px 14px;text-decoration:none;font-size:.8rem;font-weight:700">Open &amp; place →</a>
+          <button onclick="resolvePending('${o.id}')" style="background:none;border:1px solid var(--line);border-radius:16px;padding:5px 12px;cursor:pointer;font-size:.78rem">Mark placed</button>
+        </div>
+      </div>`;
+    }).join(''):'<div class="muted" style="font-size:.85rem">No orders waiting. (Staff submit from the supplier sheet.)</div>';
+  }catch(e){ $('pendingrows').innerHTML='<div class="bad" style="font-size:.85rem">Could not load: '+e.message+' — check your admin key.</div>'; }
+}
+async function resolvePending(id){
+  const key=$('adminkey').value.trim(); if(!key) return;
+  try{
+    await fetch(BACKEND+'/api/ops?action=resolve-order',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({id})});
+    loadPending();
+  }catch(e){ alert('Could not update: '+e.message); }
+}
 async function loadLiveOrders(){
   const key=$('adminkey').value.trim(); if(!key){$('liverows').innerHTML='<div class="muted" style="font-size:.85rem">Enter your admin key first.</div>';return;}
   try{ localStorage.setItem('colette_admin_key',key); }catch(e){}
@@ -226,6 +265,7 @@ async function loadLiveOrders(){
 async function load(){
   $('err').style.display='none';
   try{ const k=localStorage.getItem('colette_admin_key'); if(k&&$('adminkey'))$('adminkey').value=k; }catch(e){}
+  if($('adminkey')&&$('adminkey').value.trim()) loadPending(); // show orders waiting to be placed
   loadOrderPlan(); // stockout runs on demand (heavy) via its Run button
   try{
     const [m,p]=await Promise.all([
@@ -278,6 +318,7 @@ function render(m,p){
 
   // actions (simple rules)
   const acts=[];
+  const last=daily.length?daily[daily.length-1]:null; // most recent day with data
   if(m.aov && m.aov<40) acts.push('AOV is $'+m.aov.toFixed(2)+' (target $43+) → push the coffee-bag / "add a coffee" upsell and crêpe add-ons today.');
   if((m.repeatRate||0)<20) acts.push('Repeat rate '+ (m.repeatRate||0)+'% is the biggest lever → make sure the Winback flow is on and send a "we miss you" SMS to 30-day lapsers.');
   if(last && last.revenue<DAILY_TARGET) acts.push('Yesterday ('+money(last.revenue)+') was under the ~'+money(DAILY_TARGET)+' pace → run a crêpe Reel + a lunch SMS, and boost the leads ad set today.');

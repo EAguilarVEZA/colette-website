@@ -95,14 +95,15 @@ tfoot td{background:var(--cream);font-weight:700}
 
 <script>
 const DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-// Seed staff (Edgar's team). Persisted + editable; stored in localStorage.
-const SEED=[{name:'Melisa',rate:17},{name:'Marco',rate:16.68},{name:'Jonathan',rate:15},{name:'Arya',rate:15}];
+// Edgar's real team. Persisted + editable; stored in localStorage.
+const SEED=[{name:'Marco',rate:16.68},{name:'Melissa',rate:17},{name:'Jonathan',rate:15},{name:'Arya',rate:15}];
+const STAFF_KEY='colette_staff_v2'; // bumped so old/demo staff are replaced by the real team
 const $=id=>document.getElementById(id);
 const isAdmin=(new URLSearchParams(location.search).get('role')||'admin')==='admin'; // shell passes ?role
 let staff=loadStaff(), shifts=loadShifts(), weekStart=mondayOf(new Date()), edKey=null;
 
-function loadStaff(){ try{ const s=JSON.parse(localStorage.getItem('colette_staff')||'null'); if(s&&s.length) return s; }catch(e){} localStorage.setItem('colette_staff',JSON.stringify(SEED)); return SEED.slice(); }
-function saveStaff(){ localStorage.setItem('colette_staff',JSON.stringify(staff)); note('Saved'); }
+function loadStaff(){ try{ const s=JSON.parse(localStorage.getItem(STAFF_KEY)||'null'); if(s&&s.length) return s; }catch(e){} localStorage.setItem(STAFF_KEY,JSON.stringify(SEED)); return SEED.slice(); }
+function saveStaff(){ localStorage.setItem(STAFF_KEY,JSON.stringify(staff)); note('Saved'); }
 function loadShifts(){ try{ return JSON.parse(localStorage.getItem('colette_shifts')||'{}'); }catch(e){ return {}; } }
 function saveShifts(){ localStorage.setItem('colette_shifts',JSON.stringify(shifts)); note('Saved'); }
 function note(t){ const n=$('save-note'); n.textContent='✓ '+t+' locally'; setTimeout(()=>n.textContent='',1500); }
