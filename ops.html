@@ -136,7 +136,30 @@ function enterApp(){
     const f=document.createElement('iframe'); f.dataset.tab=t.id; f.dataset.src=srcFor(t); frames.appendChild(f);
   });
   activate(tabs[0].id);
+  if(SESSION.role==='admin') startNotif();
 }
+
+// Admin notification: poll for staff-submitted supplier orders waiting to place.
+let notifTimer=null;
+function openOrders(){ activate('dash'); } // pending orders live on the Dashboard tab
+async function pollOrders(){
+  const key=(function(){try{return localStorage.getItem('colette_admin_key');}catch(e){return '';}})();
+  if(!key) return;
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=pending-orders&t='+Date.now(),{headers:{'x-colette-secret':key}});
+    const d=await r.json().catch(()=>({}));
+    if(!d.ok) return;
+    const n=(d.orders||[]).length;
+    const bell=$('notif'), badge=$('notif-badge');
+    bell.style.display='inline-block';
+    if(n>0){ badge.style.display='inline-block'; badge.textContent=n; }
+    else { badge.style.display='none'; }
+    // badge the Dashboard tab label too
+    const dtab=document.querySelector('#tabbar button[data-tab="dash"]');
+    if(dtab) dtab.textContent='📊 Dashboard'+(n>0?' ('+n+')':'');
+  }catch(e){}
+}
+function startNotif(){ if(notifTimer) clearInterval(notifTimer); pollOrders(); notifTimer=setInterval(pollOrders,60000); }
 function activate(id){
   document.querySelectorAll('#tabbar button').forEach(b=>b.classList.toggle('on',b.dataset.tab===id));
   document.querySelectorAll('#frames iframe').forEach(f=>{
