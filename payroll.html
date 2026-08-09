@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colette — Payroll</title>
+<style>
+:root{--paper:#faf6ef;--cream:#f3ead9;--ink:#241d16;--muted:#8a7c68;--line:#e3d7c3;--gold:#c99a3b;--gold-deep:#8a6a1f;--green:#2e7d32}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--paper);color:var(--ink);padding:16px}
+.bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+h1{font-size:1.3rem;margin:0}
+.nav{display:flex;gap:8px;align-items:center}
+.nav button{background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-weight:700;cursor:pointer;color:var(--ink)}
+.range{font-weight:700;min-width:170px;text-align:center}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:.92rem}
+th{background:var(--cream);color:var(--muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.04em}
+td.r,th.r{text-align:right}
+tfoot td{background:var(--cream);font-weight:800}
+.badge{display:inline-block;background:#e8f3e8;color:var(--green);font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px}
+.totals{display:flex;gap:22px;flex-wrap:wrap;margin:14px 2px;font-weight:800}
+.totals .k{display:block;color:var(--muted);font-weight:600;font-size:.78rem}
+.muted{color:var(--muted)}
+.keybar{display:none;background:#fff7f3;border:1px solid #f0c9ba;border-radius:10px;padding:12px;margin-bottom:12px}
+.keybar input{margin:0 8px;padding:8px;border:1px solid var(--line);border-radius:8px}
+.note{color:var(--muted);font-size:.8rem;margin-top:10px}
+</style>
+</head>
+<body>
+  <div class="bar">
+    <h1>💵 Payroll</h1>
+    <div class="nav">
+      <button onclick="shiftWeek(-1)">← Prev</button>
+      <span class="range" id="range"></span>
+      <button onclick="shiftWeek(1)">Next →</button>
+      <button onclick="thisWeek()">This week</button>
+    </div>
+  </div>
+  <div class="keybar" id="keybar">Admin key: <input id="adminkey" type="password" placeholder="admin key"><button onclick="useKey()">Load</button></div>
+  <table>
+    <thead><tr><th>Employee</th><th class="r">Hours</th><th class="r">Rate</th><th class="r">Pay</th></tr></thead>
+    <tbody id="rows"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
+    <tfoot><tr><td>Total</td><td class="r" id="t-hours">—</td><td></td><td class="r" id="t-pay">—</td></tr></tfoot>
+  </table>
+  <div class="totals">
+    <div><span class="k">Week</span><span id="range2">—</span></div>
+  </div>
+  <div class="note">Hours come from staff clock in/out. A <span class="badge">on now</span> tag means they're currently clocked in (counted up to this moment). Manage rates in the Staff screen.</div>
+
+<script>
+const BACKEND='https://colette-app-backend.vercel.app';
+const $=id=>document.getElementById(id);
+let weekStart=mondayOf(new Date()), PUNCHES=[], TEAM=[];
+function key(){ try{return localStorage.getItem('colette_admin_key')||'';}catch(e){return '';} }
+function mondayOf(d){ d=new Date(d); const g=(d.getDay()+6)%7; d.setDate(d.getDate()-g); d.setHours(0,0,0,0); return d; }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function fmtD(d){ return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function money(n){ return '$'+(Math.round(n*100)/100).toFixed(2); }
+
+function shiftWeek(n){ weekStart=addDays(weekStart,7*n); render(); }
+function thisWeek(){ weekStart=mondayOf(new Date()); render(); }
+
+async function load(){
+  const k=key(); if(!k){ $('keybar').style.display='block'; }
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=punches&t='+Date.now(),{headers:{'x-colette-secret':k}});
+    const d=await r.json().catch(()=>({}));
+    if(r.status===401){ $('keybar').style.display='block'; $('rows').innerHTML='<tr><td colspan=4 class=muted>Enter your admin key.</td></tr>'; return; }
+    if(!r.ok||!d.ok){ $('rows').innerHTML='<tr><td colspan=4 class=muted>Could not load.</td></tr>'; return; }
+    $('keybar').style.display='none';
+    PUNCHES=d.punches||[]; TEAM=d.team||[];
+    render();
+  }catch(e){ $('rows').innerHTML='<tr><td colspan=4 class=muted>Network error.</td></tr>'; }
+}
+function useKey(){ try{ localStorage.setItem('colette_admin_key',$('adminkey').value.trim()); }catch(e){} load(); }
+
+function render(){
+  const ws=weekStart.getTime(), we=addDays(weekStart,7).getTime(), now=Date.now();
+  $('range').textContent=fmtD(weekStart)+' – '+fmtD(addDays(weekStart,6));
+  $('range2').textContent=fmtD(weekStart)+' – '+fmtD(addDays(weekStart,6));
+  // group events by pin
+  const byPin={};
+  PUNCHES.forEach(p=>{ (byPin[p.pin]=byPin[p.pin]||[]).push(p); });
+  // build a roster from team + anyone who punched
+  const roster={};
+  TEAM.forEach(m=>{ roster[m.pin]={name:m.name,rate:+m.rate||0,pin:m.pin}; });
+  Object.keys(byPin).forEach(pin=>{ if(!roster[pin]){ const nm=(byPin[pin][0]||{}).name||('PIN '+pin); roster[pin]={name:nm,rate:0,pin}; } });
+
+  let totHours=0, totPay=0, rowsHTML='';
+  Object.values(roster).sort((a,b)=>a.name.localeCompare(b.name)).forEach(m=>{
+    const evs=(byPin[m.pin]||[]).slice().sort((a,b)=>a.at-b.at);
+    let openIn=null, ms=0, onNow=false;
+    evs.forEach(ev=>{
+      if(ev.type==='in'){ openIn=ev.at; }
+      else if(ev.type==='out' && openIn!=null){ if(openIn>=ws && openIn<we) ms+=(ev.at-openIn); openIn=null; }
+    });
+    if(openIn!=null && openIn>=ws && openIn<we){ ms+=(now-openIn); onNow=true; }
+    const hours=ms/3600000; const pay=hours*(m.rate||0);
+    if(hours>0 || m.rate>0){
+      totHours+=hours; totPay+=pay;
+      rowsHTML+=`<tr><td>${m.name}${onNow?'<span class="badge">on now</span>':''}</td><td class="r">${hours.toFixed(2)}</td><td class="r">${money(m.rate)}</td><td class="r">${money(pay)}</td></tr>`;
+    }
+  });
+  $('rows').innerHTML=rowsHTML||'<tr><td colspan=4 class=muted>No hours recorded this week yet.</td></tr>';
+  $('t-hours').textContent=totHours.toFixed(2);
+  $('t-pay').textContent=money(totPay);
+}
+load();
+</script>
+</body>
+</html>
