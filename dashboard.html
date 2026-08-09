@@ -151,7 +151,7 @@ function thisMonth(){const n=new Date();const et=new Date(n.toLocaleString('en-U
 // ----- Alon order: full calendar + real order per delivery date -----
 const DOWN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-let ORDER_DOW=null, ORDER_DATE_ISO=null, CAT=null, CATDOW=null, CAL_MONTH=null, ALON_DATES={};
+let ORDER_DOW=null, ORDER_DATE_ISO=null, CAT=null, CATDOW=null, CAL_MONTH=null, ALON_DATES={}, ALON_CAT=[];
 const pad=n=>String(n).padStart(2,'0');
 const isoOf=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const YEAR_END=new Date(2026,11,31);
@@ -161,6 +161,10 @@ function nextOrderTarget(){ const et=etToday(); let d=new Date(et.getTime()+2*86
 async function loadAlonDates(){
   try{ const r=await fetch(BACKEND+'/api/ops?action=alon-order-dates&t='+Date.now()).then(x=>x.json());
     ALON_DATES={}; (r.dates||[]).forEach(d=>ALON_DATES[d.date]=d.count); }catch(e){}
+}
+async function loadAlonCatalog(){
+  try{ const r=await fetch(BACKEND+'/api/ops?action=alon-catalog-get&t='+Date.now()).then(x=>x.json());
+    ALON_CAT=(r.catalog||[]).map(c=>({code:String(c.code),name:c.name||''})); }catch(e){ ALON_CAT=[]; }
 }
 function renderCal(){
   const cal=$('alon-cal'); if(!cal) return;
@@ -219,8 +223,13 @@ async function loadDateOrder(){
     $('ordernote').innerHTML = n
       ? ('<span class=good>✓ Alon has an order for '+nice+'</span> — '+n+' items'+(src==='manual'?' (edited here)':'')+'. Review, adjust, then Approve &amp; Place.')
       : ('<span class=bad>No order in Alon for '+nice+'</span> — enter your new order below, then Save or Approve &amp; Place.');
+    // Reference stats (recent / yr avg / yr-ago) keyed by code, plus catalog names.
+    const stats={}; (cat||[]).forEach(i=>stats[String(i.code)]={r:i.recent,a:i.yearAvg,y:i.yoy,p:i.product});
+    // Base list = the FULL Alon catalog so any product can be ordered; fall back
+    // to the reorder-plan catalog only if the Alon catalog hasn't synced yet.
+    const base = ALON_CAT.length ? ALON_CAT : (cat||[]).map(i=>({code:String(i.code),name:i.product}));
     const seen={};
-    let rows=(cat||[]).map(i=>{ const code=String(i.code); seen[code]=1; return rowHtml(savedName[code]||i.product,code,saved[code]||0,i.recent,i.yearAvg,i.yoy); }).join('');
+    let rows=base.map(it=>{ const code=String(it.code); seen[code]=1; const s=stats[code]||{}; const nm=savedName[code]||it.name||s.p||('Item '+code); return rowHtml(nm,code,saved[code]||0,s.r??'',s.a??'',s.y??''); }).join('');
     Object.keys(saved).forEach(code=>{ if(!seen[code]) rows+=rowHtml(savedName[code]||('Item '+code),code,saved[code],'','',''); });
     $('orderrows').innerHTML=rows||'<tr><td class="muted" colspan="5">No items.</td></tr>';
   }catch(e){ $('orderrows').innerHTML='<tr><td class="muted" colspan="5">Could not load: '+e.message+'</td></tr>'; }
@@ -239,7 +248,7 @@ async function saveAlon(){
   btn.disabled=false;
 }
 async function bootstrapAlon(){
-  await loadAlonDates();
+  await Promise.all([loadAlonDates(), loadAlonCatalog()]);
   const def=nextOrderTarget();
   CAL_MONTH=new Date(def.getFullYear(),def.getMonth(),1);
   renderCal(); selectDate(isoOf(def));
