@@ -68,14 +68,16 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
     #alon-cal .cah button:disabled{opacity:.3;cursor:default}
     #alon-cal .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
     #alon-cal .dow{font-size:.6rem;color:var(--muted);text-align:center;font-weight:700;text-transform:uppercase;padding-bottom:2px}
-    #alon-cal .day{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.85rem;cursor:pointer;position:relative;border:1px solid transparent}
+    #alon-cal .day{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:.85rem;line-height:1;cursor:pointer;border:1px solid transparent}
     #alon-cal .day:hover{background:#fbf4e4}
+    #alon-cal .day .dn{line-height:1}
     #alon-cal .day.blank{cursor:default}
     #alon-cal .day.past{color:#cfc3ad;cursor:default}
     #alon-cal .day.closed{color:#cbb98f;cursor:default}
     #alon-cal .day.today{border-color:var(--gold)}
     #alon-cal .day.sel{background:var(--gold);color:#1a1206;font-weight:800}
-    #alon-cal .day .dot{width:6px;height:6px;border-radius:3px;background:#2e7d32;position:absolute;bottom:4px}
+    #alon-cal .day .dot{width:6px;height:6px;border-radius:50%;background:#2e7d32}
+    #alon-cal .day .dot.none{visibility:hidden}
     #alon-cal .day.sel .dot{background:#1a1206}
     #alon-cal .legend{font-size:.7rem;color:var(--muted);margin-top:8px;display:flex;gap:12px;flex-wrap:wrap}
     </style>
@@ -87,7 +89,7 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
       <div id="alon-cal"></div>
     </div>
     <p class="muted" style="font-size:.82rem;margin:6px 0 10px">Tap <b>Change date</b> to pick a delivery date. The quantities show the <b>actual order Alon has</b> for that day; if there's none it says so and you can enter a new order. Then <b>Save order</b> or <b>Approve &amp; Place</b>.</p>
-    <table><thead><tr><th>Item</th><th class="right">Recent</th><th class="right">Yr avg</th><th class="right">Yr-ago</th><th class="right">Order</th></tr></thead><tbody id="orderrows"><tr><td class="muted" colspan="5">Pick a date…</td></tr></tbody></table>
+    <table><thead><tr><th>Item</th><th>Code</th><th class="right">Unit $</th><th class="right">Order</th></tr></thead><tbody id="orderrows"><tr><td class="muted" colspan="4">Pick a date…</td></tr></tbody></table>
     <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
       <button class="reload" id="approveBtn" onclick="placeOrder()" style="padding:11px 22px;font-size:.95rem">✓ Approve &amp; Place Order</button>
       <button id="saveAlonBtn" onclick="saveAlon()" style="background:none;border:1px solid var(--gold-deep);color:var(--gold-deep);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Save these quantities as the order for the selected date">💾 Save order</button>
@@ -164,7 +166,7 @@ async function loadAlonDates(){
 }
 async function loadAlonCatalog(){
   try{ const r=await fetch(BACKEND+'/api/ops?action=alon-catalog-get&t='+Date.now()).then(x=>x.json());
-    ALON_CAT=(r.catalog||[]).map(c=>({code:String(c.code),name:c.name||''})); }catch(e){ ALON_CAT=[]; }
+    ALON_CAT=(r.catalog||[]).map(c=>({code:String(c.code),name:c.name||'',price:+c.price||0})); }catch(e){ ALON_CAT=[]; }
 }
 function renderCal(){
   const cal=$('alon-cal'); if(!cal) return;
@@ -183,7 +185,7 @@ function renderCal(){
     if(iso===isoOf(today)) cls+=' today';
     if(iso===ORDER_DATE_ISO) cls+=' sel';
     const clickable=!(d<today)&&dow!==1;
-    h+='<div class="'+cls+'" '+(clickable?'onclick="selectDate(\''+iso+'\')"':'')+'>'+dn+(ALON_DATES[iso]?'<span class="dot"></span>':'')+'</div>';
+    h+='<div class="'+cls+'" '+(clickable?'onclick="selectDate(\''+iso+'\')"':'')+'><span class="dn">'+dn+'</span><span class="dot'+(ALON_DATES[iso]?'':' none')+'"></span></div>';
   }
   h+='</div><div class="legend"><span>🟢 order on file</span><span>Mon = closed</span></div>';
   cal.innerHTML=h;
@@ -205,34 +207,34 @@ async function ensureCatalog(dow){
   if(r&&r.ok){ CAT=r.items||[]; CATDOW=dow; } else if(!CAT){ CAT=[]; }
   return CAT;
 }
-function rowHtml(product,code,q,recent,yearAvg,yoy){
+function rowHtml(product,code,q,price){
+  const p = price ? ('$'+(+price).toFixed(2)) : '';
   return `<tr><td>${product}</td>
-    <td class="right muted">${recent??''}</td><td class="right muted">${yearAvg??''}</td><td class="right muted">${yoy??''}</td>
+    <td class="muted" style="font-size:.82rem">${code}</td>
+    <td class="right muted">${p}</td>
     <td class="right"><input type="number" min="0" value="${q}" data-code="${code}" data-name="${String(product).replace(/"/g,'&quot;')}" style="width:56px;text-align:right;padding:5px;border:1px solid var(--line);border-radius:8px"></td></tr>`;
 }
 async function loadDateOrder(){
-  $('orderrows').innerHTML='<tr><td class="muted" colspan="5">Loading…</td></tr>';
+  $('orderrows').innerHTML='<tr><td class="muted" colspan="4">Loading…</td></tr>';
   try{
-    const [cat, od]=await Promise.all([
-      ensureCatalog(ORDER_DOW),
-      fetch(BACKEND+'/api/ops?action=alon-order-get&date='+ORDER_DATE_ISO+'&t='+Date.now()).then(x=>x.json()).catch(()=>({}))
-    ]);
-    const saved={}, savedName={}; ((od&&od.order&&od.order.lines)||[]).forEach(l=>{ saved[String(l.code)]=+l.qty||0; if(l.name) savedName[String(l.code)]=l.name; });
-    const n=Object.keys(saved).length, src=od&&od.order&&od.order.source;
+    const od=await fetch(BACKEND+'/api/ops?action=alon-order-get&date='+ORDER_DATE_ISO+'&t='+Date.now()).then(x=>x.json()).catch(()=>({}));
+    const lines=((od&&od.order&&od.order.lines)||[]);
+    const priceByCode={}, nameByCode={}; ALON_CAT.forEach(c=>{ priceByCode[c.code]=c.price||0; nameByCode[c.code]=c.name||''; });
     const nice=new Date(ORDER_DATE_ISO+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
-    $('ordernote').innerHTML = n
-      ? ('<span class=good>✓ Alon has an order for '+nice+'</span> — '+n+' items'+(src==='manual'?' (edited here)':'')+'. Review, adjust, then Approve &amp; Place.')
-      : ('<span class=bad>No order in Alon for '+nice+'</span> — enter your new order below, then Save or Approve &amp; Place.');
-    // Reference stats (recent / yr avg / yr-ago) keyed by code, plus catalog names.
-    const stats={}; (cat||[]).forEach(i=>stats[String(i.code)]={r:i.recent,a:i.yearAvg,y:i.yoy,p:i.product});
-    // Base list = the FULL Alon catalog so any product can be ordered; fall back
-    // to the reorder-plan catalog only if the Alon catalog hasn't synced yet.
-    const base = ALON_CAT.length ? ALON_CAT : (cat||[]).map(i=>({code:String(i.code),name:i.product}));
-    const seen={};
-    let rows=base.map(it=>{ const code=String(it.code); seen[code]=1; const s=stats[code]||{}; const nm=savedName[code]||it.name||s.p||('Item '+code); return rowHtml(nm,code,saved[code]||0,s.r??'',s.a??'',s.y??''); }).join('');
-    Object.keys(saved).forEach(code=>{ if(!seen[code]) rows+=rowHtml(savedName[code]||('Item '+code),code,saved[code],'','',''); });
-    $('orderrows').innerHTML=rows||'<tr><td class="muted" colspan="5">No items.</td></tr>';
-  }catch(e){ $('orderrows').innerHTML='<tr><td class="muted" colspan="5">Could not load: '+e.message+'</td></tr>'; }
+    let rows='';
+    if(lines.length){
+      // Order EXISTS in Alon → show ONLY the ordered items (editable).
+      const src=od.order.source;
+      $('ordernote').innerHTML='<span class=good>✓ Alon has an order for '+nice+'</span> — '+lines.length+' items'+(src==='manual'?' (edited here)':'')+'. Review, adjust, then Approve &amp; Place.';
+      rows=lines.map(l=>{ const code=String(l.code); const nm=l.name||nameByCode[code]||('Item '+code); return rowHtml(nm,code,+l.qty||0,priceByCode[code]); }).join('');
+    } else {
+      // NO order → show the FULL Alon product list to build a new order.
+      $('ordernote').innerHTML='<span class=bad>No order in Alon for '+nice+'</span> — build a new order from the full list below, then Save or Approve &amp; Place.';
+      rows=(ALON_CAT||[]).map(c=>rowHtml(c.name||('Item '+c.code),c.code,0,c.price)).join('');
+      if(!rows) rows='<tr><td class="muted" colspan="4">Full product list not synced yet — run the catalog sync (Actions → Run workflow → task: catalog).</td></tr>';
+    }
+    $('orderrows').innerHTML=rows||'<tr><td class="muted" colspan="4">No items.</td></tr>';
+  }catch(e){ $('orderrows').innerHTML='<tr><td class="muted" colspan="4">Could not load: '+e.message+'</td></tr>'; }
 }
 async function saveAlon(){
   if(!ORDER_DATE_ISO){$('ordermsg').textContent='Pick a date first.';return;}
