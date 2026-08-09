@@ -213,15 +213,15 @@ async function loadDateOrder(){
       ensureCatalog(ORDER_DOW),
       fetch(BACKEND+'/api/ops?action=alon-order-get&date='+ORDER_DATE_ISO+'&t='+Date.now()).then(x=>x.json()).catch(()=>({}))
     ]);
-    const saved={}; ((od&&od.order&&od.order.lines)||[]).forEach(l=>saved[String(l.code)]=+l.qty||0);
+    const saved={}, savedName={}; ((od&&od.order&&od.order.lines)||[]).forEach(l=>{ saved[String(l.code)]=+l.qty||0; if(l.name) savedName[String(l.code)]=l.name; });
     const n=Object.keys(saved).length, src=od&&od.order&&od.order.source;
     const nice=new Date(ORDER_DATE_ISO+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
     $('ordernote').innerHTML = n
       ? ('<span class=good>✓ Alon has an order for '+nice+'</span> — '+n+' items'+(src==='manual'?' (edited here)':'')+'. Review, adjust, then Approve &amp; Place.')
       : ('<span class=bad>No order in Alon for '+nice+'</span> — enter your new order below, then Save or Approve &amp; Place.');
     const seen={};
-    let rows=(cat||[]).map(i=>{ seen[String(i.code)]=1; return rowHtml(i.product,i.code,saved[String(i.code)]||0,i.recent,i.yearAvg,i.yoy); }).join('');
-    Object.keys(saved).forEach(code=>{ if(!seen[code]) rows+=rowHtml('Item '+code,code,saved[code],'','',''); });
+    let rows=(cat||[]).map(i=>{ const code=String(i.code); seen[code]=1; return rowHtml(savedName[code]||i.product,code,saved[code]||0,i.recent,i.yearAvg,i.yoy); }).join('');
+    Object.keys(saved).forEach(code=>{ if(!seen[code]) rows+=rowHtml(savedName[code]||('Item '+code),code,saved[code],'','',''); });
     $('orderrows').innerHTML=rows||'<tr><td class="muted" colspan="5">No items.</td></tr>';
   }catch(e){ $('orderrows').innerHTML='<tr><td class="muted" colspan="5">Could not load: '+e.message+'</td></tr>'; }
 }
