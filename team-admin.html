@@ -15,6 +15,9 @@ th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;font-s
 th{background:var(--cream);color:var(--muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.04em}
 input{width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:.95rem}
 input.rate,input.pin{width:90px}
+.days{display:flex;gap:3px;flex-wrap:wrap}
+.days button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 6px;font-size:.7rem;cursor:pointer;color:var(--ink)}
+.days button.on{background:var(--wine);color:#fff;border-color:var(--wine)}
 td.del{width:40px;text-align:center}
 .del button{background:none;border:none;color:var(--wine);font-size:1.1rem;cursor:pointer}
 .row-actions{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -37,7 +40,7 @@ td.del{width:40px;text-align:center}
   </div>
 
   <table>
-    <thead><tr><th>Name</th><th>Phone</th><th>Rate $/hr</th><th>PIN</th><th></th></tr></thead>
+    <thead><tr><th>Name</th><th>Phone</th><th>Rate $/hr</th><th>PIN</th><th>Days off</th><th></th></tr></thead>
     <tbody id="rows"></tbody>
   </table>
 
@@ -58,7 +61,9 @@ const DEFAULTS=[
   {name:'Jonathan',phone:'+1 (678) 879-9619',rate:15,pin:'9619'},
   {name:'Arya',phone:'+1 (470) 429-7830',rate:15,pin:'7830'},
 ];
+const DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 let team=[];
+function toggleDay(i,dw){ const m=team[i]; m.daysOff=m.daysOff||[]; const k=m.daysOff.indexOf(dw); if(k>=0) m.daysOff.splice(k,1); else m.daysOff.push(dw); render(); }
 function key(){ try{ return localStorage.getItem('colette_admin_key')||''; }catch(e){ return ''; } }
 const last4=p=>{ const d=(p||'').replace(/\D/g,''); return d.slice(-4); };
 
@@ -68,6 +73,7 @@ function rowHTML(m,i){
     <td><input value="${(m.phone||'').replace(/"/g,'&quot;')}" oninput="phoneChanged(${i},this.value)" placeholder="Phone"></td>
     <td><input class="rate" type="number" step="0.01" min="0" value="${m.rate||0}" oninput="upd(${i},'rate',this.value)"></td>
     <td><input class="pin" value="${m.pin||''}" oninput="upd(${i},'pin',this.value)" maxlength="8" inputmode="numeric"></td>
+    <td><div class="days">${DOW.map(dw=>`<button class="${(m.daysOff||[]).includes(dw)?'on':''}" onclick="toggleDay(${i},'${dw}')">${dw}</button>`).join('')}</div></td>
     <td class="del"><button title="Remove" onclick="delRow(${i})">🗑</button></td>
   </tr>`;
 }
@@ -94,7 +100,7 @@ function useKey(){ try{ localStorage.setItem('colette_admin_key',$('adminkey').v
 async function saveTeam(){
   const s=$('status'); const k=key();
   if(!k){ s.style.color='#a33'; s.textContent='Enter your admin key first.'; $('keybar').style.display='block'; return; }
-  const clean=team.map(m=>({name:(m.name||'').trim(),phone:(m.phone||'').trim(),rate:parseFloat(m.rate)||0,pin:(m.pin||'').trim()})).filter(m=>m.name);
+  const clean=team.map(m=>({name:(m.name||'').trim(),phone:(m.phone||'').trim(),rate:parseFloat(m.rate)||0,pin:(m.pin||'').trim(),daysOff:m.daysOff||[]})).filter(m=>m.name);
   const bad=clean.find(m=>!/^\d{3,8}$/.test(m.pin));
   if(bad){ s.style.color='#a33'; s.textContent='“'+bad.name+'” needs a 3–8 digit PIN.'; return; }
   s.style.color='#666'; s.textContent='Saving…';

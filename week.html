@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Colette — Weekly Coverage</title>
+<title>Colette — Weekly Schedule</title>
 <style>
 :root{--paper:#faf6ef;--cream:#f3ead9;--ink:#241d16;--muted:#8a7c68;--line:#e3d7c3;--gold:#c99a3b;--gold-deep:#8a6a1f;--wine:#7c2d3a;--green:#2e7d32}
 *{box-sizing:border-box}
@@ -12,7 +12,7 @@ h1{font-size:1.3rem;margin:0}
 .bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px}
 .nav{display:flex;align-items:center;gap:8px}
 .nav button{background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-weight:700;cursor:pointer;color:var(--ink)}
-.range{font-weight:700;min-width:180px;text-align:center}
+.range{font-weight:700;min-width:170px;text-align:center}
 .wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:#fff}
 table{border-collapse:collapse;width:100%;min-width:820px;font-size:.86rem}
 th,td{border:1px solid var(--line);padding:8px;text-align:center;vertical-align:top}
@@ -23,37 +23,40 @@ th.today,td.today{background:#fbf4e4}
 .cell{cursor:pointer;min-width:92px}
 .cell .shift{font-weight:700;color:var(--gold-deep)}
 .cell .off{color:var(--muted)}
+.cell.conflict{background:#fdecec}
+.cell .warn{color:var(--wine);font-size:.72rem;font-weight:700}
 .cell:hover{background:#fbf4e4}
 tfoot td{background:var(--cream);font-weight:700}
 .rowtot{background:var(--cream);font-weight:700;white-space:nowrap}
-.muted{color:var(--muted)}
-.small{font-size:.8rem}
-.add{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.add input{padding:8px;border:1px solid var(--line);border-radius:8px}
-.add .btn{background:var(--gold);color:#1a1206;border:none;border-radius:20px;padding:9px 16px;font-weight:700;cursor:pointer}
+.muted{color:var(--muted)} .small{font-size:.8rem}
 .totals{display:flex;gap:18px;flex-wrap:wrap;margin:12px 2px;font-weight:700}
-.totals .k{color:var(--muted);font-weight:600;font-size:.8rem;display:block}
-/* editor modal */
+.totals .k{display:block;color:var(--muted);font-weight:600;font-size:.8rem}
+.reqs{margin:14px 0;border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px 14px}
+.reqs h3{margin:0 0 8px;font-size:1rem}
+.req{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding:8px 0}
+.req:first-of-type{border-top:none}
+.req .acts button{border:1px solid var(--line);border-radius:16px;padding:5px 12px;cursor:pointer;font-weight:700;margin-left:6px}
+.req .ok{background:var(--green);color:#fff;border-color:var(--green)}
+.req .no{background:none;color:var(--wine)}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:30;padding:16px}
 .ov.on{display:flex}
 .ed{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:320px;border:1px solid var(--line)}
-.ed h3{margin:0 0 4px}
-.ed .who{color:var(--muted);font-size:.85rem;margin-bottom:14px}
+.ed h3{margin:0 0 4px} .ed .who{color:var(--muted);font-size:.85rem;margin-bottom:6px}
+.ed .warn{color:var(--wine);font-size:.82rem;margin-bottom:10px;font-weight:700}
 .ed label{display:block;font-size:.8rem;color:var(--muted);margin:8px 0 3px}
 .ed input{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:1rem}
-.ed .row{display:flex;gap:10px}
-.ed .row>div{flex:1}
+.ed .row{display:flex;gap:10px}.ed .row>div{flex:1}
 .ed .acts{display:flex;gap:8px;margin-top:16px}
 .ed .acts button{flex:1;border-radius:20px;padding:10px;font-weight:700;cursor:pointer;border:1px solid var(--line);background:#fff}
-.ed .acts .save{background:var(--gold);border-color:var(--gold);color:#1a1206}
-.ed .acts .off{color:var(--wine)}
-.readonly .cell{cursor:default}
-.readonly .add,.readonly .ed .acts .save{display:none}
+.ed .acts .save{background:var(--gold);border-color:var(--gold);color:#1a1206} .ed .acts .off{color:var(--wine)}
+body.readonly .cell{cursor:default}
+body.readonly .adminonly{display:none}
+.savenote{font-size:.8rem;color:var(--muted)}
 </style>
 </head>
 <body>
 <div class="bar">
-  <h1>🗓️ Weekly Coverage</h1>
+  <h1>🗓️ Weekly Schedule</h1>
   <div class="nav">
     <button onclick="shiftWeek(-1)">← Prev</button>
     <span class="range" id="range"></span>
@@ -62,25 +65,21 @@ tfoot td{background:var(--cream);font-weight:700}
   </div>
 </div>
 
+<div class="reqs adminonly" id="reqs" style="display:none"></div>
+
 <div class="wrap"><table id="grid"></table></div>
 
 <div class="totals">
   <div><span class="k">Week hours</span><span id="tot-hours">0</span></div>
-  <div><span class="k">Week labor</span><span id="tot-pay">$0</span></div>
-  <div class="small muted" id="save-note" style="align-self:center"></div>
+  <div class="adminonly"><span class="k">Week labor</span><span id="tot-pay">$0</span></div>
+  <div class="savenote" id="savenote" style="align-self:center"></div>
 </div>
 
-<div class="add" id="addrow">
-  <input id="new-name" placeholder="Add staff name">
-  <input id="new-rate" type="number" step="0.01" min="0" placeholder="Hourly $" style="width:110px">
-  <button class="btn" onclick="addStaff()">+ Add staff</button>
-</div>
-
-<!-- Shift editor -->
 <div class="ov" id="ov">
   <div class="ed">
     <h3>Set shift</h3>
     <div class="who" id="ed-who"></div>
+    <div class="warn" id="ed-warn" style="display:none"></div>
     <div class="row">
       <div><label>Start</label><input type="time" id="ed-start" value="06:00"></div>
       <div><label>End</label><input type="time" id="ed-end" value="14:00"></div>
@@ -94,41 +93,30 @@ tfoot td{background:var(--cream);font-weight:700}
 </div>
 
 <script>
-const DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-// Edgar's real team. Persisted + editable; stored in localStorage.
-const SEED=[{name:'Marco',rate:16.68},{name:'Melissa',rate:17},{name:'Jonathan',rate:15},{name:'Arya',rate:15}];
-const STAFF_KEY='colette_staff_v2'; // bumped so old/demo staff are replaced by the real team
-const $=id=>document.getElementById(id);
-const isAdmin=(new URLSearchParams(location.search).get('role')||'admin')==='admin'; // shell passes ?role
-let staff=loadStaff(), shifts=loadShifts(), weekStart=mondayOf(new Date()), edKey=null;
-
 const BACKEND='https://colette-app-backend.vercel.app';
-function loadStaff(){ try{ const s=JSON.parse(localStorage.getItem(STAFF_KEY)||'null'); if(s&&s.length) return s; }catch(e){} localStorage.setItem(STAFF_KEY,JSON.stringify(SEED)); return SEED.slice(); }
-// Pull the team from the shared admin store (Staff screen) so the grid stays in sync.
-async function syncTeam(){
-  try{
-    const k=localStorage.getItem('colette_admin_key')||''; if(!k) return;
-    const r=await fetch(BACKEND+'/api/ops?action=team-list&t='+Date.now(),{headers:{'x-colette-secret':k}});
-    const d=await r.json().catch(()=>({}));
-    if(d&&d.ok&&Array.isArray(d.team)&&d.team.length){
-      staff=d.team.map(m=>({name:m.name,rate:+m.rate||0}));
-      try{ localStorage.setItem(STAFF_KEY,JSON.stringify(staff)); }catch(e){}
-      render();
-    }
-  }catch(e){}
-}
-function saveStaff(){ localStorage.setItem(STAFF_KEY,JSON.stringify(staff)); note('Saved'); }
-function loadShifts(){ try{ return JSON.parse(localStorage.getItem('colette_shifts')||'{}'); }catch(e){ return {}; } }
-function saveShifts(){ localStorage.setItem('colette_shifts',JSON.stringify(shifts)); note('Saved'); }
-function note(t){ const n=$('save-note'); n.textContent='✓ '+t+' locally'; setTimeout(()=>n.textContent='',1500); }
+const DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const $=id=>document.getElementById(id);
+const isAdmin=(new URLSearchParams(location.search).get('role')||'admin')==='admin';
+const adminKey=()=>{ try{ return localStorage.getItem('colette_admin_key')||''; }catch(e){ return ''; } };
+let staff=[], roster={}, shifts={}, timeoff=[], weekStart=mondayOf(new Date()), edKey=null;
 
 function mondayOf(d){ d=new Date(d); const g=(d.getDay()+6)%7; d.setDate(d.getDate()-g); d.setHours(0,0,0,0); return d; }
 function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 function iso(d){ return d.toISOString().slice(0,10); }
 function fmtD(d){ return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
-function keyOf(name,dateISO){ return name+'|'+dateISO; }
+function keyOf(n,d){ return n+'|'+d; }
 function to12(t){ if(!t) return ''; let [h,m]=t.split(':').map(Number); const ap=h<12?'a':'p'; let hh=h%12; if(hh===0)hh=12; return hh+(m?(':'+String(m).padStart(2,'0')):'')+ap; }
-function hoursBetween(a,b){ const [ah,am]=a.split(':').map(Number),[bh,bm]=b.split(':').map(Number); let mins=(bh*60+bm)-(ah*60+am); if(mins<0)mins+=24*60; return mins/60; }
+function hoursBetween(a,b){ const [ah,am]=a.split(':').map(Number),[bh,bm]=b.split(':').map(Number); let mins=(bh*60+bm)-(ah*60+am); if(mins<0)mins+=1440; return mins/60; }
+function money(n){ return '$'+(Math.round(n)).toLocaleString(); }
+function note(t){ const n=$('savenote'); n.textContent=t; setTimeout(()=>n.textContent='',1800); }
+
+function dowLabel(dateISO){ return DOW[(new Date(dateISO+'T12:00:00').getDay()+6)%7]; }
+function conflict(name,dateISO){
+  if((roster[name]||[]).includes(dowLabel(dateISO))) return 'day off';
+  const t=timeoff.find(x=>x.name===name && dateISO>=x.from && dateISO<=(x.to||x.from));
+  if(t) return 'time off';
+  return null;
+}
 
 function shiftWeek(n){ weekStart=addDays(weekStart,7*n); render(); }
 function thisWeek(){ weekStart=mondayOf(new Date()); render(); }
@@ -137,45 +125,79 @@ function render(){
   document.body.classList.toggle('readonly',!isAdmin);
   const days=DOW.map((_,i)=>addDays(weekStart,i));
   $('range').textContent=fmtD(days[0])+' – '+fmtD(days[6]);
-  const todayISO=iso(mondayOf(new Date()))===iso(weekStart)?iso(new Date()):null;
-  let head='<thead><tr><th class="name">Staff</th>'+days.map((d,i)=>`<th class="${iso(d)===iso(new Date())?'today':''}">${DOW[i]}<br><span class="muted small">${fmtD(d)}</span></th>`).join('')+'<th class="rowtot">Week</th></tr></thead>';
+  const todayISO=iso(new Date());
+  let head='<thead><tr><th class="name">Staff</th>'+days.map((d,i)=>`<th class="${iso(d)===todayISO?'today':''}">${DOW[i]}<br><span class="muted small">${fmtD(d)}</span></th>`).join('')+'<th class="rowtot">Week</th></tr></thead>';
   let dayH=new Array(7).fill(0), dayN=new Array(7).fill(0), weekHours=0, weekPay=0;
   let body='<tbody>';
-  staff.forEach((p,pi)=>{
+  staff.forEach((p)=>{
     let rowHours=0;
-    body+=`<tr><td class="name">${p.name}<span class="rate">$${(+p.rate).toFixed(2)}/hr</span></td>`;
+    const rate=(typeof p.rate==='number')?p.rate:null;
+    body+=`<tr><td class="name">${p.name}${(isAdmin&&rate!=null)?`<span class="rate">$${rate.toFixed(2)}/hr</span>`:''}</td>`;
     days.forEach((d,i)=>{
-      const sh=shifts[keyOf(p.name,iso(d))];
+      const di=iso(d); const sh=shifts[keyOf(p.name,di)]; const conf=conflict(p.name,di);
       let inner='<span class="off">—</span>';
-      if(sh){ const h=hoursBetween(sh.start,sh.end); rowHours+=h; dayH[i]+=h; dayN[i]++; inner=`<span class="shift">${to12(sh.start)}–${to12(sh.end)}</span><br><span class="muted small">${h.toFixed(1)}h</span>`; }
-      body+=`<td class="cell ${iso(d)===iso(new Date())?'today':''}" onclick="openEd('${p.name}','${iso(d)}')">${inner}</td>`;
+      if(sh){ const h=hoursBetween(sh.start,sh.end); rowHours+=h; dayH[i]+=h; dayN[i]++; inner=`<span class="shift">${to12(sh.start)}–${to12(sh.end)}</span><br><span class="muted small">${h.toFixed(1)}h</span>`; if(conf) inner+=`<br><span class="warn">⚠ ${conf}</span>`; }
+      else if(conf){ inner=`<span class="warn">${conf}</span>`; }
+      body+=`<td class="cell ${iso(d)===todayISO?'today':''} ${sh&&conf?'conflict':''}" onclick="openEd('${p.name.replace(/'/g,"\\'")}','${di}')">${inner}</td>`;
     });
-    const pay=rowHours*(+p.rate); weekHours+=rowHours; weekPay+=pay;
-    body+=`<td class="rowtot">${rowHours.toFixed(1)}h<br><span class="muted small">$${pay.toFixed(0)}</span></td></tr>`;
+    const pay=rowHours*(rate||0); weekHours+=rowHours; weekPay+=pay;
+    body+=`<td class="rowtot">${rowHours.toFixed(1)}h${(isAdmin&&rate!=null)?`<br><span class="muted small">$${pay.toFixed(0)}</span>`:''}</td></tr>`;
   });
   body+='</tbody>';
   let foot='<tfoot><tr><td class="name">Coverage</td>'+dayH.map((h,i)=>`<td>${dayN[i]} ppl<br><span class="muted small">${h.toFixed(1)}h</span></td>`).join('')+`<td class="rowtot">${weekHours.toFixed(1)}h</td></tr></tfoot>`;
   $('grid').innerHTML=head+body+foot;
   $('tot-hours').textContent=weekHours.toFixed(1)+' h';
-  $('tot-pay').textContent='$'+weekPay.toFixed(0);
+  $('tot-pay').textContent=money(weekPay);
 }
 
 function openEd(name,dateISO){
   if(!isAdmin) return;
   edKey={name,dateISO};
   $('ed-who').textContent=name+' · '+new Date(dateISO+'T00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+  const conf=conflict(name,dateISO); const w=$('ed-warn');
+  if(conf){ w.style.display='block'; w.textContent='⚠ '+name+' is marked '+conf+' this day.'; } else { w.style.display='none'; }
   const sh=shifts[keyOf(name,dateISO)];
   $('ed-start').value=sh?sh.start:'06:00'; $('ed-end').value=sh?sh.end:'14:00';
   $('ov').classList.add('on');
 }
 function closeEd(){ $('ov').classList.remove('on'); edKey=null; }
-function saveShift(){ if(!edKey) return; const s=$('ed-start').value,e=$('ed-end').value; if(!s||!e){ return; } shifts[keyOf(edKey.name,edKey.dateISO)]={start:s,end:e}; saveShifts(); closeEd(); render(); }
-function clearShift(){ if(!edKey) return; delete shifts[keyOf(edKey.name,edKey.dateISO)]; saveShifts(); closeEd(); render(); }
-function addStaff(){ const n=($('new-name').value||'').trim(); const r=parseFloat($('new-rate').value||'0'); if(!n){ return; } staff.push({name:n,rate:isNaN(r)?0:r}); saveStaff(); $('new-name').value=''; $('new-rate').value=''; render(); }
+async function persist(){ try{ await fetch(BACKEND+'/api/ops?action=shifts-save',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':adminKey()},body:JSON.stringify({shifts})}); note('✓ Saved'); }catch(e){ note('Save failed'); } }
+function saveShift(){ if(!edKey) return; const s=$('ed-start').value,e=$('ed-end').value; if(!s||!e) return; shifts[keyOf(edKey.name,edKey.dateISO)]={start:s,end:e}; closeEd(); render(); persist(); }
+function clearShift(){ if(!edKey) return; delete shifts[keyOf(edKey.name,edKey.dateISO)]; closeEd(); render(); persist(); }
 
+// Admin: pending time-off requests
+async function loadRequests(){
+  if(!isAdmin) return;
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=timeoff-list&t='+Date.now(),{headers:{'x-colette-secret':adminKey()}});
+    const d=await r.json().catch(()=>({}));
+    if(!d.ok) return;
+    const pending=(d.requests||[]).filter(t=>t.status==='pending');
+    const box=$('reqs');
+    if(!pending.length){ box.style.display='none'; return; }
+    box.style.display='block';
+    box.innerHTML='<h3>⏳ Time-off requests</h3>'+pending.map(t=>`<div class="req"><div><b>${t.name}</b> · ${t.from}${t.to&&t.to!==t.from?' – '+t.to:''}${t.reason?' · <span class="muted">'+t.reason+'</span>':''}</div><div class="acts"><button class="ok" onclick="resolveReq('${t.id}','approved')">Approve</button><button class="no" onclick="resolveReq('${t.id}','denied')">Deny</button></div></div>`).join('');
+  }catch(e){}
+}
+async function resolveReq(id,status){
+  try{ await fetch(BACKEND+'/api/ops?action=timeoff-resolve',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':adminKey()},body:JSON.stringify({id,status})}); await loadAll(); }catch(e){}
+}
+
+async function loadAll(){
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=shifts-get&t='+Date.now());
+    const d=await r.json().catch(()=>({}));
+    shifts=d.shifts||{}; roster={}; (d.roster||[]).forEach(m=>roster[m.name]=m.daysOff||[]); timeoff=d.timeoff||[];
+    staff=(d.roster||[]).map(m=>({name:m.name})); // employee default: names only, no rate
+  }catch(e){}
+  if(isAdmin){
+    try{ const t=await fetch(BACKEND+'/api/ops?action=team-list&t='+Date.now(),{headers:{'x-colette-secret':adminKey()}}); const td=await t.json().catch(()=>({})); if(td.ok&&td.team&&td.team.length) staff=td.team.map(m=>({name:m.name,rate:+m.rate||0})); }catch(e){}
+    loadRequests();
+  }
+  render();
+}
 $('ov').addEventListener('click',e=>{ if(e.target===$('ov')) closeEd(); });
-render();
-syncTeam();
+loadAll();
 </script>
 </body>
 </html>

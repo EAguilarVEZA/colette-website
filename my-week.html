@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colette — My Week</title>
+<style>
+:root{--paper:#faf6ef;--cream:#f3ead9;--ink:#241d16;--muted:#8a7c68;--line:#e3d7c3;--gold:#c99a3b;--gold-deep:#8a6a1f;--green:#2e7d32;--wine:#7c2d3a}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--paper);color:var(--ink);padding:16px}
+.wrap{max-width:560px;margin:0 auto}
+h1{font-size:1.3rem;margin:0}
+.sub{color:var(--muted);font-size:.9rem;margin:2px 0 16px}
+.bar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.bar button{background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:6px 11px;font-weight:700;cursor:pointer;color:var(--ink)}
+.range{font-weight:700;flex:1;text-align:center}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.day{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-top:1px solid var(--line)}
+.day:first-child{border-top:none}
+.day.today{background:#fbf4e4}
+.day .d{font-weight:700}
+.day .d small{display:block;color:var(--muted);font-weight:500}
+.day .sh{font-weight:700;color:var(--gold-deep)}
+.day .off{color:var(--muted)}
+.day .to{color:var(--wine);font-weight:700;font-size:.85rem}
+.tot{display:flex;justify-content:space-between;padding:12px 14px;background:var(--cream);font-weight:800}
+.req{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
+.req h3{margin:0 0 10px;font-size:1rem}
+.req .row{display:flex;gap:10px;flex-wrap:wrap}
+.req label{display:block;font-size:.78rem;color:var(--muted);margin:0 0 3px}
+.req input{padding:9px;border:1px solid var(--line);border-radius:10px;font-size:.95rem}
+.req input[type=date]{min-width:150px}
+.req .reason{width:100%}
+.req .go{margin-top:10px;background:var(--gold);border:none;border-radius:20px;padding:11px 18px;font-weight:800;cursor:pointer}
+.req .msg{font-size:.85rem;margin-top:8px}
+.mine{margin-top:12px;font-size:.85rem}
+.mine .m{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding:6px 0}
+.tag{font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.tag.pending{background:var(--cream);color:var(--muted)} .tag.approved{background:#e8f3e8;color:var(--green)} .tag.denied{background:#fdecec;color:var(--wine)}
+.pinpane{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center}
+.pinpane input{width:140px;text-align:center;letter-spacing:.2em;padding:11px;border:1px solid var(--line);border-radius:12px;font-size:1.1rem}
+.pinpane button{margin-left:8px;background:var(--gold);border:none;border-radius:20px;padding:11px 16px;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🙋 My Week</h1>
+  <div class="sub" id="hello">—</div>
+
+  <div id="pinpane" class="pinpane" style="display:none">
+    Enter your PIN: <input id="pin" type="tel" inputmode="numeric" maxlength="8"><button onclick="usePin()">Go</button>
+  </div>
+
+  <div id="content" style="display:none">
+    <div class="bar">
+      <button onclick="wk(-1)">← Prev</button>
+      <span class="range" id="range"></span>
+      <button onclick="wk(1)">Next →</button>
+      <button onclick="wkNow()">This week</button>
+    </div>
+    <div class="card" id="days"></div>
+    <div class="req">
+      <h3>Request time off</h3>
+      <div class="row">
+        <div><label>From</label><input type="date" id="from"></div>
+        <div><label>To</label><input type="date" id="to"></div>
+      </div>
+      <label style="margin-top:8px">Reason (optional)</label>
+      <input class="reason" id="reason" placeholder="e.g. doctor's appointment">
+      <div><button class="go" onclick="requestOff()">Send request</button></div>
+      <div class="msg" id="msg"></div>
+      <div class="mine" id="mine"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const BACKEND='https://colette-app-backend.vercel.app';
+const DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const $=id=>document.getElementById(id);
+let PIN=new URLSearchParams(location.search).get('pin')||'';
+let NAME=null, shifts={}, roster={}, timeoff=[], weekStart=mondayOf(new Date());
+
+function mondayOf(d){ d=new Date(d); const g=(d.getDay()+6)%7; d.setDate(d.getDate()-g); d.setHours(0,0,0,0); return d; }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function iso(d){ return d.toISOString().slice(0,10); }
+function fmtD(d){ return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function to12(t){ if(!t)return''; let[h,m]=t.split(':').map(Number); const ap=h<12?'a':'p'; let hh=h%12||12; return hh+(m?(':'+String(m).padStart(2,'0')):'')+ap; }
+function hrs(a,b){ const[ah,am]=a.split(':').map(Number),[bh,bm]=b.split(':').map(Number); let mn=(bh*60+bm)-(ah*60+am); if(mn<0)mn+=1440; return mn/60; }
+function dowLabel(di){ return DOW[(new Date(di+'T12:00:00').getDay()+6)%7]; }
+
+function wk(n){ weekStart=addDays(weekStart,7*n); render(); }
+function wkNow(){ weekStart=mondayOf(new Date()); render(); }
+
+function render(){
+  const days=DOW.map((_,i)=>addDays(weekStart,i));
+  $('range').textContent=fmtD(days[0])+' – '+fmtD(days[6]);
+  const todayISO=iso(new Date()); let total=0; let html='';
+  days.forEach((d,i)=>{
+    const di=iso(d); const sh=shifts[(NAME||'')+'|'+di];
+    const off=(roster[NAME]||[]).includes(dowLabel(di));
+    const to=timeoff.find(t=>t.name===NAME && di>=t.from && di<=(t.to||t.from));
+    let right='<span class="off">—</span>';
+    if(sh){ const h=hrs(sh.start,sh.end); total+=h; right=`<span class="sh">${to12(sh.start)}–${to12(sh.end)}</span> <span class="off">· ${h.toFixed(1)}h</span>`; }
+    else if(to && to.status!=='denied'){ right='<span class="to">Time off</span>'; }
+    else if(off){ right='<span class="to">Day off</span>'; }
+    html+=`<div class="day ${di===todayISO?'today':''}"><div class="d">${DOW[i]}<small>${fmtD(d)}</small></div><div>${right}</div></div>`;
+  });
+  $('days').innerHTML=html+`<div class="tot"><span>Total this week</span><span>${total.toFixed(1)} h</span></div>`;
+}
+
+async function loadMine(){
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=timeoff-mine',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:PIN})});
+    const d=await r.json().catch(()=>({}));
+    if(d.ok){ const rs=(d.requests||[]).slice(0,6); $('mine').innerHTML=rs.length?('<b>Your requests</b>'+rs.map(t=>`<div class="m"><span>${t.from}${t.to&&t.to!==t.from?' – '+t.to:''}</span><span class="tag ${t.status}">${t.status}</span></div>`).join('')):''; }
+  }catch(e){}
+}
+async function loadAll(){
+  if(!PIN){ $('pinpane').style.display='block'; $('content').style.display='none'; return; }
+  // who am I
+  try{ const s=await fetch(BACKEND+'/api/ops?action=clock-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:PIN})}); const sd=await s.json().catch(()=>({})); if(sd.ok) NAME=sd.name; else { $('pinpane').style.display='block'; return; } }catch(e){}
+  try{ const r=await fetch(BACKEND+'/api/ops?action=shifts-get&t='+Date.now()); const d=await r.json().catch(()=>({})); shifts=d.shifts||{}; roster={}; (d.roster||[]).forEach(m=>roster[m.name]=m.daysOff||[]); timeoff=d.timeoff||[]; }catch(e){}
+  $('pinpane').style.display='none'; $('content').style.display='block';
+  $('hello').textContent='Hi '+(NAME||'')+' — your shifts and time off.';
+  render(); loadMine();
+}
+function usePin(){ PIN=($('pin').value||'').trim(); if(PIN) loadAll(); }
+async function requestOff(){
+  const m=$('msg'); const from=$('from').value, to=$('to').value||from, reason=$('reason').value.trim();
+  if(!from){ m.style.color='#a33'; m.textContent='Pick a start date.'; return; }
+  m.style.color='#666'; m.textContent='Sending…';
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=timeoff-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:PIN,from,to,reason})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||!d.ok){ m.style.color='#a33'; m.textContent=d.error||'Could not send.'; return; }
+    m.style.color='#2e7d32'; m.textContent='✓ Request sent to your manager.'; $('reason').value=''; loadMine();
+  }catch(e){ m.style.color='#a33'; m.textContent='Network error — try again.'; }
+}
+$('pin')&&$('pin').addEventListener('keydown',e=>{ if(e.key==='Enter') usePin(); });
+loadAll();
+</script>
+</body>
+</html>

@@ -81,6 +81,7 @@ const $=id=>document.getElementById(id);
 // About/Team point to pages you add to this same site (upload the two HTMLs).
 const TABS=[
   {id:'clock',    label:'⏱️ Clock In/Out',  roles:['employee','admin'], src:'/clock.html'},
+  {id:'myweek',   label:'🙋 My Week',       roles:['employee'],         src:'/my-week.html'},
   {id:'schedule', label:'🗓️ Weekly Schedule', roles:['employee','admin'], src:'/week.html'},
   {id:'order',    label:'🛒 Order Supplies',roles:['employee','admin'], src:'/supplier-order.html'},
   {id:'dash',     label:'📊 Dashboard',     roles:['admin'],            src:'/dashboard.html'},
@@ -133,8 +134,8 @@ function srcFor(t){
     // Employees get their PIN passed in so they don't re-enter it.
     if(SESSION.role==='employee' && SESSION.pin) return t.src+'?pin='+encodeURIComponent(SESSION.pin);
   }
-  // Clock tab: pass the employee's PIN so it opens straight to their clock.
-  if(t.id==='clock' && SESSION.role==='employee' && SESSION.pin) return t.src+'?pin='+encodeURIComponent(SESSION.pin);
+  // Clock + My Week tabs: pass the employee's PIN so they open straight to their data.
+  if((t.id==='clock'||t.id==='myweek') && SESSION.role==='employee' && SESSION.pin) return t.src+'?pin='+encodeURIComponent(SESSION.pin);
   return t.src;
 }
 function enterApp(){
