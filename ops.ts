@@ -9,7 +9,9 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import {
   applyCors, assertConfigured, fail,
   suggestReorder, suggestReorderSmart, getAllCustomers, receiveStock, resetStockZero, salesSummary, setItemCosts, setItemPrices, stockoutAnalysis, getRecentOrders, notifyCustomer,
-  employeeForPin, buildOrderLink, savePendingOrder, listPendingOrders, resolvePendingOrder, notifyOwner,
+  employeeForPin, employeeForPinAsync, getTeam, saveTeam, buildOrderLink, savePendingOrder, listPendingOrders, resolvePendingOrder, notifyOwner,
+  togglePunch, clockStatus, listPunches,
+  getShifts, saveShifts, listTimeOff, addTimeOff, resolveTimeOff,
 } from '../lib/clover.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -82,6 +84,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ ok: true, placed: false, dispatched: false, targetDay, lines,
           note: 'Approval recorded. Auto-submit to Alon activates after the new-order recon + placement step.' });
       }
+      case 'run-task': {
+        // On-demand trigger for the FlexiBake GitHub workflow (sync / reset).
+        // Used by the dashboard "Sync now" button. Secret-gated; needs GH_DISPATCH_TOKEN.
+        if (req.method !== 'POST') return fail(res, 405, 'Use POST');
+        if (!requireAuth()) return;
+        const task = String(body?.task || 'sync').toLowerCase();
+        if (!['sync', 'reset', 'setcosts'].includes(task)) return fail(res, 400, 'task must be sync | reset | setcosts');
+        const token = process.env.GH_DISPATCH_TOKEN;
+        const repo = process.env.GH_REPO || 'EAguilarVEZA/colette-app-backend';
+        if (!token) {
+          return res.status(200).json({ ok: true, dispatched: false,
+            note: 'On-demand trigger needs GH_DISPATCH_TOKEN set in Vercel. Until then, the daily schedule still runs automatically.' });
+        }
+        const gh = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/flexibake-sync.yml/dispatches`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'User-Agent': 'colette-dashboard' },
+          body: JSON.stringify({ ref: 'main', inputs: { task, date: String(body?.date || '') } }),
+        });
+        if (gh.status === 204) return res.status(200).json({ ok: true, dispatched: true, task });
+        const detail = await gh.text();
+        return fail(res, 502, 'Dispatch failed', detail);
+      }
       case 'customers-export': {
         if (req.method !== 'GET') return fail(res, 405, 'Use GET');
         if (!requireAuth()) return;
@@ -129,7 +153,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // A store employee submits a supplier order for the owner to place.
         // PIN-gated (not the admin secret) so staff can use it without the key.
         if (req.method !== 'POST') return fail(res, 405, 'Use POST');
-        const employee = employeeForPin(String(body?.pin || ''));
+        const employee = await employeeForPinAsync(String(body?.pin || ''));
         if (!employee) return fail(res, 401, 'Invalid PIN');
         const c = (body?.c && typeof body.c === 'object') ? body.c : {};
         const r = (body?.r && typeof body.r === 'object') ? body.r : {};
@@ -151,17 +175,131 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ ok: true, employee, id, link, notify });
       }
       case 'auth-check': {
-        // Unified-shell login: a 4-digit PIN => employee (with name); a valid
-        // admin secret (header) => admin. Used to gate tabs by role.
+        // Unified-shell login:
+        //   • a 4-digit PIN            => employee (with name)
+        //   • admin ID + password      => admin (returns the app secret so the
+        //                                 dashboard's protected calls work — the
+        //                                 owner never sees or types the key)
+        //   • valid admin secret header => admin (legacy)
         if (req.method !== 'POST') return fail(res, 405, 'Use POST');
         const pin = String(body?.pin || '').trim();
         if (pin) {
-          const employee = employeeForPin(pin);
+          const employee = await employeeForPinAsync(pin);
           if (!employee) return fail(res, 401, 'PIN not recognized');
           return res.status(200).json({ ok: true, role: 'employee', name: employee });
         }
-        if (authed) return res.status(200).json({ ok: true, role: 'admin', name: 'Admin' });
-        return fail(res, 401, 'Enter a PIN or a valid admin key');
+        const id = String(body?.adminId || '').trim();
+        const pw = String(body?.adminPassword || '');
+        if (id || pw) {
+          const ADMIN_ID = process.env.ADMIN_ID, ADMIN_PW = process.env.ADMIN_PASSWORD;
+          if (ADMIN_ID && ADMIN_PW && id === ADMIN_ID && pw === ADMIN_PW) {
+            return res.status(200).json({ ok: true, role: 'admin', name: id, key: process.env.SYNC_SECRET || '' });
+          }
+          return fail(res, 401, 'ID or password not recognized');
+        }
+        if (authed) return res.status(200).json({ ok: true, role: 'admin', name: 'Admin', key: process.env.SYNC_SECRET || '' });
+        return fail(res, 401, 'Enter your PIN, or admin ID + password');
+      }
+      case 'shifts-get': {
+        // Schedule shifts + a rate-free roster (names + days off only) so staff can
+        // view the schedule/My Week WITHOUT seeing anyone's pay. No PII/rates here.
+        if (req.method !== 'GET') return fail(res, 405, 'Use GET');
+        const roster = (await getTeam()).map((m: any) => ({ name: m.name, daysOff: Array.isArray(m.daysOff) ? m.daysOff : [] }));
+        const approved = (await listTimeOff()).filter((t) => t.status === 'approved').map((t) => ({ name: t.name, from: t.from, to: t.to }));
+        return res.status(200).json({ ok: true, shifts: await getShifts(), roster, timeoff: approved });
+      }
+      case 'shifts-save': {
+        if (req.method !== 'POST') return fail(res, 405, 'Use POST');
+        // The owner (admin secret) OR an authorized scheduler's PIN may edit shifts.
+        // Schedulers are named in SCHEDULERS env (comma-separated); default: Marco, Melissa.
+        let allowed = authed;
+        if (!allowed && body?.pin) {
+          const who = await employeeForPinAsync(String(body.pin));
+          const SCHEDULERS = (process.env.SCHEDULERS || 'marco,melissa').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+          if (who && SCHEDULERS.includes(who.toLowerCase())) allowed = true;
+        }
+        if (!allowed) return fail(res, 401, 'Not authorized to edit the schedule');
+        const shifts = (body?.shifts && typeof body.shifts === 'object') ? body.shifts : null;
+        if (!shifts) return fail(res, 400, 'shifts object required');
+        await saveShifts(shifts);
+        return res.status(200).json({ ok: true });
+      }
+      case 'timeoff-request': {
+        // Employee submits a time-off request (PIN-gated).
+        if (req.method !== 'POST') return fail(res, 405, 'Use POST');
+        const employee = await employeeForPinAsync(String(body?.pin || ''));
+        if (!employee) return fail(res, 401, 'PIN not recognized');
+        const from = String(body?.from || '').trim(), to = String(body?.to || from).trim();
+        if (!from) return fail(res, 400, 'from date required');
+        const at = Date.now();
+        const t = { id: at.toString(36) + Math.random().toString(36).slice(2, 6), name: employee, pin: String(body?.pin), from, to, reason: String(body?.reason || '').slice(0, 200), status: 'pending' as const, at };
+        await addTimeOff(t);
+        try { await notifyOwner({ sms: `Colette: ${employee} requested time off ${from}${to && to !== from ? '–' + to : ''}${t.reason ? ' ('+t.reason+')' : ''}.`, emailSubject: `Time-off request — ${employee}`, emailHtml: `<p><b>${employee}</b> requested time off: <b>${from}${to && to !== from ? ' – ' + to : ''}</b>${t.reason ? '<br>Reason: ' + t.reason : ''}</p>` }); } catch { /* best effort */ }
+        return res.status(200).json({ ok: true, request: t });
+      }
+      case 'timeoff-mine': {
+        // An employee's own requests (PIN-gated).
+        if (req.method !== 'POST') return fail(res, 405, 'Use POST');
+        const employee = await employeeForPinAsync(String(body?.pin || ''));
+        if (!employee) return fail(res, 401, 'PIN not recognized');
+        const mine = (await listTimeOff()).filter((t) => String(t.pin) === String(body?.pin));
+        return res.status(200).json({ ok: true, requests: mine });
+      }
+      case 'timeoff-list': {
+        if (req.method !== 'GET') return fail(res, 405, 'Use GET');
+        if (!requireAuth()) return;
+        return res.status(200).json({ ok: true, requests: await listTimeOff() });
+      }
+      case 'timeoff-resolve': {
+        if (req.method !== 'POST') return fail(res, 405, 'Use POST');
+        if (!requireAuth()) return;
+        const id = String(body?.id || ''); const status = body?.status === 'approved' ? 'approved' : 'denied';
+        if (!id) return fail(res, 400, 'id required');
+        await resolveTimeOff(id, status);
+        return res.status(200).json({ ok: true });
+      }
+      case 'punch': {
+        // Employee clock in/out — PIN-gated (staff use it without the admin key).
+        if (req.method !== 'POST') return fail(res, 405, 'Use POST');
+        const r = await togglePunch(String(body?.pin || ''));
+        if (!r) return fail(res, 401, 'PIN not recognized');
+        return res.status(200).json({ ok: true, ...r });
+      }
+      case 'clock-status': {
+        if (req.method !== 'POST') return fail(res, 405, 'Use POST');
+        const pin = String(body?.pin || '');
+        const st = await clockStatus(pin);
+        if (!st.name) return fail(res, 401, 'PIN not recognized');
+        return res.status(200).json({ ok: true, ...st });
+      }
+      case 'punches': {
+        // All clock events for payroll (admin only).
+        if (req.method !== 'GET') return fail(res, 405, 'Use GET');
+        if (!requireAuth()) return;
+        return res.status(200).json({ ok: true, punches: await listPunches(), team: await getTeam() });
+      }
+      case 'team-list': {
+        if (req.method !== 'GET') return fail(res, 405, 'Use GET');
+        if (!requireAuth()) return;
+        return res.status(200).json({ ok: true, team: await getTeam() });
+      }
+      case 'team-save': {
+        if (req.method !== 'POST') return fail(res, 405, 'Use POST');
+        if (!requireAuth()) return;
+        const team = Array.isArray(body?.team) ? body.team : null;
+        if (!team) return fail(res, 400, 'team[] required');
+        // Normalize + validate: keep name, phone, pin, rate.
+        const clean = team
+          .map((m: any) => ({
+            name: String(m?.name || '').trim(),
+            phone: String(m?.phone || '').trim(),
+            pin: String(m?.pin || '').trim(),
+            rate: Number(m?.rate) || 0,
+            daysOff: Array.isArray(m?.daysOff) ? m.daysOff.map((x: any) => String(x)) : [],
+          }))
+          .filter((m: any) => m.name && /^\d{3,8}$/.test(m.pin));
+        await saveTeam(clean);
+        return res.status(200).json({ ok: true, team: clean });
       }
       case 'pending-orders': {
         if (req.method !== 'GET') return fail(res, 405, 'Use GET');
@@ -177,7 +315,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ ok: true });
       }
       default:
-        return fail(res, 400, 'Unknown action. Use reorder-suggest | reorder-plan | stockout | metrics | place-order | set-costs | recent-orders | notify-customer | customers-export | inventory-receive | inventory-reset-zero | submit-order | pending-orders | resolve-order');
+        return fail(res, 400, 'Unknown action. Use reorder-suggest | reorder-plan | stockout | metrics | place-order | run-task | set-costs | recent-orders | notify-customer | customers-export | inventory-receive | inventory-reset-zero | submit-order | pending-orders | resolve-order');
     }
   } catch (e: any) {
     fail(res, e?.status || 502, `${action} failed`, e?.body ?? String(e));

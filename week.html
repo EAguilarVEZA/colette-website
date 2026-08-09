@@ -96,7 +96,11 @@ body.readonly .adminonly{display:none}
 const BACKEND='https://colette-app-backend.vercel.app';
 const DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const $=id=>document.getElementById(id);
-const isAdmin=(new URLSearchParams(location.search).get('role')||'admin')==='admin';
+const _params=new URLSearchParams(location.search);
+const _role=_params.get('role')||'admin';
+const isAdmin=_role==='admin';                 // owner: sees pay, approves time off
+const canEdit=(_role==='admin'||_role==='manager'); // owner + Marco/Melissa can edit shifts
+const MYPIN=_params.get('pin')||'';             // scheduler's PIN (manager mode saves with this)
 const adminKey=()=>{ try{ return localStorage.getItem('colette_admin_key')||''; }catch(e){ return ''; } };
 let staff=[], roster={}, shifts={}, timeoff=[], weekStart=mondayOf(new Date()), edKey=null;
 
@@ -122,7 +126,7 @@ function shiftWeek(n){ weekStart=addDays(weekStart,7*n); render(); }
 function thisWeek(){ weekStart=mondayOf(new Date()); render(); }
 
 function render(){
-  document.body.classList.toggle('readonly',!isAdmin);
+  document.body.classList.toggle('readonly',!canEdit);
   const days=DOW.map((_,i)=>addDays(weekStart,i));
   $('range').textContent=fmtD(days[0])+' – '+fmtD(days[6]);
   const todayISO=iso(new Date());
@@ -151,7 +155,7 @@ function render(){
 }
 
 function openEd(name,dateISO){
-  if(!isAdmin) return;
+  if(!canEdit) return;
   edKey={name,dateISO};
   $('ed-who').textContent=name+' · '+new Date(dateISO+'T00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
   const conf=conflict(name,dateISO); const w=$('ed-warn');
@@ -161,7 +165,17 @@ function openEd(name,dateISO){
   $('ov').classList.add('on');
 }
 function closeEd(){ $('ov').classList.remove('on'); edKey=null; }
-async function persist(){ try{ await fetch(BACKEND+'/api/ops?action=shifts-save',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':adminKey()},body:JSON.stringify({shifts})}); note('✓ Saved'); }catch(e){ note('Save failed'); } }
+async function persist(){
+  const headers={'Content-Type':'application/json'};
+  const payload={shifts};
+  if(isAdmin){ headers['x-colette-secret']=adminKey(); } // owner saves with the admin key
+  else { payload.pin=MYPIN; }                             // Marco/Melissa save with their PIN
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=shifts-save',{method:'POST',headers,body:JSON.stringify(payload)});
+    const d=await r.json().catch(()=>({}));
+    note(d.ok?'✓ Saved':(d.error||'Save failed'));
+  }catch(e){ note('Save failed'); }
+}
 function saveShift(){ if(!edKey) return; const s=$('ed-start').value,e=$('ed-end').value; if(!s||!e) return; shifts[keyOf(edKey.name,edKey.dateISO)]={start:s,end:e}; closeEd(); render(); persist(); }
 function clearShift(){ if(!edKey) return; delete shifts[keyOf(edKey.name,edKey.dateISO)]; closeEd(); render(); persist(); }
 
