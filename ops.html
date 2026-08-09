@@ -165,7 +165,11 @@ function enterApp(){
   } else {
     who.textContent=SESSION.name||''; who.style.cursor='default'; who.onclick=null;
   }
-  const tabs=TABS.filter(t=>t.roles.includes(SESSION.role));
+  let tabs=TABS.filter(t=>t.roles.includes(SESSION.role));
+  // Per-person access: Marco (staff) also gets the Dashboard (view — no admin key).
+  if(SESSION.role==='employee' && (SESSION.name||'').trim().toLowerCase()==='marco' && !tabs.some(t=>t.id==='dash')){
+    const d=TABS.find(t=>t.id==='dash'); if(d) tabs=[...tabs, d];
+  }
   const bar=$('tabbar'), frames=$('frames');
   bar.innerHTML='';
   // keep the login node; remove any old iframes

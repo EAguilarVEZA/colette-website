@@ -28,10 +28,20 @@ a{color:#8a6a1f}
 #out{white-space:pre-wrap;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:12px;font-family:ui-monospace,Menlo,monospace;font-size:.82rem;display:none}
 .itemname{font-weight:600}
 #load-banner{display:none;background:#e8f3e8;border:1px solid #b6d7b6;border-radius:12px;padding:14px 16px;margin-bottom:18px;color:#25502a}
-#submit-bar{position:sticky;bottom:0;background:var(--cream);border-top:2px solid var(--gold);margin:22px -20px -20px;padding:14px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 -4px 14px rgba(0,0,0,.06)}
-#submit-bar input{width:120px;text-align:center;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:1rem}
-#submit-bar .btn{font-size:1rem}
+#submit-bar{position:sticky;bottom:0;background:var(--cream);border-top:2px solid var(--gold);margin:22px -20px -20px;padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 -4px 14px rgba(0,0,0,.06)}
+#submit-bar input{width:110px;text-align:center;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:.95rem}
+#submit-bar .btn{font-size:.95rem}
 #submit-status{font-size:.9rem}
+/* When signed in through the app (PIN already passed in), hide the PIN field +
+   helper text so the bar is slim and the button owns the row — key on mobile. */
+body.pinned #submit-bar .needs-pin{display:none}
+body.pinned #submit-bar{padding:8px 12px}
+body.pinned #submit-bar .btn{flex:1 1 auto}
+@media (max-width:520px){
+  #submit-bar{padding:8px 12px;gap:8px}
+  #submit-bar .btn{padding:11px 12px;flex:1 1 100%;text-align:center}
+  #submit-bar .needs-pin{font-size:.82rem}
+}
 .owner-only{display:none}
 /* Employees see only quantities + submit. The Send/Open/Fill controls appear
    only in owner mode (opened via a submitted-order link). */
@@ -90,10 +100,10 @@ body.owner-mode #submit-bar{display:none}
   </div>
 
   <div id="submit-bar">
-    <b>Ready?</b>
-    <span class="small muted">Enter your PIN, then submit — the Colette AI Assistant takes it from here.</span>
-    <input id="emp-pin" type="tel" inputmode="numeric" placeholder="Your PIN" maxlength="8" autocomplete="off">
-    <button class="btn" onclick="submitOrder()">📤 Submit order to Colette AI Assistant</button>
+    <b class="needs-pin">Ready?</b>
+    <span class="small muted needs-pin">Enter your PIN, then submit — the Colette AI Assistant takes it from here.</span>
+    <input id="emp-pin" class="needs-pin" type="tel" inputmode="numeric" placeholder="Your PIN" maxlength="8" autocomplete="off">
+    <button class="btn" onclick="submitOrder()">📤 Submit to Colette AI</button>
     <span id="submit-status"></span>
   </div>
 </div>
@@ -503,7 +513,7 @@ if(_pl) applyLoad(_pl);
 const _ownerParam=new URLSearchParams(location.search).get('owner')==='1';
 // When embedded in the Colette Ops shell, the employee's PIN is passed in so
 // they don't retype it (the field stays editable).
-(function prefillPin(){ try{ const p=new URLSearchParams(location.search).get('pin'); if(p&&document.getElementById('emp-pin')) document.getElementById('emp-pin').value=p; }catch(e){} })();
+(function prefillPin(){ try{ const p=new URLSearchParams(location.search).get('pin'); if(p){ const el=document.getElementById('emp-pin'); if(el) el.value=p; document.body.classList.add('pinned'); /* already signed in → hide PIN field, slim the bar */ } }catch(e){} })();
 render();
 if(_ownerParam && !_pl) ownerAuto();
 </script>
