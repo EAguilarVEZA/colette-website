@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colette — Clock</title>
+<style>
+:root{--paper:#faf6ef;--cream:#f3ead9;--ink:#241d16;--muted:#8a7c68;--line:#e3d7c3;--gold:#c99a3b;--gold-deep:#8a6a1f;--green:#2e7d32;--wine:#7c2d3a}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--paper);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:28px 16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:26px 22px;width:100%;max-width:420px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.06)}
+.hi{font-size:1.1rem;color:var(--muted)}
+.name{font-size:1.5rem;font-weight:800;margin:2px 0 18px}
+.status{font-size:1rem;font-weight:700;padding:10px;border-radius:12px;margin-bottom:6px}
+.status.in{background:#e8f3e8;color:var(--green)}
+.status.out{background:var(--cream);color:var(--muted)}
+.timer{font-size:2.4rem;font-weight:800;letter-spacing:.02em;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+.since{color:var(--muted);font-size:.85rem;margin-bottom:20px}
+.big{width:100%;border:none;border-radius:26px;padding:20px;font-size:1.3rem;font-weight:800;cursor:pointer;color:#fff}
+.big.in{background:var(--green)}
+.big.out{background:var(--wine)}
+.big:disabled{opacity:.6;cursor:default}
+.pinrow{margin-top:8px}
+.pinrow input{width:130px;text-align:center;letter-spacing:.2em;padding:11px;border:1px solid var(--line);border-radius:12px;font-size:1.1rem}
+.pinrow button{margin-left:8px;background:var(--gold);border:none;border-radius:20px;padding:11px 16px;font-weight:700;cursor:pointer}
+.msg{min-height:18px;font-size:.85rem;margin-top:12px}
+.clock{font-size:.9rem;color:var(--muted);margin-top:16px}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="hi">Welcome</div>
+    <div class="name" id="name">—</div>
+
+    <div id="pin-pane" style="display:none">
+      <div class="since">Enter your PIN to clock in / out</div>
+      <div class="pinrow"><input id="pin" type="tel" inputmode="numeric" maxlength="8" placeholder="PIN"><button onclick="usePin()">Go</button></div>
+    </div>
+
+    <div id="clock-pane" style="display:none">
+      <div class="status" id="status">—</div>
+      <div class="timer" id="timer">00:00:00</div>
+      <div class="since" id="since"></div>
+      <button class="big" id="btn" onclick="toggle()">Clock In</button>
+      <div class="msg" id="msg"></div>
+    </div>
+
+    <div class="clock" id="now"></div>
+  </div>
+
+<script>
+const BACKEND='https://colette-app-backend.vercel.app';
+const $=id=>document.getElementById(id);
+let PIN=new URLSearchParams(location.search).get('pin')||'';
+let state={clockedIn:false, since:null, name:null};
+let tick=null;
+
+function fmtDur(ms){ if(ms<0)ms=0; const s=Math.floor(ms/1000); const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60; return [h,m,sec].map(n=>String(n).padStart(2,'0')).join(':'); }
+function fmtTime(t){ return new Date(t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); }
+function nowClock(){ $('now').textContent=new Date().toLocaleString('en-US',{weekday:'short',hour:'numeric',minute:'2-digit'}); }
+setInterval(nowClock,1000); nowClock();
+
+function renderStatus(){
+  $('clock-pane').style.display='block'; $('pin-pane').style.display='none';
+  $('name').textContent=state.name||'Team member';
+  const st=$('status'), btn=$('btn');
+  if(state.clockedIn){
+    st.className='status in'; st.textContent='● Clocked IN';
+    $('since').textContent='Since '+fmtTime(state.since);
+    btn.className='big out'; btn.textContent='Clock Out';
+    if(tick) clearInterval(tick);
+    tick=setInterval(()=>{ $('timer').textContent=fmtDur(Date.now()-state.since); },1000);
+    $('timer').textContent=fmtDur(Date.now()-state.since);
+  }else{
+    st.className='status out'; st.textContent='○ Clocked out';
+    $('since').textContent='';
+    btn.className='big in'; btn.textContent='Clock In';
+    if(tick) clearInterval(tick);
+    $('timer').textContent='00:00:00';
+  }
+}
+async function loadStatus(){
+  if(!PIN){ $('pin-pane').style.display='block'; $('clock-pane').style.display='none'; return; }
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=clock-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:PIN})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||!d.ok){ $('pin-pane').style.display='block'; $('clock-pane').style.display='none'; $('name').textContent='—'; return; }
+    state={clockedIn:d.clockedIn,since:d.since,name:d.name}; renderStatus();
+  }catch(e){ $('msg').textContent='Network error — try again.'; }
+}
+async function toggle(){
+  const btn=$('btn'), m=$('msg'); m.textContent=''; btn.disabled=true;
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=punch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:PIN})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||!d.ok){ m.textContent=d.error||'Could not record.'; btn.disabled=false; return; }
+    state={clockedIn:d.type==='in',since:d.at,name:d.name}; renderStatus();
+    m.style.color='#2e7d32'; m.textContent=d.type==='in'?('Clocked in at '+fmtTime(d.at)):('Clocked out at '+fmtTime(d.at));
+  }catch(e){ m.textContent='Network error — try again.'; }
+  btn.disabled=false;
+}
+function usePin(){ PIN=($('pin').value||'').trim(); if(PIN) loadStatus(); }
+$('pin')&&$('pin').addEventListener('keydown',e=>{ if(e.key==='Enter') usePin(); });
+loadStatus();
+</script>
+</body>
+</html>
