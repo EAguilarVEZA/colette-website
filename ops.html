@@ -80,9 +80,11 @@ const $=id=>document.getElementById(id);
 // Tab definitions. `roles` controls who sees each. `src` is the embedded page.
 // About/Team point to pages you add to this same site (upload the two HTMLs).
 const TABS=[
+  {id:'clock',    label:'⏱️ Clock In/Out',  roles:['employee','admin'], src:'/clock.html'},
   {id:'schedule', label:'🗓️ Weekly Schedule', roles:['employee','admin'], src:'/week.html'},
   {id:'order',    label:'🛒 Order Supplies',roles:['employee','admin'], src:'/supplier-order.html'},
   {id:'dash',     label:'📊 Dashboard',     roles:['admin'],            src:'/dashboard.html'},
+  {id:'payroll',  label:'💵 Payroll',       roles:['admin'],            src:'/payroll.html'},
   {id:'staff',    label:'🧑‍🍳 Staff',        roles:['admin'],            src:'/team-admin.html'},
   {id:'about',    label:'✨ About Colette',  roles:['employee','admin'], src:'/colette-la-difference_1.html'},
   {id:'team',     label:'👥 Team & Roles',  roles:['employee','admin'], src:'/colette-team-profiles_2.html'},
@@ -131,6 +133,8 @@ function srcFor(t){
     // Employees get their PIN passed in so they don't re-enter it.
     if(SESSION.role==='employee' && SESSION.pin) return t.src+'?pin='+encodeURIComponent(SESSION.pin);
   }
+  // Clock tab: pass the employee's PIN so it opens straight to their clock.
+  if(t.id==='clock' && SESSION.role==='employee' && SESSION.pin) return t.src+'?pin='+encodeURIComponent(SESSION.pin);
   return t.src;
 }
 function enterApp(){
