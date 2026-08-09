@@ -133,7 +133,13 @@ function logout(){ try{ localStorage.removeItem('colette_ops_session'); }catch(e
 
 function srcFor(t){
   if(!SESSION) return t.src;
-  if(t.id==='schedule') return t.src + (SESSION.role==='admin' ? '?role=admin' : '?role=view');
+  // Schedule: owner + designated schedulers (Marco, Melissa) can edit; other staff view.
+  if(t.id==='schedule'){
+    if(SESSION.role==='admin') return t.src+'?role=admin';
+    const nm=(SESSION.name||'').trim().toLowerCase();
+    if(SESSION.role==='employee' && (nm==='marco'||nm==='melissa') && SESSION.pin) return t.src+'?role=manager&pin='+encodeURIComponent(SESSION.pin);
+    return t.src+'?role=view';
+  }
   if(t.id==='order'){
     if(SESSION.role==='admin') return t.src+'?owner=1';
     if(SESSION.role==='employee' && SESSION.pin) return t.src+'?pin='+encodeURIComponent(SESSION.pin);
