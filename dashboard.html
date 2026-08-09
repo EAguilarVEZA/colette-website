@@ -70,9 +70,12 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
     <table><thead><tr><th>Item</th><th class="right">Recent</th><th class="right">Yr avg</th><th class="right">Yr-ago</th><th class="right">Order</th></tr></thead><tbody id="orderrows"><tr><td class="muted" colspan="5">Loading…</td></tr></tbody></table>
     <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
       <button class="reload" id="approveBtn" onclick="placeOrder()" style="padding:11px 22px;font-size:.95rem">✓ Approve &amp; Place Order</button>
+      <button id="syncBtn" onclick="syncNow()" style="background:none;border:1px solid var(--line);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Pull today's Alon delivery into Clover now (instead of waiting for the daily run)">🔄 Sync now</button>
+      <button id="resetBtn" onclick="resetInventory()" style="background:none;border:1px solid var(--wine);color:var(--wine);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Zero every item's stock in Clover — clean slate">♻️ Reset to zero</button>
       <button onclick="copyOrder()" style="background:none;border:1px solid var(--line);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem">Copy order</button>
       <span id="ordermsg" style="font-size:.85rem"></span>
     </div>
+    <div id="invmsg" class="muted" style="font-size:.82rem;margin-top:8px"></div>
   </div>
 
   <div class="card" id="pendingorders">
@@ -182,6 +185,41 @@ async function placeOrder(){
     if(r.placed){$('ordermsg').innerHTML='<span class=good>✓ Order sent to Alon\'s for '+DOWN[ORDER_DOW]+'</span>';}
     else{$('ordermsg').innerHTML='<span class=good>✓ Approved</span> <span class=muted>'+(r.note||'')+'</span>';}
   }catch(e){$('ordermsg').innerHTML='<span class=bad>Error: '+e.message+'</span>';}
+  btn.disabled=false;
+}
+
+// ----- On-demand inventory controls -----
+function adminKey(){
+  try{ const k=localStorage.getItem('colette_admin_key'); if(k) return k; }catch(e){}
+  const inp=$('adminkey'); return inp && inp.value ? inp.value.trim() : '';
+}
+async function syncNow(){
+  const key=adminKey(); const m=$('invmsg');
+  if(!key){ m.innerHTML='<span class=bad>Enter your admin key (Live Orders box) first.</span>'; return; }
+  const btn=$('syncBtn'); btn.disabled=true; m.textContent='Requesting a fresh sync from Alon…';
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=run-task',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({task:'sync'})}).then(x=>x.json());
+    if(!r||!r.ok) throw new Error(r&&r.error||'failed');
+    if(r.dispatched){ m.innerHTML='<span class=good>✓ Sync started — Clover will show today’s numbers in ~2 min.</span>'; }
+    else { m.innerHTML='<span class=muted>'+(r.note||'Sync could not be triggered on demand.')+'</span>'; }
+  }catch(e){ m.innerHTML='<span class=bad>Error: '+e.message+'</span>'; }
+  btn.disabled=false;
+}
+async function resetInventory(){
+  if(!confirm('Zero the stock on EVERY item in Clover? This is the clean-slate reset.')) return;
+  const key=adminKey(); const m=$('invmsg');
+  if(!key){ m.innerHTML='<span class=bad>Enter your admin key (Live Orders box) first.</span>'; return; }
+  const btn=$('resetBtn'); btn.disabled=true;
+  let offset=0, done=0, total=0, guard=0;
+  try{
+    do{
+      const r=await fetch(BACKEND+'/api/ops?action=inventory-reset-zero',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({offset,limit:40})}).then(x=>x.json());
+      if(!r||!r.ok) throw new Error(r&&r.error||'failed');
+      total=r.total; done+=r.processed; offset=r.nextOffset;
+      m.textContent='Zeroing inventory… '+done+'/'+total;
+      if(r.done||offset==null){ m.innerHTML='<span class=good>✓ All '+total+' items reset to zero.</span>'; break; }
+    }while(++guard<50);
+  }catch(e){ m.innerHTML='<span class=bad>Error: '+e.message+'</span>'; }
   btn.disabled=false;
 }
 
