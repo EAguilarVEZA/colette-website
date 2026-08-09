@@ -110,24 +110,86 @@ body.owner-mode #submit-bar{display:none}
 
 <script>
 const BACKEND='https://colette-app-backend.vercel.app';
-// Costco catalog (seeded from order #1303811516). qty = typical order.
+// Costco list — from Edgar's supplier list (Aug 2026). Items with an item # (id)
+// auto-fill the cart via the extension; the rest have no Costco # yet, so they
+// still submit to the owner but are added manually. q = default (typical) amount.
 const COSTCO=[
-  {n:'Kirkland Fully-Cooked Bacon, 1 lb',id:'1601187',p:14.09,q:4},
-  {n:'Kirkland Smoked Salmon, 12 oz, 2 ct',id:'1267000',p:27.69,q:3},
-  {n:'Organic Spring Salad Mix, 1 lb',id:'48757',p:5.99,q:5},
-  {n:'Soules Grilled Chicken Breast Strips, 32 oz',id:'1716914',p:13.59,q:2},
-  {n:'Wild Planet Albacore Tuna, 5 oz, 6 ct',id:'7552',p:20.19,q:2},
-  {n:'Kirkland Imported Basil Pesto, 22 oz',id:'990551',p:11.39,q:6},
-  {n:'Kirkland Whole Milk, 1 gal',id:'3',p:4.72,q:6},
-  {n:'Kirkland 2% Milk, 1 gal',id:'8',p:4.72,q:1},
-  {n:"Land O'Lakes Half & Half, 1 qt",id:'673667',p:2.99,q:2},
-  {n:'Califia Cafe Oatmilk, 32 oz, 6 ct',id:'1503826',p:17.59,q:1},
-  {n:'Kirkland Large Eggs, Cage Free, 5 dz',id:'1025795',p:9.79,q:1},
-  {n:'Premium Blueberries, 18 oz',id:'57554',p:4.79,q:5},
-  {n:'Avocados, 6 ct',id:'647465',p:7.09,q:1},
-  {n:'Grape Tomatoes, 2 lbs',id:'77053',p:6.79,q:2},
-  {n:'Bella Sun Luci Sun-Dried Tomatoes, 35 oz',id:'710944',p:15.59,q:1},
+  {n:'4-Cup Pulp Carrier Tray / Cup Holder',id:'',p:0,q:1},
+  {n:'Almond Milk',id:'',p:0,q:3},
+  {n:'Aluminum Foil',id:'',p:0,q:1},
+  {n:'Apple Juice',id:'',p:0,q:1},
+  {n:'Arugula',id:'',p:0,q:1},
+  {n:'Avocados, 6 ct',id:'647465',p:7.09,q:6},
+  {n:'Kirkland Fully-Cooked Bacon, 1 lb',id:'1601187',p:14.09,q:1},
+  {n:'Black Pepper',id:'',p:0,q:1},
+  {n:'Black Trash Bags (33 Gallon)',id:'',p:0,q:1},
+  {n:'Premium Blueberries, 18 oz',id:'57554',p:4.79,q:1},
+  {n:'Butter (Country Crock)',id:'',p:0,q:1},
+  {n:'Butter, Unsalted',id:'',p:0,q:12},
+  {n:'Capers',id:'',p:0,q:1},
+  {n:'Center Pull Paper Towel Dispenser',id:'',p:0,q:1},
+  {n:'Grape / Cherry Tomatoes, 2 lbs',id:'77053',p:6.79,q:1},
   {n:'Kirkland Organic Ground Saigon Cinnamon, 10.7 oz',id:'1124845',p:6.09,q:1},
+  {n:'Clorox Bleach',id:'',p:0,q:1},
+  {n:'Coca-Cola',id:'',p:0,q:1},
+  {n:'Coca-Cola Zero',id:'',p:0,q:1},
+  {n:'Cream Cheese (Philadelphia)',id:'',p:0,q:1},
+  {n:'Dill',id:'',p:0,q:1},
+  {n:'Dish Soap',id:'',p:0,q:1},
+  {n:'Bella Sun Luci Sun-Dried Tomatoes, 35 oz',id:'710944',p:15.59,q:1},
+  {n:'Dulce de Leche',id:'',p:0,q:1},
+  {n:'Kirkland Large Eggs, Cage Free, 5 dz',id:'1025795',p:9.79,q:1},
+  {n:'Fabuloso Cleaner',id:'',p:0,q:1},
+  {n:'Feta Cheese',id:'',p:0,q:1},
+  {n:'Food Service Film Roll w/ Safety Blade (27.8" × 3000\')',id:'',p:0,q:1},
+  {n:'Granola',id:'',p:0,q:1},
+  {n:'Granulated Sugar (50 lb Bag)',id:'',p:0,q:1},
+  {n:'Greek Yogurt',id:'',p:0,q:1},
+  {n:'Green Beans',id:'',p:0,q:1},
+  {n:"Land O'Lakes Half & Half, 1 qt",id:'673667',p:2.99,q:1},
+  {n:'Hand Paper Towels (Cascades 2-Ply Center Pull)',id:'',p:0,q:1},
+  {n:"Hershey's Chocolate",id:'',p:0,q:1},
+  {n:'Honey',id:'',p:0,q:1},
+  {n:'Lemons',id:'',p:0,q:1},
+  {n:'Lysol Bathroom Cleaner',id:'',p:0,q:1},
+  {n:'Madeleines',id:'',p:0,q:1},
+  {n:'Marina Salt',id:'',p:0,q:1},
+  {n:'Mayonnaise (1 Gallon)',id:'',p:0,q:1},
+  {n:'Kirkland Whole Milk, 1 gal',id:'3',p:4.72,q:1},
+  {n:'Mozzarella Cheese (Thin Sliced)',id:'',p:0,q:1},
+  {n:'Napkins (Costco)',id:'',p:0,q:1},
+  {n:'Nutella',id:'',p:0,q:2},
+  {n:'Califia Cafe Oatmilk, 32 oz, 6 ct',id:'1503826',p:17.59,q:3},
+  {n:'Palmiers',id:'',p:0,q:1},
+  {n:'Paper Towels',id:'',p:0,q:1},
+  {n:'Perrier',id:'',p:0,q:1},
+  {n:'Kirkland Imported Basil Pesto, 22 oz',id:'990551',p:11.39,q:1},
+  {n:'Pine Nuts',id:'',p:0,q:1},
+  {n:'Plastic Trash Bags (13 Gallon)',id:'',p:0,q:1},
+  {n:'Potatoes',id:'',p:0,q:1},
+  {n:'Powdered Sugar',id:'',p:0,q:1},
+  {n:'Prosciutto',id:'',p:0,q:1},
+  {n:'Raspberries',id:'',p:0,q:1},
+  {n:'Red Wine Vinegar',id:'',p:0,q:1},
+  {n:'Shallots',id:'',p:0,q:1},
+  {n:'Skim Milk',id:'',p:0,q:1},
+  {n:'Kirkland Smoked Salmon, 12 oz, 2 ct',id:'1267000',p:27.69,q:2},
+  {n:'Sparkling Water',id:'',p:0,q:40},
+  {n:'Sponges',id:'',p:0,q:1},
+  {n:'Organic Spring Salad Mix, 1 lb',id:'48757',p:5.99,q:1},
+  {n:'Sriracha',id:'',p:0,q:1},
+  {n:'Strawberries',id:'',p:0,q:1},
+  {n:'Sliced Chicken Cordon Bleu',id:'',p:0,q:1},
+  {n:'Toilet Bowl Cleaner Refill (Lysol)',id:'',p:0,q:1},
+  {n:'Toilet Paper (Cascade / Celtic, 2-Ply)',id:'',p:0,q:1},
+  {n:'Tomatoes (Large)',id:'',p:0,q:6},
+  {n:'Wild Planet Albacore Tuna, 5 oz, 6 ct',id:'7552',p:20.19,q:1},
+  {n:'Turkey',id:'',p:0,q:2},
+  {n:'White Pepper',id:'',p:0,q:1},
+  {n:'White Vinegar',id:'',p:0,q:2},
+  {n:'Whipped Cream',id:'',p:0,q:3},
+  {n:'Soules Grilled Chicken Breast Strips, 32 oz',id:'1716914',p:13.59,q:1},
+  {n:'Kirkland 2% Milk, 1 gal',id:'8',p:4.72,q:1},
 ];
 // Restaurant Depot catalog — full Buy It Again (member.restaurantdepot.com / Instacart-powered).
 // In-stock items; default qty 0 (staff enter what they need). Excludes sponsored ads.
@@ -326,10 +388,12 @@ const IC=[
   {n:'evian Natural Spring Water 11.2 fl oz', url:P+'16480048-evian-natural-spring-water-330-ml'+S},
   {n:'BelGioioso Fresh Mozzarella Cheese Sliced 8 oz', url:P+'96152-belgioioso-fresh-mozzarella-cheese-sliced-8-oz'+S},
   {n:'Sargento Gouda Sliced Cheese, 10 slices 7 oz', url:P+'77159-sargento-sliced-gouda-natural-cheese-7-oz'+S},
+  {n:'Artesano Brioche Bakery Bread, 20 oz'},
 ].map(x=>({n:x.n, url:x.url||'', q:0}));
 const money=n=>'$'+n.toFixed(2);
-// Everything starts at ZERO — staff enter what they need.
-COSTCO.forEach(it=>it.q=0); RD.forEach(it=>it.q=0); IC.forEach(it=>it.q=0);
+// RD & Publix start at ZERO (staff enter what they need). Costco keeps its
+// typical-order defaults from the list above — staff adjust as needed.
+RD.forEach(it=>it.q=0); IC.forEach(it=>it.q=0);
 // One source of truth: the arrays. The stepper +/- and the number box both write
 // straight into the array, and Send reads from the array — so what you see is what
 // gets ordered, on all three suppliers.
@@ -348,9 +412,9 @@ function recalcFor(a){ if(a==='costco')calc(); else if(a==='rd')calcRD(); }
 function render(){ renderCostco(); renderRD(); renderIC(); }
 function renderCostco(){
   document.getElementById('costco-rows').innerHTML=COSTCO.map((it,i)=>`<tr>
-    <td class="itemname">${it.n}</td>
-    <td class="muted">${it.id}</td>
-    <td class="right muted">${money(it.p)}</td>
+    <td class="itemname">${it.n}${it.id?'':' <span class="muted" title="No Costco item # — submits to owner, add manually">• manual</span>'}</td>
+    <td class="muted">${it.id||'—'}</td>
+    <td class="right muted">${it.p?money(it.p):'—'}</td>
     <td class="right">${stepper('costco',i,it.q)}</td>
   </tr>`).join('');
   calc();
@@ -361,7 +425,7 @@ function calc(){
 }
 function lines(){ return COSTCO.filter(it=>it.q>0); }
 function copyOrder(){
-  const txt='COSTCO ORDER\n'+lines().map(l=>`${l.q} × ${l.n} (item ${l.id})`).join('\n');
+  const txt='COSTCO ORDER\n'+lines().map(l=>`${l.q} × ${l.n}${l.id?' (item '+l.id+')':' (no item #)'}`).join('\n');
   const out=document.getElementById('out'); out.style.display='block'; out.textContent=txt;
   navigator.clipboard.writeText(txt).catch(()=>{});
 }
@@ -373,8 +437,9 @@ function sendCostco(){
   const ls=lines(); const s=document.getElementById('costco-status');
   if(!ls.length){ if(s)s.textContent='Set some quantities first.'; return; }
   if(!EXT){ if(s)s.innerHTML='⚠ Extension not detected. Install the “Colette Supplier Order Filler” extension first (then reload this page). For now, use “Copy list”.'; return; }
-  window.dispatchEvent(new CustomEvent('colette-send',{detail:{supplier:'costco',lines:ls.map(l=>({id:l.id,qty:l.q,name:l.n}))}}));
-  if(s)s.innerHTML='Sent '+ls.length+' items ✓ — now <b>Open Costco order page</b> and click the gold “Fill Costco cart” button.';
+  const auto=ls.filter(l=>l.id); const manual=ls.length-auto.length;
+  window.dispatchEvent(new CustomEvent('colette-send',{detail:{supplier:'costco',lines:auto.map(l=>({id:l.id,qty:l.q,name:l.n}))}}));
+  if(s)s.innerHTML='Sent '+auto.length+' items ✓ — now <b>Open Costco order page</b> and click the gold “Fill Costco cart” button.'+(manual?('<br><span class="muted">'+manual+' item(s) have no Costco item # — add those manually (they’re in “Copy list”).</span>'):'');
 }
 // RD exact product links: SKU → Instacart product id (harvested from RD "Buy It Again").
 // The full product URL is RDBASE + id (slug is optional — the id alone resolves).
@@ -431,7 +496,7 @@ function copyIC(){
 // Gather non-zero quantities keyed by a stable id: Costco item#, RD SKU, Publix index.
 function gatherOrders(){
   const c={},r={},i={};
-  COSTCO.forEach(it=>{ if(it.q>0) c[it.id]=it.q; });
+  COSTCO.forEach((it,idx)=>{ if(it.q>0) c[idx]=it.q; }); // by index — some items have no item #
   RD.forEach(it=>{ if(it.q>0) r[it.id]=it.q; });
   IC.forEach((it,idx)=>{ if(it.q>0) i[idx]=it.q; });
   return {c,r,i};
@@ -462,7 +527,8 @@ function decodeLoad(){
 function applyLoad(pl){
   if(!pl) return false;
   const byId=(arr,map)=>{ Object.entries(map||{}).forEach(([id,q])=>{ const it=arr.find(x=>String(x.id)===String(id)); if(it) it.q=+q||0; }); };
-  byId(COSTCO,pl.c); byId(RD,pl.r);
+  Object.entries(pl.c||{}).forEach(([idx,q])=>{ if(COSTCO[idx]) COSTCO[idx].q=+q||0; }); // Costco keyed by index
+  byId(RD,pl.r);
   Object.entries(pl.i||{}).forEach(([idx,q])=>{ if(IC[idx]) IC[idx].q=+q||0; });
   const when=pl.t?new Date(pl.t).toLocaleString('en-US',{timeZone:'America/New_York'}):'';
   const b=document.getElementById('load-banner');
