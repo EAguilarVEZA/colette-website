@@ -59,17 +59,35 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
   </div>
 
   <div class="card" id="ordercard">
+    <style>
+    #alon-cal{border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0 12px;max-width:360px}
+    #alon-cal .cah{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    #alon-cal .cah b{font-size:1rem}
+    #alon-cal .cah button{background:var(--line);border:none;border-radius:8px;width:30px;height:30px;font-weight:700;cursor:pointer;font-size:1rem}
+    #alon-cal .cah button:disabled{opacity:.3;cursor:default}
+    #alon-cal .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+    #alon-cal .dow{font-size:.6rem;color:var(--muted);text-align:center;font-weight:700;text-transform:uppercase;padding-bottom:2px}
+    #alon-cal .day{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.85rem;cursor:pointer;position:relative;border:1px solid transparent}
+    #alon-cal .day:hover{background:#fbf4e4}
+    #alon-cal .day.blank{cursor:default}
+    #alon-cal .day.past{color:#cfc3ad;cursor:default}
+    #alon-cal .day.closed{color:#cbb98f;cursor:default}
+    #alon-cal .day.today{border-color:var(--gold)}
+    #alon-cal .day.sel{background:var(--gold);color:#1a1206;font-weight:800}
+    #alon-cal .day .dot{width:6px;height:6px;border-radius:3px;background:#2e7d32;position:absolute;bottom:4px}
+    #alon-cal .day.sel .dot{background:#1a1206}
+    #alon-cal .legend{font-size:.7rem;color:var(--muted);margin-top:8px;display:flex;gap:12px;flex-wrap:wrap}
+    </style>
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-      <h3 style="margin:0">🥖 Order for
-        <select id="orderdow" onchange="loadOrderPlan()" style="font-size:1rem;padding:5px 8px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-weight:600"></select>
-        <span class="pill" id="orderwhen"></span>
-      </h3>
+      <h3 style="margin:0">🥖 Order for Alon — <span id="orderwhen" style="color:var(--gold-deep)">…</span></h3>
       <span class="muted" id="ordernote" style="font-size:.78rem"></span>
     </div>
-    <p class="muted" style="font-size:.82rem;margin:6px 0 10px">Recommended from a blend of recent same-weekday sales, full-year weekday average, and last year — with a safety buffer. Adjust any quantity, then approve.</p>
-    <table><thead><tr><th>Item</th><th class="right">Recent</th><th class="right">Yr avg</th><th class="right">Yr-ago</th><th class="right">Order</th></tr></thead><tbody id="orderrows"><tr><td class="muted" colspan="5">Loading…</td></tr></tbody></table>
+    <div id="alon-cal"></div>
+    <p class="muted" style="font-size:.82rem;margin:6px 0 10px">Pick a delivery date on the calendar. Quantities show the <b>actual order in Alon</b> for that day (green dot = an order is on file). Adjust as needed, then <b>Save order</b> or <b>Approve &amp; Place</b>. Mondays are closed.</p>
+    <table><thead><tr><th>Item</th><th class="right">Recent</th><th class="right">Yr avg</th><th class="right">Yr-ago</th><th class="right">Order</th></tr></thead><tbody id="orderrows"><tr><td class="muted" colspan="5">Pick a date…</td></tr></tbody></table>
     <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
       <button class="reload" id="approveBtn" onclick="placeOrder()" style="padding:11px 22px;font-size:.95rem">✓ Approve &amp; Place Order</button>
+      <button id="saveAlonBtn" onclick="saveAlon()" style="background:none;border:1px solid var(--gold-deep);color:var(--gold-deep);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Save these quantities as the order for the selected date">💾 Save order</button>
       <button id="syncBtn" onclick="syncNow()" style="background:none;border:1px solid var(--line);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Pull today's Alon delivery into Clover now (instead of waiting for the daily run)">🔄 Sync now</button>
       <button id="resetBtn" onclick="resetInventory()" style="background:none;border:1px solid var(--wine);color:var(--wine);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Zero every item's stock in Clover — clean slate">♻️ Reset to zero</button>
       <button onclick="copyOrder()" style="background:none;border:1px solid var(--line);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem">Copy order</button>
@@ -127,46 +145,93 @@ let chart;
 function monthKey(d){return d.slice(0,7);} // YYYY-MM
 function thisMonth(){const n=new Date();const et=new Date(n.toLocaleString('en-US',{timeZone:'America/New_York'}));return et.toISOString().slice(0,7);}
 
-// ----- Alon order recommendation + approval -----
+// ----- Alon order: full calendar + real order per delivery date -----
 const DOWN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-let ORDER_PLAN=null, ORDER_DOW=null, ORDER_DATE_ISO=null;
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let ORDER_DOW=null, ORDER_DATE_ISO=null, CAT=null, CATDOW=null, CAL_MONTH=null, ALON_DATES={};
 const pad=n=>String(n).padStart(2,'0');
 const isoOf=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
-function nextOrderTarget(){
-  // Default = 2 days ahead (your cutoff is noon the prior day), skipping Monday (closed).
-  const et=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
-  let d=new Date(et.getTime()+2*86400000);
-  if(d.getDay()===1) d=new Date(et.getTime()+3*86400000);
-  return {dow:d.getDay(), date:d};
+const YEAR_END=new Date(2026,11,31);
+function etToday(){ const et=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'})); et.setHours(0,0,0,0); return et; }
+function nextOrderTarget(){ const et=etToday(); let d=new Date(et.getTime()+2*86400000); if(d.getDay()===1) d=new Date(et.getTime()+3*86400000); return d; }
+
+async function loadAlonDates(){
+  try{ const r=await fetch(BACKEND+'/api/ops?action=alon-order-dates&t='+Date.now()).then(x=>x.json());
+    ALON_DATES={}; (r.dates||[]).forEach(d=>ALON_DATES[d.date]=d.count); }catch(e){}
 }
-function ensureDaySelector(){
-  const sel=$('orderdow'); if(!sel||sel.dataset.filled) return;
-  const et=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
-  const def=nextOrderTarget(); let opts='';
-  for(let i=1;i<=9;i++){ const d=new Date(et.getTime()+i*86400000); if(d.getDay()===1) continue; // skip Monday (closed)
-    const iso=isoOf(d); const lbl=DOWN[d.getDay()]+' '+d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+(d.getDay()===0?' (standing)':'');
-    opts+=`<option value="${iso}|${d.getDay()}"${d.toDateString()===def.date.toDateString()?' selected':''}>${lbl}</option>`; }
-  sel.innerHTML=opts; sel.dataset.filled='1';
+function renderCal(){
+  const cal=$('alon-cal'); if(!cal) return;
+  const y=CAL_MONTH.getFullYear(), m=CAL_MONTH.getMonth(), today=etToday();
+  const atStart=(y===today.getFullYear()&&m===today.getMonth());
+  const atEnd=(y===YEAR_END.getFullYear()&&m>=YEAR_END.getMonth());
+  let h='<div class="cah"><button '+(atStart?'disabled':'')+' onclick="calMove(-1)">‹</button><b>'+MON[m]+' '+y+'</b><button '+(atEnd?'disabled':'')+' onclick="calMove(1)">›</button></div>';
+  h+='<div class="grid">'+['S','M','T','W','T','F','S'].map(d=>'<div class="dow">'+d+'</div>').join('');
+  const lead=new Date(y,m,1).getDay();
+  for(let i=0;i<lead;i++) h+='<div class="day blank"></div>';
+  const days=new Date(y,m+1,0).getDate();
+  for(let dn=1;dn<=days;dn++){
+    const d=new Date(y,m,dn), iso=isoOf(d), dow=d.getDay();
+    let cls='day';
+    if(d<today) cls+=' past'; else if(dow===1) cls+=' closed';
+    if(iso===isoOf(today)) cls+=' today';
+    if(iso===ORDER_DATE_ISO) cls+=' sel';
+    const clickable=!(d<today)&&dow!==1;
+    h+='<div class="'+cls+'" '+(clickable?'onclick="selectDate(\''+iso+'\')"':'')+'>'+dn+(ALON_DATES[iso]?'<span class="dot"></span>':'')+'</div>';
+  }
+  h+='</div><div class="legend"><span>🟢 order on file</span><span>Mon = closed</span></div>';
+  cal.innerHTML=h;
 }
-async function loadOrderPlan(){
-  ensureDaySelector();
-  const sel=$('orderdow'); let dow, dateObj;
-  if(sel&&sel.value){ const [iso,dw]=sel.value.split('|'); dow=Number(dw); dateObj=new Date(iso+'T12:00:00'); ORDER_DATE_ISO=iso; }
-  else { const t=nextOrderTarget(); dow=t.dow; dateObj=t.date; ORDER_DATE_ISO=isoOf(dateObj); }
-  ORDER_DOW=dow;
-  $('orderwhen').textContent='deliver '+dateObj.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' · order by noon prior day'+(dow===0?' · Sunday = standing order':'');
-  $('orderrows').innerHTML='<tr><td class="muted" colspan="5">Loading recommendation…</td></tr>';
+function calMove(n){ CAL_MONTH=new Date(CAL_MONTH.getFullYear(),CAL_MONTH.getMonth()+n,1); renderCal(); }
+async function selectDate(iso){
+  ORDER_DATE_ISO=iso; const d=new Date(iso+'T12:00:00'); ORDER_DOW=d.getDay();
+  $('orderwhen').textContent=DOWN[d.getDay()]+' '+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+  renderCal(); await loadDateOrder();
+}
+async function ensureCatalog(dow){
+  if(CAT&&CATDOW===dow) return CAT;
+  const r=await fetch(BACKEND+'/api/ops?action=reorder-plan&dow='+dow+'&t='+Date.now()).then(x=>x.json()).catch(()=>null);
+  if(r&&r.ok){ CAT=r.items||[]; CATDOW=dow; } else if(!CAT){ CAT=[]; }
+  return CAT;
+}
+function rowHtml(product,code,q,recent,yearAvg,yoy){
+  return `<tr><td>${product}</td>
+    <td class="right muted">${recent??''}</td><td class="right muted">${yearAvg??''}</td><td class="right muted">${yoy??''}</td>
+    <td class="right"><input type="number" min="0" value="${q}" data-code="${code}" data-name="${String(product).replace(/"/g,'&quot;')}" style="width:56px;text-align:right;padding:5px;border:1px solid var(--line);border-radius:8px"></td></tr>`;
+}
+async function loadDateOrder(){
+  $('orderrows').innerHTML='<tr><td class="muted" colspan="5">Loading…</td></tr>';
   try{
-    const r=await fetch(BACKEND+'/api/ops?action=reorder-plan&dow='+dow+'&t='+Date.now()).then(x=>x.json());
-    if(!r||!r.ok) throw new Error(r&&r.error||'plan unavailable');
-    ORDER_PLAN=r;
-    $('ordernote').textContent=r.note||'';
-    $('orderrows').innerHTML=(r.items||[]).map(i=>`<tr>
-      <td>${i.product}${i.cadence?' <span class="pill">prep</span>':(i.derivedFrom?' <span class="pill">from toast</span>':(i.madeInto?' <span class="pill">+variants</span>':''))}</td>
-      <td class="right muted">${i.recent}</td><td class="right muted">${i.yearAvg}</td><td class="right muted">${i.yoy}</td>
-      <td class="right"><input type="number" min="0" value="${i.suggested}" data-code="${i.code}" data-name="${i.product}" style="width:56px;text-align:right;padding:5px;border:1px solid var(--line);border-radius:8px"></td>
-    </tr>`).join('')||'<tr><td class="muted" colspan="5">No items.</td></tr>';
-  }catch(e){ $('orderrows').innerHTML='<tr><td class="muted" colspan="5">Could not load recommendation: '+e.message+'</td></tr>'; }
+    const [cat, od]=await Promise.all([
+      ensureCatalog(ORDER_DOW),
+      fetch(BACKEND+'/api/ops?action=alon-order-get&date='+ORDER_DATE_ISO+'&t='+Date.now()).then(x=>x.json()).catch(()=>({}))
+    ]);
+    const saved={}; ((od&&od.order&&od.order.lines)||[]).forEach(l=>saved[String(l.code)]=+l.qty||0);
+    const n=Object.keys(saved).length, src=od&&od.order&&od.order.source;
+    $('ordernote').textContent = n ? ('From Alon'+(src==='manual'?' (edited)':'')+' · '+n+' items') : 'No order on file for this date — enter quantities and Save.';
+    const seen={};
+    let rows=(cat||[]).map(i=>{ seen[String(i.code)]=1; return rowHtml(i.product,i.code,saved[String(i.code)]||0,i.recent,i.yearAvg,i.yoy); }).join('');
+    Object.keys(saved).forEach(code=>{ if(!seen[code]) rows+=rowHtml('Item '+code,code,saved[code],'','',''); });
+    $('orderrows').innerHTML=rows||'<tr><td class="muted" colspan="5">No items.</td></tr>';
+  }catch(e){ $('orderrows').innerHTML='<tr><td class="muted" colspan="5">Could not load: '+e.message+'</td></tr>'; }
+}
+async function saveAlon(){
+  if(!ORDER_DATE_ISO){$('ordermsg').textContent='Pick a date first.';return;}
+  const key=adminKey(); if(!key){$('ordermsg').innerHTML='<span class=bad>Enter your admin key (Live Orders box) first.</span>';return;}
+  const lines=readOrderLines().map(l=>({code:l.code,qty:l.qty}));
+  const btn=$('saveAlonBtn'); btn.disabled=true; $('ordermsg').textContent='Saving…';
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=alon-order-save',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({date:ORDER_DATE_ISO,lines,source:'manual'})}).then(x=>x.json());
+    if(!r||!r.ok) throw new Error(r&&r.error||'failed');
+    if(lines.length) ALON_DATES[ORDER_DATE_ISO]=lines.length; else delete ALON_DATES[ORDER_DATE_ISO];
+    renderCal(); $('ordermsg').innerHTML='<span class=good>✓ Saved order for '+ORDER_DATE_ISO+'</span>';
+  }catch(e){$('ordermsg').innerHTML='<span class=bad>Error: '+e.message+'</span>';}
+  btn.disabled=false;
+}
+async function bootstrapAlon(){
+  await loadAlonDates();
+  const def=nextOrderTarget();
+  CAL_MONTH=new Date(def.getFullYear(),def.getMonth(),1);
+  renderCal(); selectDate(isoOf(def));
 }
 function readOrderLines(){
   return [...document.querySelectorAll('#orderrows input')].map(inp=>({code:inp.dataset.code,product:inp.dataset.name,qty:parseInt(inp.value||'0',10)})).filter(l=>l.qty>0);
@@ -304,7 +369,7 @@ async function load(){
   $('err').style.display='none';
   try{ const k=localStorage.getItem('colette_admin_key'); if(k&&$('adminkey'))$('adminkey').value=k; }catch(e){}
   if($('adminkey')&&$('adminkey').value.trim()) loadPending(); // show orders waiting to be placed
-  loadOrderPlan(); // stockout runs on demand (heavy) via its Run button
+  bootstrapAlon(); // Alon order calendar; stockout runs on demand via its Run button
   try{
     const [m,p]=await Promise.all([
       fetch(BACKEND+'/api/ops?action=metrics&days=35').then(r=>r.json()),
