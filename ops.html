@@ -87,7 +87,7 @@ const $=id=>document.getElementById(id);
 
 // Tab definitions. `roles` controls who sees each.
 const TABS=[
-  {id:'clock',    label:'⏱️ Clock In/Out',  roles:['employee','admin'], src:'/clock.html'},
+  {id:'clock',    label:'⏱️ Clock In/Out',  roles:['employee'],         src:'/clock.html'},
   {id:'myweek',   label:'🙋 My Week',       roles:['employee'],         src:'/my-week.html'},
   {id:'schedule', label:'🗓️ Weekly Schedule', roles:['employee','admin'], src:'/week.html'},
   {id:'order',    label:'🛒 Order Supplies',roles:['employee','admin'], src:'/supplier-order.html'},
@@ -156,8 +156,15 @@ function showPreviewTabs(){
 
 function enterApp(){
   $('login').style.display='none';
-  // Owner is never asked to log out; staff get a Sign-out chip (never at the top).
-  $('whoami').textContent = SESSION.role==='admin' ? 'Owner' : (SESSION.name||'');
+  const who=$('whoami');
+  if(SESSION.role==='admin'){
+    // Owner: no login/logout box. The name doubles as a quiet "switch user" — tap
+    // it only to hand the device to staff. Session persists, so no nag on return.
+    who.textContent='Owner ▾'; who.style.cursor='pointer'; who.title='Tap to switch user';
+    who.onclick=()=>{ if(confirm('Switch user? This returns to the login screen.')) logout(); };
+  } else {
+    who.textContent=SESSION.name||''; who.style.cursor='default'; who.onclick=null;
+  }
   const tabs=TABS.filter(t=>t.roles.includes(SESSION.role));
   const bar=$('tabbar'), frames=$('frames');
   bar.innerHTML='';
@@ -167,11 +174,14 @@ function enterApp(){
     const b=document.createElement('button'); b.textContent=t.label; b.onclick=()=>activate(t.id); b.dataset.tab=t.id; bar.appendChild(b);
     const f=document.createElement('iframe'); f.dataset.tab=t.id; f.dataset.src=srcFor(t); frames.appendChild(f);
   });
-  // Everyone gets a small Sign out at the FAR END of the tab row (not a big box
-  // at the top). The owner's session is still remembered between visits, so this
-  // is only used to hand the device to staff or switch users — never a nag.
-  const so=document.createElement('button'); so.className='signout'; so.textContent='Sign out'; so.onclick=logout; bar.appendChild(so);
-  activate(tabs[0].id);
+  // Staff share a device, so they get a Sign out chip at the far end of the tab
+  // row. The owner switches via the name menu instead (no login/logout chrome).
+  if(SESSION.role!=='admin'){
+    const so=document.createElement('button'); so.className='signout'; so.textContent='Sign out'; so.onclick=logout; bar.appendChild(so);
+  }
+  // Owner opens straight to the Dashboard (no PIN/clock prompt); staff to their first tab.
+  const first = SESSION.role==='admin' ? (tabs.some(t=>t.id==='dash')?'dash':tabs[0].id) : tabs[0].id;
+  activate(first);
   if(SESSION.role==='admin') startNotif();
 }
 
