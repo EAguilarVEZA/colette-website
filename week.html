@@ -102,7 +102,21 @@ const $=id=>document.getElementById(id);
 const isAdmin=(new URLSearchParams(location.search).get('role')||'admin')==='admin'; // shell passes ?role
 let staff=loadStaff(), shifts=loadShifts(), weekStart=mondayOf(new Date()), edKey=null;
 
+const BACKEND='https://colette-app-backend.vercel.app';
 function loadStaff(){ try{ const s=JSON.parse(localStorage.getItem(STAFF_KEY)||'null'); if(s&&s.length) return s; }catch(e){} localStorage.setItem(STAFF_KEY,JSON.stringify(SEED)); return SEED.slice(); }
+// Pull the team from the shared admin store (Staff screen) so the grid stays in sync.
+async function syncTeam(){
+  try{
+    const k=localStorage.getItem('colette_admin_key')||''; if(!k) return;
+    const r=await fetch(BACKEND+'/api/ops?action=team-list&t='+Date.now(),{headers:{'x-colette-secret':k}});
+    const d=await r.json().catch(()=>({}));
+    if(d&&d.ok&&Array.isArray(d.team)&&d.team.length){
+      staff=d.team.map(m=>({name:m.name,rate:+m.rate||0}));
+      try{ localStorage.setItem(STAFF_KEY,JSON.stringify(staff)); }catch(e){}
+      render();
+    }
+  }catch(e){}
+}
 function saveStaff(){ localStorage.setItem(STAFF_KEY,JSON.stringify(staff)); note('Saved'); }
 function loadShifts(){ try{ return JSON.parse(localStorage.getItem('colette_shifts')||'{}'); }catch(e){ return {}; } }
 function saveShifts(){ localStorage.setItem('colette_shifts',JSON.stringify(shifts)); note('Saved'); }
@@ -161,6 +175,7 @@ function addStaff(){ const n=($('new-name').value||'').trim(); const r=parseFloa
 
 $('ov').addEventListener('click',e=>{ if(e.target===$('ov')) closeEd(); });
 render();
+syncTeam();
 </script>
 </body>
 </html>

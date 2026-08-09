@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colette — Staff</title>
+<style>
+:root{--paper:#faf6ef;--cream:#f3ead9;--ink:#241d16;--muted:#8a7c68;--line:#e3d7c3;--gold:#c99a3b;--gold-deep:#8a6a1f;--wine:#7c2d3a;--green:#2e7d32}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--paper);color:var(--ink);padding:16px}
+h1{font-size:1.3rem;margin:0 0 2px}
+.sub{color:var(--muted);font-size:.85rem;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:.9rem}
+th{background:var(--cream);color:var(--muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.04em}
+input{width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:.95rem}
+input.rate,input.pin{width:90px}
+td.del{width:40px;text-align:center}
+.del button{background:none;border:none;color:var(--wine);font-size:1.1rem;cursor:pointer}
+.row-actions{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{background:var(--gold);color:#1a1206;border:none;border-radius:22px;padding:11px 20px;font-weight:700;cursor:pointer;font-size:.95rem}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--ink)}
+#status{font-size:.9rem;margin-left:4px}
+.keybar{display:none;background:#fff7f3;border:1px solid #f0c9ba;border-radius:10px;padding:12px;margin-bottom:14px}
+.keybar input{max-width:260px;display:inline-block;width:auto;margin:0 8px}
+.hint{color:var(--muted);font-size:.8rem;margin-top:6px}
+</style>
+</head>
+<body>
+  <h1>🧑‍🍳 Staff</h1>
+  <div class="sub">Add your team here — name, phone, hourly rate, and a 4-digit PIN (defaults to the last 4 of their phone). These PINs are what they use to log in. Click <b>Save team</b> when done.</div>
+
+  <div class="keybar" id="keybar">
+    Enter your admin key to manage staff:
+    <input id="adminkey" type="password" placeholder="admin key">
+    <button class="btn" onclick="useKey()">Load</button>
+  </div>
+
+  <table>
+    <thead><tr><th>Name</th><th>Phone</th><th>Rate $/hr</th><th>PIN</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <div class="row-actions">
+    <button class="btn ghost" onclick="addRow()">＋ Add member</button>
+    <button class="btn" onclick="saveTeam()">💾 Save team</button>
+    <span id="status"></span>
+  </div>
+  <div class="hint">Tip: the PIN auto-fills from the last 4 digits of the phone number — you can change it to anything (3–8 digits).</div>
+
+<script>
+const BACKEND='https://colette-app-backend.vercel.app';
+const $=id=>document.getElementById(id);
+// Default team to show if the store is empty (Edgar just clicks Save to persist).
+const DEFAULTS=[
+  {name:'Marco',phone:'+1 (678) 907-5259',rate:16.68,pin:'5259'},
+  {name:'Melissa',phone:'',rate:17,pin:'9033'},
+  {name:'Jonathan',phone:'+1 (678) 879-9619',rate:15,pin:'9619'},
+  {name:'Arya',phone:'+1 (470) 429-7830',rate:15,pin:'7830'},
+];
+let team=[];
+function key(){ try{ return localStorage.getItem('colette_admin_key')||''; }catch(e){ return ''; } }
+const last4=p=>{ const d=(p||'').replace(/\D/g,''); return d.slice(-4); };
+
+function rowHTML(m,i){
+  return `<tr>
+    <td><input value="${(m.name||'').replace(/"/g,'&quot;')}" oninput="upd(${i},'name',this.value)" placeholder="Name"></td>
+    <td><input value="${(m.phone||'').replace(/"/g,'&quot;')}" oninput="phoneChanged(${i},this.value)" placeholder="Phone"></td>
+    <td><input class="rate" type="number" step="0.01" min="0" value="${m.rate||0}" oninput="upd(${i},'rate',this.value)"></td>
+    <td><input class="pin" value="${m.pin||''}" oninput="upd(${i},'pin',this.value)" maxlength="8" inputmode="numeric"></td>
+    <td class="del"><button title="Remove" onclick="delRow(${i})">🗑</button></td>
+  </tr>`;
+}
+function render(){ $('rows').innerHTML=team.map(rowHTML).join(''); }
+function upd(i,f,v){ team[i][f]=f==='rate'?(parseFloat(v)||0):v; }
+function phoneChanged(i,v){ team[i].phone=v; if(!team[i].pin || team[i].pin.length<3){ team[i].pin=last4(v); render(); } }
+function addRow(){ team.push({name:'',phone:'',rate:0,pin:''}); render(); }
+function delRow(i){ team.splice(i,1); render(); }
+
+async function load(){
+  const k=key();
+  if(!k){ $('keybar').style.display='block'; }
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=team-list&t='+Date.now(),{headers:{'x-colette-secret':k}});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok && d.ok){ team=(d.team&&d.team.length)?d.team:DEFAULTS.slice(); $('keybar').style.display='none'; }
+    else if(r.status===401){ $('keybar').style.display='block'; team=DEFAULTS.slice(); }
+    else { team=DEFAULTS.slice(); }
+  }catch(e){ team=DEFAULTS.slice(); }
+  render();
+}
+function useKey(){ try{ localStorage.setItem('colette_admin_key',$('adminkey').value.trim()); }catch(e){} load(); }
+
+async function saveTeam(){
+  const s=$('status'); const k=key();
+  if(!k){ s.style.color='#a33'; s.textContent='Enter your admin key first.'; $('keybar').style.display='block'; return; }
+  const clean=team.map(m=>({name:(m.name||'').trim(),phone:(m.phone||'').trim(),rate:parseFloat(m.rate)||0,pin:(m.pin||'').trim()})).filter(m=>m.name);
+  const bad=clean.find(m=>!/^\d{3,8}$/.test(m.pin));
+  if(bad){ s.style.color='#a33'; s.textContent='“'+bad.name+'” needs a 3–8 digit PIN.'; return; }
+  s.style.color='#666'; s.textContent='Saving…';
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=team-save',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':k},body:JSON.stringify({team:clean})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||!d.ok){ s.style.color='#a33'; s.textContent='Could not save: '+(d.error||r.status); return; }
+    team=d.team||clean; render();
+    s.style.color='#2e7d32'; s.textContent='✓ Saved — '+team.length+' team members. Their PINs work at login now.';
+  }catch(e){ s.style.color='#a33'; s.textContent='Network error — try again.'; }
+}
+
+load();
+</script>
+</body>
+</html>
