@@ -167,9 +167,10 @@ function enterApp(){
     const b=document.createElement('button'); b.textContent=t.label; b.onclick=()=>activate(t.id); b.dataset.tab=t.id; bar.appendChild(b);
     const f=document.createElement('iframe'); f.dataset.tab=t.id; f.dataset.src=srcFor(t); frames.appendChild(f);
   });
-  if(SESSION.role!=='admin'){
-    const so=document.createElement('button'); so.className='signout'; so.textContent='Sign out'; so.onclick=logout; bar.appendChild(so);
-  }
+  // Everyone gets a small Sign out at the FAR END of the tab row (not a big box
+  // at the top). The owner's session is still remembered between visits, so this
+  // is only used to hand the device to staff or switch users — never a nag.
+  const so=document.createElement('button'); so.className='signout'; so.textContent='Sign out'; so.onclick=logout; bar.appendChild(so);
   activate(tabs[0].id);
   if(SESSION.role==='admin') startNotif();
 }
