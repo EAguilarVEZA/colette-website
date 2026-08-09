@@ -60,7 +60,8 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
 
   <div class="card" id="ordercard">
     <style>
-    #alon-cal{border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0 12px;max-width:360px}
+    #alon-cal{display:none;position:absolute;top:100%;left:0;z-index:30;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:6px;max-width:360px;background:var(--card);box-shadow:0 12px 34px rgba(0,0,0,.18)}
+    #alon-cal.open{display:block}
     #alon-cal .cah{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
     #alon-cal .cah b{font-size:1rem}
     #alon-cal .cah button{background:var(--line);border:none;border-radius:8px;width:30px;height:30px;font-weight:700;cursor:pointer;font-size:1rem}
@@ -78,12 +79,14 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
     #alon-cal .day.sel .dot{background:#1a1206}
     #alon-cal .legend{font-size:.7rem;color:var(--muted);margin-top:8px;display:flex;gap:12px;flex-wrap:wrap}
     </style>
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-      <h3 style="margin:0">🥖 Order for Alon — <span id="orderwhen" style="color:var(--gold-deep)">…</span></h3>
+    <div style="position:relative;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0">🥖 Order for Alon — <span id="orderwhen" style="color:var(--gold-deep)">…</span>
+        <button id="calBtn" onclick="toggleCal()" style="margin-left:8px;background:none;border:1px solid var(--line);border-radius:16px;padding:5px 12px;font-size:.8rem;cursor:pointer">📅 Change date</button>
+      </h3>
       <span class="muted" id="ordernote" style="font-size:.78rem"></span>
+      <div id="alon-cal"></div>
     </div>
-    <div id="alon-cal"></div>
-    <p class="muted" style="font-size:.82rem;margin:6px 0 10px">Pick a delivery date on the calendar. Quantities show the <b>actual order in Alon</b> for that day (green dot = an order is on file). Adjust as needed, then <b>Save order</b> or <b>Approve &amp; Place</b>. Mondays are closed.</p>
+    <p class="muted" style="font-size:.82rem;margin:6px 0 10px">Tap <b>Change date</b> to pick a delivery date. The quantities show the <b>actual order Alon has</b> for that day; if there's none it says so and you can enter a new order. Then <b>Save order</b> or <b>Approve &amp; Place</b>.</p>
     <table><thead><tr><th>Item</th><th class="right">Recent</th><th class="right">Yr avg</th><th class="right">Yr-ago</th><th class="right">Order</th></tr></thead><tbody id="orderrows"><tr><td class="muted" colspan="5">Pick a date…</td></tr></tbody></table>
     <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
       <button class="reload" id="approveBtn" onclick="placeOrder()" style="padding:11px 22px;font-size:.95rem">✓ Approve &amp; Place Order</button>
@@ -182,10 +185,15 @@ function renderCal(){
   cal.innerHTML=h;
 }
 function calMove(n){ CAL_MONTH=new Date(CAL_MONTH.getFullYear(),CAL_MONTH.getMonth()+n,1); renderCal(); }
+// The calendar is a popover: hidden until you tap "Change date", overlays the
+// order to save space, and closes as soon as you pick a date.
+function toggleCal(){ const c=$('alon-cal'); if(!c) return; if(!c.classList.contains('open')){ if(ORDER_DATE_ISO){ CAL_MONTH=new Date(new Date(ORDER_DATE_ISO+'T12:00:00').getFullYear(), new Date(ORDER_DATE_ISO+'T12:00:00').getMonth(), 1); } renderCal(); c.classList.add('open'); } else { c.classList.remove('open'); } }
+function closeCal(){ const c=$('alon-cal'); if(c) c.classList.remove('open'); }
+document.addEventListener('click',e=>{ const c=$('alon-cal'); const b=$('calBtn'); if(c&&c.classList.contains('open')&&!c.contains(e.target)&&e.target!==b&&!(b&&b.contains(e.target))) closeCal(); });
 async function selectDate(iso){
   ORDER_DATE_ISO=iso; const d=new Date(iso+'T12:00:00'); ORDER_DOW=d.getDay();
   $('orderwhen').textContent=DOWN[d.getDay()]+' '+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
-  renderCal(); await loadDateOrder();
+  closeCal(); await loadDateOrder();
 }
 async function ensureCatalog(dow){
   if(CAT&&CATDOW===dow) return CAT;
@@ -207,7 +215,10 @@ async function loadDateOrder(){
     ]);
     const saved={}; ((od&&od.order&&od.order.lines)||[]).forEach(l=>saved[String(l.code)]=+l.qty||0);
     const n=Object.keys(saved).length, src=od&&od.order&&od.order.source;
-    $('ordernote').textContent = n ? ('From Alon'+(src==='manual'?' (edited)':'')+' · '+n+' items') : 'No order on file for this date — enter quantities and Save.';
+    const nice=new Date(ORDER_DATE_ISO+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+    $('ordernote').innerHTML = n
+      ? ('<span class=good>✓ Alon has an order for '+nice+'</span> — '+n+' items'+(src==='manual'?' (edited here)':'')+'. Review, adjust, then Approve &amp; Place.')
+      : ('<span class=bad>No order in Alon for '+nice+'</span> — enter your new order below, then Save or Approve &amp; Place.');
     const seen={};
     let rows=(cat||[]).map(i=>{ seen[String(i.code)]=1; return rowHtml(i.product,i.code,saved[String(i.code)]||0,i.recent,i.yearAvg,i.yoy); }).join('');
     Object.keys(saved).forEach(code=>{ if(!seen[code]) rows+=rowHtml('Item '+code,code,saved[code],'','',''); });
