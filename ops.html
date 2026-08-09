@@ -80,8 +80,7 @@ const $=id=>document.getElementById(id);
 // Tab definitions. `roles` controls who sees each. `src` is the embedded page.
 // About/Team point to pages you add to this same site (upload the two HTMLs).
 const TABS=[
-  {id:'schedule', label:'📅 Schedule',      roles:['employee','admin'], src:SCHEDULER},
-  {id:'week',     label:'🗓️ Week Coverage', roles:['admin'], src:'/week.html?role=admin'},
+  {id:'schedule', label:'📅 Schedule',      roles:['employee','admin'], src:'/week.html'},
   {id:'order',    label:'🛒 Order Supplies',roles:['employee','admin'], src:'/supplier-order.html'},
   {id:'dash',     label:'📊 Dashboard',     roles:['admin'],            src:'/dashboard.html'},
   {id:'staff',    label:'🧑‍🍳 Staff',        roles:['admin'],            src:'/team-admin.html'},
@@ -123,7 +122,10 @@ async function loginAdmin(){
 function logout(){ try{ localStorage.removeItem('colette_ops_session'); }catch(e){} SESSION=null; location.reload(); }
 
 function srcFor(t){
-  if(t.id==='order' && SESSION){
+  if(!SESSION) return t.src;
+  // Schedule: admins can edit the weekly grid; employees see it read-only.
+  if(t.id==='schedule') return t.src + (SESSION.role==='admin' ? '?role=admin' : '?role=view');
+  if(t.id==='order'){
     // Admin sees the orders employees submitted (owner mode: Send/Open only, no AI-submit).
     if(SESSION.role==='admin') return t.src+'?owner=1';
     // Employees get their PIN passed in so they don't re-enter it.
