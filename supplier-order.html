@@ -99,6 +99,20 @@ body.owner-mode #submit-bar{display:none}
     <div id="ic-out"></div>
   </div>
 
+  <div class="card">
+    <div class="suphead">
+      <div><h3>☕ Paname Coffee</h3><div class="small muted">panamecoffeewholesale.b2b.cin7.com · Cafés Richard, teas, syrups, cups</div></div>
+      <div class="small muted" id="paname-total"></div>
+    </div>
+    <table><thead><tr><th>Item</th><th>SKU</th><th class="right">Unit $</th><th class="right">Qty</th></tr></thead><tbody id="paname-rows"></tbody></table>
+    <div class="owner-actions" style="margin-top:14px;gap:10px;flex-wrap:wrap;align-items:center">
+      <button class="btn" onclick="sendPaname()">☕ Send to Paname</button>
+      <button class="btn ghost" onclick="window.open('https://panamecoffeewholesale.b2b.cin7.com/products','_blank')">Open Paname</button>
+      <button class="btn ghost" onclick="copyPaname()">Copy list</button>
+    </div>
+    <div id="paname-out"></div>
+  </div>
+
   <div id="submit-bar">
     <b class="needs-pin">Ready?</b>
     <span class="small muted needs-pin">Enter your PIN, then submit — the Colette AI Assistant takes it from here.</span>
@@ -114,80 +128,70 @@ const BACKEND='https://colette-app-backend.vercel.app';
 // auto-fill the cart via the extension; the rest have no Costco # yet, so they
 // still submit to the owner but are added manually. q = default (typical) amount.
 const COSTCO=[
-  {n:'4-Cup Pulp Carrier Tray / Cup Holder',id:'',p:0,q:0},
+  {n:'4-Cup Pulp Carrier Tray / Cup Holder',id:'2009645',p:12.89,q:0},
   {n:'Almond Milk (Kirkland Unsweetened, 32 oz, 12 ct)',id:'1242342',p:18.09,q:0},
   {n:'Aluminum Foil (Kirkland 12" x 1000\')',id:'31680',p:49.99,q:0},
   {n:'Apple Juice (Kirkland Fresh Pressed, 1 gal, 2 ct)',id:'158996',p:14.89,q:0},
-  {n:'Arugula',id:'',p:0,q:0},
   {n:'Avocados, 6 ct',id:'647465',p:7.09,q:0},
   {n:'Kirkland Fully-Cooked Bacon, 1 lb',id:'1601187',p:14.09,q:0},
-  {n:'Black Pepper',id:'',p:0,q:0},
-  {n:'Black Trash Bags (33 Gallon)',id:'',p:0,q:0},
+  {n:'Black Pepper',id:'164981',p:7.59,q:0},
+  {n:'Black Trash Bags (33 Gallon)',id:'1755441',p:27.19,q:0},
   {n:'Premium Blueberries, 18 oz',id:'57554',p:4.79,q:0},
-  {n:'Butter (Country Crock)',id:'',p:0,q:0},
+  {n:'Butter (Country Crock)',id:'998734',p:8.99,q:0},
   {n:'Butter, Unsalted (Kirkland Sticks, 1 lb, 4 ct)',id:'384962',p:10.79,q:0},
-  {n:'Capers',id:'',p:0,q:0},
-  {n:'Center Pull Paper Towel Dispenser',id:'',p:0,q:0},
+  {n:'Capers',id:'261485',p:9.89,q:0},
   {n:'Grape / Cherry Tomatoes, 2 lbs',id:'77053',p:6.79,q:0},
   {n:'Kirkland Organic Ground Saigon Cinnamon, 10.7 oz',id:'1124845',p:6.09,q:0},
-  {n:'Clorox Bleach',id:'',p:0,q:0},
-  {n:'Coca-Cola',id:'',p:0,q:0},
-  {n:'Coca-Cola Zero',id:'',p:0,q:0},
+  {n:'Clorox Bleach',id:'2159793',p:23.79,q:0},
+  {n:'Coca-Cola',id:'854330',p:23.49,q:0},
+  {n:'Coca-Cola Zero',id:'891742',p:23.49,q:0},
   {n:'Cream Cheese (Philadelphia Original, 48 oz)',id:'805925',p:8.99,q:0},
-  {n:'Dill',id:'',p:0,q:0},
-  {n:'Dish Soap',id:'',p:0,q:0},
+  {n:'Dish Soap',id:'1789130',p:9.99,q:0},
   {n:'Bella Sun Luci Sun-Dried Tomatoes, 35 oz',id:'710944',p:15.59,q:0},
-  {n:'Dulce de Leche',id:'',p:0,q:0},
+  {n:'Dulce de Leche',id:'1994678',p:7.57,q:0},
   {n:'Kirkland Large Eggs, Cage Free, 5 dz',id:'1025795',p:9.79,q:0},
-  {n:'Fabuloso Cleaner',id:'',p:0,q:0},
+  {n:'Fabuloso Cleaner',id:'1988113',p:13.79,q:0},
   {n:'Feta Cheese (President Crumbles, 24 oz)',id:'26802',p:7.79,q:0},
-  {n:'Food Service Film Roll w/ Safety Blade (27.8" × 3000\')',id:'',p:0,q:0},
-  {n:'Granola',id:'',p:0,q:0},
-  {n:'Granulated Sugar (50 lb Bag)',id:'',p:0,q:0},
+  {n:'Food Service Film Roll w/ Safety Blade (27.8" × 3000\')',id:'63202',p:30.39,q:0},
+  {n:'Granola',id:'2222019',p:10.09,q:0},
+  {n:'Granulated Sugar (50 lb Bag)',id:'355819',p:32.19,q:0},
   {n:'Greek Yogurt (Chobani Blended, 40 oz)',id:'1415774',p:6.69,q:0},
-  {n:'Green Beans',id:'',p:0,q:0},
+  {n:'Green Beans',id:'910270',p:7.49,q:0},
   {n:"Land O'Lakes Half & Half, 1 qt",id:'673667',p:2.99,q:0},
-  {n:'Hand Paper Towels (Cascades 2-Ply Center Pull)',id:'',p:0,q:0},
-  {n:"Hershey's Chocolate",id:'',p:0,q:0},
+  {n:'Hand Paper Towels (Cascades 2-Ply Center Pull)',id:'4789550',p:48.99,q:0},
+  {n:"Hershey's Chocolate",id:'24000',p:46.69,q:0},
   {n:'Honey (Kirkland Wildflower, 5 lb)',id:'1347776',p:14.79,q:0},
-  {n:'Lemons',id:'',p:0,q:0},
-  {n:'Lysol Bathroom Cleaner',id:'',p:0,q:0},
+  {n:'Lemons',id:'694975',p:42.39,q:0},
+  {n:'Lysol Bathroom Cleaner',id:'1246015',p:12.59,q:0},
   {n:'Madeleines (Donsuemor Traditional, 28 ct)',id:'1343983',p:10.09,q:0},
-  {n:'Marina Salt',id:'',p:0,q:0},
-  {n:'Mayonnaise (1 Gallon)',id:'',p:0,q:0},
+  {n:'Marina Salt',id:'384732',p:4.09,q:0},
+  {n:'Mayonnaise (Hellmann\'s Real, 1 Gallon)',id:'4581',p:15.99,q:0},
   {n:'Kirkland Whole Milk, 1 gal',id:'3',p:4.72,q:0},
-  {n:'Mozzarella Cheese (Thin Sliced)',id:'',p:0,q:0},
-  {n:'Napkins (Costco)',id:'',p:0,q:0},
-  {n:'Nutella',id:'',p:0,q:0},
+  {n:'Mozzarella Cheese (Thin Sliced)',id:'206364',p:9.49,q:0},
+  {n:'Napkins (Costco)',id:'1585373',p:14.09,q:0},
+  {n:'Nutella (Hazelnut Spread, 6.6 lb)',id:'1080890',p:25.69,q:0},
   {n:'Califia Cafe Oatmilk, 32 oz, 6 ct',id:'1503826',p:17.59,q:0},
   {n:'Palmiers (Sugar Bowl Bakery Petite, 32 oz)',id:'937348',p:10.09,q:0},
-  {n:'Paper Towels',id:'',p:0,q:0},
-  {n:'Perrier',id:'',p:0,q:0},
+  {n:'Paper Towels',id:'512599',p:23.79,q:0},
+  {n:'Perrier (Sparkling, 11.1 oz, 24 ct)',id:'1404546',p:27.99,q:0},
   {n:'Kirkland Imported Basil Pesto, 22 oz',id:'990551',p:11.39,q:0},
-  {n:'Pine Nuts',id:'',p:0,q:0},
-  {n:'Plastic Trash Bags (13 Gallon)',id:'',p:0,q:0},
-  {n:'Potatoes',id:'',p:0,q:0},
-  {n:'Powdered Sugar',id:'',p:0,q:0},
-  {n:'Prosciutto',id:'',p:0,q:0},
-  {n:'Raspberries',id:'',p:0,q:0},
-  {n:'Red Wine Vinegar',id:'',p:0,q:0},
-  {n:'Shallots',id:'',p:0,q:0},
-  {n:'Skim Milk',id:'',p:0,q:0},
+  {n:'Pine Nuts',id:'941275',p:30.09,q:0},
+  {n:'Plastic Trash Bags (13 Gallon)',id:'1089787',p:22.19,q:0},
+  {n:'Potatoes',id:'5938',p:9.79,q:0},
+  {n:'Prosciutto',id:'1322805',p:14.79,q:0},
+  {n:'Raspberries',id:'56366',p:3.59,q:0},
   {n:'Kirkland Smoked Salmon, 12 oz, 2 ct',id:'1267000',p:27.69,q:0},
-  {n:'Sparkling Water',id:'',p:0,q:0},
-  {n:'Sponges',id:'',p:0,q:0},
+  {n:'Sparkling Water (Kirkland Italian, 16.9 oz, 24 ct)',id:'9262015',p:22.69,q:0},
+  {n:'Sponges',id:'1717853',p:12.79,q:0},
   {n:'Organic Spring Salad Mix, 1 lb',id:'48757',p:5.99,q:0},
-  {n:'Sriracha',id:'',p:0,q:0},
-  {n:'Strawberries',id:'',p:0,q:0},
-  {n:'Sliced Chicken Cordon Bleu',id:'',p:0,q:0},
-  {n:'Toilet Bowl Cleaner Refill (Lysol)',id:'',p:0,q:0},
-  {n:'Toilet Paper (Cascade / Celtic, 2-Ply)',id:'',p:0,q:0},
-  {n:'Tomatoes (Large)',id:'',p:0,q:0},
+  {n:'Strawberries (Premium, 2 lb)',id:'27003',p:4.99,q:0},
+  {n:'Toilet Bowl Cleaner Refill (Lysol)',id:'2662877',p:10.29,q:0},
+  {n:'Toilet Paper (Cascade / Celtic, 2-Ply)',id:'6262016',p:24.49,q:0},
+  {n:'Tomatoes (Large)',id:'865343',p:23.99,q:0},
   {n:'Wild Planet Albacore Tuna, 5 oz, 6 ct',id:'7552',p:20.19,q:0},
-  {n:'Turkey',id:'',p:0,q:0},
-  {n:'White Pepper',id:'',p:0,q:0},
-  {n:'White Vinegar',id:'',p:0,q:0},
-  {n:'Whipped Cream',id:'',p:0,q:0},
+  {n:'Turkey',id:'8443334',p:14.79,q:0},
+  {n:'White Vinegar',id:'1823670',p:10.89,q:0},
+  {n:'Whipped Cream',id:'1777000',p:9.69,q:0},
   {n:'Soules Grilled Chicken Breast Strips, 32 oz',id:'1716914',p:13.59,q:0},
   {n:'Kirkland 2% Milk, 1 gal',id:'8',p:4.72,q:0},
 ];
@@ -369,6 +373,10 @@ const RD=[
   {n:'Lysol All Purpose Cleaner Lemon, 32 oz',id:'1310034',p:6.89,q:0},
   {n:'Alpine Soap/Sanitizer Dispenser White',id:'3190004',p:37.53,q:0},
   {n:'Coffee Percolator, 100 cup',id:'840146',p:190.16,q:0},
+  {n:'Dill Weed, 24 oz',id:'',p:15.17,q:0,url:'https://member.restaurantdepot.com/store/jetro-restaurant-depot/products/19190707'},
+  {n:'Powdered / Confectioners Sugar (Domino), 7 lb',id:'',p:9.14,q:0,url:'https://member.restaurantdepot.com/store/jetro-restaurant-depot/products/3313350'},
+  {n:'Instant Non-Fat Dry Milk, 5 lb',id:'',p:23.63,q:0,url:'https://member.restaurantdepot.com/store/jetro-restaurant-depot/products/19188101'},
+  {n:'Ground White Pepper, 5 lb',id:'',p:55.42,q:0,url:'https://member.restaurantdepot.com/store/jetro-restaurant-depot/products/19187408'},
 ];
 // Instacart / Publix. Each item can carry an exact product `url` (100% precise —
 // adds the RIGHT item every time). Items without a url fall back to name search.
@@ -389,14 +397,165 @@ const IC=[
   {n:'BelGioioso Fresh Mozzarella Cheese Sliced 8 oz', url:P+'96152-belgioioso-fresh-mozzarella-cheese-sliced-8-oz'+S},
   {n:'Sargento Gouda Sliced Cheese, 10 slices 7 oz', url:P+'77159-sargento-sliced-gouda-natural-cheese-7-oz'+S},
   {n:'Sara Lee Artesano Brioche Bakery Bread, 20 oz', url:P+'20150038-sara-lee-artesano-brioche-bakery-bread-20-oz'+S},
+  {n:'Sriracha (Huy Fong, 17 oz)', url:P+'35512-huy-fong-foods-sriracha-chili-sauce-17-oz'+S},
 ].map(x=>({n:x.n, url:x.url||'', q:0}));
+const PANAME=[
+  {n:'Cafiza: Cleaning Product for Espresso Machines',id:'12-ESP20',p:17.99,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/107'},
+  {n:'Tabz : Cleaning product for coffee brewers',id:'13-Z61-UX120',p:20.99,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/110'},
+  {n:'Alpine Berry Tea - Case (100 Sachets)',id:'T08100',p:53.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/78'},
+  {n:'Bunn: 1.5 Gallon Coffee & Tea Paper Filters 13.75" x 5.25"',id:'20138.1000',p:32,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/104'},
+  {n:'Chocolate Sauce - 64 oz Bottle',id:'206',p:155.94,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/99'},
+  {n:'English Breakfast (Organic) Tea - Case (100 sachets)',id:'T33100',p:53.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/359'},
+  {n:'Grand Earl Grey (Organic) - Black Tea',id:'440589',p:21,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/440'},
+  {n:'Nice Matcha: Tea Latte Blend',id:'MAT-0101',p:270,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/5'},
+  {n:'Rouge Richard : Whole Bean - 1kg Bag',id:'400031',p:407.88,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/14'},
+  {n:'To-Go Cups / Paper [12 ounces]',id:'440059',p:84.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/133'},
+  {n:'Un-Conventional Black Iced Tea (3-gallon)',id:'IT4001',p:109.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/208'},
+  {n:'Black Organic Iced Tea (1-gallon)',id:'IT1001',p:44.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/372'},
+  {n:'Breakfast B.O.P. - Black Tea',id:'440588',p:21,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/441'},
+  {n:'Cafes Richard : Java Jackets',id:'EIN1234',p:84.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/242'},
+  {n:'Hot Chocolate Powder - 1 KG',id:'403360',p:29,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/20'},
+  {n:'Nice Chai: Tea Latte Blend',id:'CHAI-500G',p:270,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/6'},
+  {n:'Perle Noire: Whole Bean - 1kg Bag',id:'401884',p:419.88,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/7'},
+  {n:'Toddy Cold Brew : Commercial Model Paper Filters',id:'TCMPF20',p:44,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/106'},
+  {n:'Cafe Florio : Whole Bean - 1kg Bag',id:'401228',p:431.88,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/13'},
+  {n:'Chef\'s Matcha Green Cat Culinary Matcha, 340g',id:'MAT-0303',p:270,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/436'},
+  {n:'Darjeeling I.G.P. - Black Tea',id:'440587',p:21,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/447'},
+  {n:'Earl Grey (Organic) Tea - Case (100 sachets)',id:'T03100',p:53.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/69'},
+  {n:'Lids [12 ounces]',id:'C-KDL516W-PP',p:74.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/374'},
+  {n:'Peach Black Iced Tea (3-gallon)',id:'OPBFSIT3G-CS',p:109.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/212'},
+  {n:'White Chocolate Sauce - 64 oz Bottle',id:'138',p:162.94,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/101'},
+  {n:'Barista Espresso Cups + Saucers (Case of 6)',id:'420745',p:55,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/387'},
+  {n:'Butter & Coco Cookies (200/box)',id:'420672',p:38,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/132'},
+  {n:'Peach Black Iced Tea (1-gallon)',id:'IT1023',p:51.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/210'},
+  {n:'Speculoos Cookies',id:'420686',p:40,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/18'},
+  {n:'Tradition : Whole Bean - 1kg Bag',id:'400713',p:383.88,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/12'},
+  {n:'Vanilla Syrup - 1 Liter Bottle',id:'4366',p:69,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/96'},
+  {n:'Barista Double Espresso Cups + Saucers (Case of 6)',id:'420746',p:48,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/147'},
+  {n:'Mexique : Whole Bean - 1kg Bag',id:'420134',p:467.88,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/15'},
+  {n:'Reserve Richard : Whole Bean - 1kg Bag',id:'400705',p:395.88,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/398'},
+  {n:'Tropical Green Iced Tea (3-gallon)',id:'T3015',p:109.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/214'},
+  {n:'Barista Cappuccino Cups + Saucers (Set of 6)',id:'420747',p:77.94,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/148'},
+  {n:'Caramel Syrup - 1 Liter Bottle',id:'4367',p:69,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/89'},
+  {n:'Chamomile (Organic) Tea - Case (100 sachets)',id:'T11100',p:53.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/77'},
+  {n:'Hazelnut Syrup - 1 Liter Bottle',id:'5418',p:69,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/92'},
+  {n:'Tropical Green Iced Tea (1-gallon)',id:'IT1015',p:44.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/211'},
+  {n:'Wild Berries (Fruits Rouges) - Black Tea',id:'440590',p:21,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/445'},
+  {n:'Green Jasmine Organic (au Jasmin) - Green Tea',id:'440593',p:22,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/444'},
+  {n:'Toffee Crunch Syrup - 1 Liter Bottle',id:'4596',p:69,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/127'},
+  {n:'Unic DV0105 Cleaning Insert, Dual Chamber Pod',id:'',p:98,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/520'},
+  {n:'Zinc : Espresso Cups + Saucer (Case of 6)',id:'420920',p:45,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/143'},
+  {n:'Cafes Richard White Sugar Sticks (750 sticks)',id:'440369',p:30.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/389'},
+  {n:'DK Richard Decaf : Whole Bean - 500g Bag',id:'400244',p:370,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/16'},
+  {n:'Green Mint (Thé Vert Menthe) - Green Tea',id:'440594',p:22,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/448'},
+  {n:'Lavender Syrup - 1 Liter Bottle',id:'5645',p:69,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/93'},
+  {n:'Tart Berry Iced Tea (1-gallon)',id:'IT1008',p:48.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/209'},
+  {n:'Tropical Green (Organic) Tea - Case (100 sachets)',id:'T15100',p:53.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/75'},
+  {n:'Zinc : Coffee/Tea Cups + Saucer (Case of 6)',id:'185',p:58,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/144'},
+  {n:'DK Richard Decaf : MO1 (Pre-Ground Espresso) - 500g',id:'4001677',p:222,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/421'},
+  {n:'Garden of Wonders Organic (Jardin des Merveilles) - Green Tea',id:'440595',p:22,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/446'},
+  {n:'Paris Paname : Sugar Sticks',id:'440661',p:40,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/505'},
+  {n:'Zinc Latte/Chocolate Cups + Saucer (Case of 6)',id:'186',p:59.94,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/145'},
+  {n:'Cafe Pack Tradition (50 x 65g packets) - pre-ground coffee',id:'403563',p:109,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/54'},
+  {n:'Organic Turbinado - Raw Sugar Sticks',id:'420519',p:68,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/60'},
+  {n:'Perle Noire : Espresso Cups + Saucers (Case of 6)',id:'402859',p:59.94,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/138'},
+  {n:'Cafe Pack Decaf (50 x 65g packets) - pre-ground coffee',id:'420704',p:119,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/55'},
+  {n:'Perle Noire : Double Espresso Cups + Saucers (Case of 6)',id:'180',p:60,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/139'},
+  {n:'Sucralose [Splenda]',id:'83655',p:55,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/131'},
+  {n:'Mountain High Chai (Organic) Tea - Case (100 sachets)',id:'T10100',p:53.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/73'},
+  {n:'Perle Noire : Cappuccino Cups + Saucers (Case of 6)',id:'178',p:64,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/137'},
+  {n:'Perle Noire Pods (100)',id:'401262',p:71,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/34'},
+  {n:'Stevia [Green]',id:'83656',p:73,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/426'},
+  {n:'Sugar Free Vanilla Syrup - 1 Liter Bottle',id:'4305',p:70.5,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/97'},
+  {n:'Cafe Florio : Espresso Cups + Saucers (Case of 6)',id:'420859',p:48,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/140'},
+  {n:'Cafe Florio : Pods (100)',id:'401274',p:71,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/33'},
+  {n:'Pure Butter Cookie (Croc Cafe) (200/Box)',id:'403285',p:34,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/328'},
+  {n:'Saccharin [Sweet n\' Low]',id:'83653',p:36,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/129'},
+  {n:'Spicy Rooibos Organic (Rooïbos aux Épices) - Herbal Tea',id:'440597',p:22,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/449'},
+  {n:'Sugar Free Caramel Syrup - 1 Liter Bottle',id:'4306',p:70.5,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/361'},
+  {n:'Aspertame [Equal]',id:'83654',p:52,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/130'},
+  {n:'Cafe Florio : Double Espresso Cups + Saucers (Case of 6)',id:'420315',p:60,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/141'},
+  {n:'Chamomile (Camomile) - Herbal Tea',id:'440601',p:23,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/442'},
+  {n:'Decaf Pods : (100)',id:'403665',p:71,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/35'},
+  {n:'Cafe Florio : Cappuccino Cups + Saucers (Case of 6)',id:'404385',p:64,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/142'},
+  {n:'Grey Barista Espresso Cups',id:'',p:55,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/479'},
+  {n:'Peppermint (Organic) Tea - Case (100 sachets)',id:'T12100',p:53.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/76'},
+  {n:'Perle Noire : Whole Bean - 250g Retail Bag',id:'440256',p:111.2,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/452'},
+  {n:'Rinza : Milk Frother Cleaner',id:'2-MILK6-32',p:27.99,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/337'},
+  {n:'Verbena (Verveine) - Herbal Tea',id:'440599',p:23,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/450'},
+  {n:'Grey Barista Double Espresso',id:'',p:55,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/480'},
+  {n:'Peppermint (Menthe Poivrée) - Herbal Tea',id:'440600',p:23,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/443'},
+  {n:'Peppermint Syrup - 1 Liter Bottle',id:'4588',p:69,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/94'},
+  {n:'Childhood Dreams (Reves Enfantins) - Herbal Tea',id:'440603',p:23,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/451'},
+  {n:'Grey Barista Cappuccino',id:'',p:74,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/481'},
+  {n:'Jasmine Petal Tea - Case (100 Sachets)',id:'T07100',p:53.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/74'},
+  {n:'Rouge Richard - 250g Retail Bag - Whole Bean',id:'440254',p:208.4,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/126'},
+  {n:'La Route Teapot (16 ounces) - 4 Tea Pots',id:'440621',p:56,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/497'},
+  {n:'Syrup Pump',id:'5521',p:3.99,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/98'},
+  {n:'To-Go Cups / Paper - Espresso [3 ounces]',id:'420666',p:75.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/136'},
+  {n:'Hollander Sauce Pump',id:'139',p:9.5,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/102'},
+  {n:'La Route Teapot Combo w/ Cup (16 ounces)',id:'440622',p:56,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/502'},
+  {n:'Lemon Lime (Citron-Vert) Green Tea',id:'',p:22,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/465'},
+  {n:'Chocolate Gourmand (milk-based) - 1 KG (1 Bag)',id:'400125',p:31,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/21'},
+  {n:'Duralex Coffee Tumbler, (9cl/3.04oz) case of 6',id:'422424',p:36,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/379'},
+  {n:'Espresso Glass (Case of 6)',id:'196',p:12,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/155'},
+  {n:'White Rose Litchi x 24 sachets',id:'',p:15.75,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/467'},
+  {n:'Espresso Glass 8.9 CL (Case of 12)',id:'440665',p:18,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/482'},
+  {n:'Moka Noisette [Hazelnut] : Pods (25)',id:'403674',p:22,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/28'},
+  {n:'Rooibos Apricot Orange',id:'',p:14,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/466'},
+  {n:'1883 : Wire Syrup Display Stand (x4 bottles)',id:'4189',p:18,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/202'},
+  {n:'Glass Saucer (Espresso) (Case of 6)',id:'440666',p:8,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/503'},
+  {n:'Green Jasmine (Thé Vert au Jasmin) : Loose Leaf - Green Tea',id:'423268',p:63,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/228'},
+  {n:'1883 : Wire Syrup Display Stand (x6 bottles)',id:'3138',p:22,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/203'},
+  {n:'Green Mint (Thé Vert a la Menthe) : Loose Leaf - Green Tea',id:'420470',p:58,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/230'},
+  {n:'Breakfast B.O.P. : Loose Leaf - Black Tea',id:'423269',p:60,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/223'},
+  {n:'Childhood Dreams (Reves Enfantins) : Loose Leaf - Herbal Tea',id:'423277',p:64,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/226'},
+  {n:'Grand Earl Grey : Loose Leaf - Black Tea',id:'423270',p:62,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/224'},
+  {n:'INSTANT COFFEE, Fair Trade x 200 sticks/case',id:'440104',p:52.4,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/364'},
+  {n:'Sumatra : Pods (25) Case',id:'403127',p:20,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/51'},
+  {n:'Green Sencha (Thé Vert Sencha) : Loose Leaf - Green Tea',id:'423267',p:61,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/229'},
+  {n:'Jardin Darjeeling Loose Leaf Tea',id:'420472',p:70,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/396'},
+  {n:'Costa Rica : Pods (25)',id:'402324',p:18,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/53'},
+  {n:'Spicy Rooibos (Rooïbos aux Épices) : Loose Leaf - Herbal Tea',id:'269',p:72,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/227'},
+  {n:'Wild Berries (Fruits Rouges) : Loose Leaf - Black Tea',id:'420471',p:62,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/435'},
+  {n:'Tote',id:'420896',p:5,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/177'},
+  {n:'Apron (Long)',id:'403904',p:10,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/152'},
+  {n:'Espresso Tamper (53mm)',id:'420366',p:26.99,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/181'},
+  {n:'Espresso Tamper (57mm)',id:'420361',p:26.99,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/182'},
+  {n:'Milk Frothing Pitcher - Small (30 cl)',id:'420362',p:17.99,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/179'},
+  {n:'Milk Frothing Pitcher - Large (60 cl)',id:'420363',p:19.99,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/180'},
+  {n:'Sugar Globe (Stainless Steel) EMPTY',id:'403868',p:10.99,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/161'},
+  {n:'Black Metal Canister-Airtight (Empty)',id:'440033',p:5,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/168'},
+  {n:'LRDC Assorted Teas x20 - Metal Canister',id:'440635',p:15,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/507'},
+  {n:'LRDC Tea - Metal Canister (Empty)',id:'440631',p:8,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/508'},
+  {n:'250th Rouge Richard Whole Bean 1 kg',id:'400031-250',p:407.88,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/546'},
+  {n:'250th Rouge Richard Whole Bean 8.8 oz',id:'440254-250',p:208.4,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/545'},
+  {n:'Bunn: Banquet Filters: 20" x 8" Coffee Filter [6-gallon Banquet Brewer]',id:'20111.0000',p:42,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/360'},
+  {n:'Decaffeinated Nespresso Compatible Capsules',id:'',p:6.96,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/517'},
+  {n:'Detox (Green Tea & Mate) x 24 sachets',id:'',p:14,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/463'},
+  {n:'Green Tea VITALITY x 24 sachets',id:'',p:14,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/464'},
+  {n:'Hot Chocolate Packets (milk-based) 100 packets/case x30g',id:'420823',p:86.58,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/420'},
+  {n:'Natural Defenses Herbal Tea x 24 sachets',id:'',p:15.55,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/468'},
+  {n:'Paper Bag',id:'420807',p:2.5,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/498'},
+  {n:'Papouasie Pods (25)',id:'402346',p:20,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/462'},
+  {n:'Relax (Tisane Des Comptoirs) Herbal Tea x 24 sachets',id:'',p:15.25,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/469'},
+  {n:'Toddy Commercial Cold Brew System',id:'448',p:100,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/375'},
+  {n:'Black Board',id:'402536',p:20,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/154'},
+  {n:'Cafes Richard : Aluminum Sign',id:'403585',p:4.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/175'},
+  {n:'Cafe Florio : Aluminum Sign',id:'403584',p:4.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/176'},
+  {n:'Plexi Menu / Carte Holder',id:'212',p:20,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/171'},
+  {n:'Metal Box Richard - Black (Empty)',id:'420933',p:10.99,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/363'},
+  {n:'La Route Bamboo Tea Presentation Box (Empty)',id:'440633',p:30.95,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/461'},
+  {n:'La Route Bamboo Tea Presentation Box (FILLED x 100 Sachets)',id:'440632',p:88,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/506'},
+  {n:'Bamboo Presentation Box [6-Slots] - EMPTY',id:'T9600',p:32,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/256'},
+];
 const money=n=>'$'+n.toFixed(2);
 // Everything starts at ZERO on every supplier — staff enter what they need.
-COSTCO.forEach(it=>it.q=0); RD.forEach(it=>it.q=0); IC.forEach(it=>it.q=0);
+COSTCO.forEach(it=>it.q=0); RD.forEach(it=>it.q=0); IC.forEach(it=>it.q=0); PANAME.forEach(it=>it.q=0);
 // One source of truth: the arrays. The stepper +/- and the number box both write
 // straight into the array, and Send reads from the array — so what you see is what
 // gets ordered, on all three suppliers.
-const ARR={costco:COSTCO, rd:RD, ic:IC};
+const ARR={costco:COSTCO, rd:RD, ic:IC, paname:PANAME};
 function stepper(a,i,q){
   return `<div class="stepper">
     <button type="button" onclick="bump('${a}',${i},-1)">−</button>
@@ -406,9 +565,9 @@ function stepper(a,i,q){
 }
 function setQ(a,i,v){ ARR[a][i].q=Math.max(0,parseInt(v||'0',10)||0); recalcFor(a); }
 function bump(a,i,d){ ARR[a][i].q=Math.max(0,(ARR[a][i].q||0)+d); renderFor(a); }
-function renderFor(a){ a==='costco'?renderCostco():a==='rd'?renderRD():renderIC(); }
-function recalcFor(a){ if(a==='costco')calc(); else if(a==='rd')calcRD(); }
-function render(){ renderCostco(); renderRD(); renderIC(); }
+function renderFor(a){ a==='costco'?renderCostco():a==='rd'?renderRD():a==='paname'?renderPaname():renderIC(); }
+function recalcFor(a){ if(a==='costco')calc(); else if(a==='rd')calcRD(); else if(a==='paname')calcPaname(); }
+function render(){ renderCostco(); renderRD(); renderIC(); renderPaname(); }
 function renderCostco(){
   document.getElementById('costco-rows').innerHTML=COSTCO.map((it,i)=>`<tr>
     <td class="itemname">${it.n}${it.id?'':' <span class="muted" title="No Costco item # — submits to owner, add manually">• manual</span>'}</td>
@@ -490,6 +649,29 @@ function copyIC(){
   const txt='PUBLIX / INSTACART ORDER\n'+ls.map(x=>`${x.q} × ${x.n}`).join('\n');
   const out=document.getElementById('ic-out'); out.style.display='block'; out.textContent=txt; navigator.clipboard.writeText(txt).catch(()=>{});
 }
+function renderPaname(){
+  document.getElementById('paname-rows').innerHTML=PANAME.map((it,i)=>`<tr>
+    <td class="itemname">${it.n}</td>
+    <td class="muted" style="font-size:.8rem">${it.id||''}</td>
+    <td class="right muted">${it.p?('$'+(+it.p).toFixed(2)):''}</td>
+    <td class="right">${stepper('paname',i,it.q)}</td>
+  </tr>`).join('');
+  calcPaname();
+}
+function calcPaname(){ const tot=PANAME.reduce((s,it)=>s+(+it.p||0)*(it.q||0),0); const el=document.getElementById('paname-total'); if(el) el.textContent='Est. total $'+tot.toFixed(2); }
+function sendPaname(){
+  const ls=PANAME.filter(it=>it.q>0).map(it=>({name:it.n, sku:it.id, qty:it.q, url:it.url||''}));
+  const s=document.getElementById('paname-out'); s.style.display='block';
+  if(!ls.length){s.textContent='Set some quantities first.';return;}
+  if(!EXT){s.textContent='⚠ Install the Colette extension first (then reload). For now use “Copy list”.';return;}
+  window.dispatchEvent(new CustomEvent('colette-send',{detail:{supplier:'paname',lines:ls}}));
+  s.textContent='Sent '+ls.length+' items ✓ — Open Paname → click the gold “Fill Paname cart” button.';
+}
+function copyPaname(){
+  const ls=PANAME.filter(it=>it.q>0);
+  const txt='PANAME COFFEE ORDER\n'+ls.map(x=>`${x.q} × ${x.n}${x.id?' ('+x.id+')':''}`).join('\n');
+  const out=document.getElementById('paname-out'); out.style.display='block'; out.textContent=txt; navigator.clipboard.writeText(txt).catch(()=>{});
+}
 
 // ---- Employee submit → notify Edgar ----
 // Gather non-zero quantities keyed by a stable id: Costco item#, RD SKU, Publix index.
@@ -515,7 +697,7 @@ async function submitOrder(){
     s.style.color='#2e7d32'; s.textContent=`✓ Order sent to the Colette AI Assistant (from ${d.employee}). It’ll be placed shortly. Sheet cleared — ready for the next order.`;
     document.getElementById('emp-pin').value='';
     // Clear the whole sheet to zero so the next order starts fresh.
-    COSTCO.forEach(it=>it.q=0); RD.forEach(it=>it.q=0); IC.forEach(it=>it.q=0);
+    COSTCO.forEach(it=>it.q=0); RD.forEach(it=>it.q=0); IC.forEach(it=>it.q=0); PANAME.forEach(it=>it.q=0);
     render();
   }catch(e){ s.style.color='#a33'; s.textContent='Network error — try again.'; }
 }
