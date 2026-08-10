@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>AirGlass — Colette</title>
+<style>
+  :root{ --cy:#5fe3d0; --cy2:#39a0ff; --bg:#03070c; --ink:#dffcff; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink)}
+  #scene{position:fixed;inset:0}
+  /* webcam PIP + hand overlay */
+  #pip{position:fixed;right:14px;bottom:14px;width:200px;height:150px;border:1px solid rgba(95,227,208,.4);border-radius:12px;overflow:hidden;background:#000;opacity:.9;box-shadow:0 6px 24px rgba(0,0,0,.5);z-index:20}
+  #pip video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+  #pip canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1)}
+  #pipLabel{position:absolute;top:4px;left:8px;font-size:10px;color:var(--cy);letter-spacing:.5px;text-shadow:0 0 6px #000}
+  /* HUD */
+  #hud{position:fixed;top:14px;left:16px;z-index:20;font-size:12px;line-height:1.5;color:#8fb7c0;text-shadow:0 0 8px rgba(0,0,0,.8);pointer-events:none}
+  #hud b{color:var(--cy)}
+  #crumb{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:20;font-size:13px;letter-spacing:2px;color:var(--cy);text-shadow:0 0 12px rgba(95,227,208,.5)}
+  .btn{pointer-events:auto;cursor:pointer;background:rgba(10,26,34,.7);border:1px solid rgba(95,227,208,.5);color:var(--cy);
+       padding:8px 12px;border-radius:10px;font:inherit;font-size:12px;letter-spacing:.5px;backdrop-filter:blur(6px)}
+  .btn:hover{background:rgba(95,227,208,.16)}
+  #tools{position:fixed;top:12px;right:16px;z-index:20;display:flex;gap:8px}
+  /* start gate */
+  #gate{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:radial-gradient(1200px 700px at 50% 30%,rgba(9,30,40,.6),rgba(3,7,12,.96))}
+  #gate .card{max-width:520px;text-align:center;padding:34px 30px;border:1px solid rgba(95,227,208,.35);border-radius:18px;background:rgba(6,16,22,.72);backdrop-filter:blur(10px);box-shadow:0 0 60px rgba(57,160,255,.15)}
+  #gate h1{margin:.1em 0 .1em;font-size:40px;letter-spacing:6px;color:#eafffb;text-shadow:0 0 26px rgba(95,227,208,.55)}
+  #gate .sub{color:#7fb0bb;font-size:13px;margin-bottom:20px}
+  #gate ol{text-align:left;color:#bfe9ef;font-size:13px;line-height:1.8;margin:0 auto 22px;max-width:340px}
+  #gate .big{font-size:15px;padding:12px 22px}
+  /* content overlay (file preview / prompt) */
+  #panel{position:fixed;z-index:30;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);opacity:0;pointer-events:none;
+    width:min(680px,86vw);max-height:74vh;overflow:auto;padding:22px 24px;border-radius:16px;transition:.18s ease;
+    border:1px solid rgba(95,227,208,.4);background:linear-gradient(160deg,rgba(9,26,34,.92),rgba(6,14,20,.92));backdrop-filter:blur(14px);box-shadow:0 24px 90px rgba(0,0,0,.6),0 0 50px rgba(57,160,255,.12)}
+  #panel.show{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+  #panel h2{margin:0 0 4px;color:#eafffb;font-size:20px;letter-spacing:1px}
+  #panel .meta{color:#7fb0bb;font-size:12px;margin-bottom:14px}
+  #panel pre{white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.55;color:#d6f2f6;background:rgba(0,0,0,.28);border:1px solid rgba(95,227,208,.15);border-radius:10px;padding:14px;margin:0}
+  #panel .row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;transition:.2s;z-index:50;
+    background:rgba(31,122,61,.92);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  a{color:var(--cy)}
+</style>
+</head>
+<body>
+<div id="scene"></div>
+
+<div id="hud">
+  <div><b>AirGlass</b> · hand-controlled hologram deck</div>
+  <div>point to move · <b>pinch</b> to select · open palm = home</div>
+  <div id="status">camera: off (mouse works too)</div>
+</div>
+<div id="crumb">HOME</div>
+<div id="tools">
+  <button class="btn" id="homeBtn">⌂ Home</button>
+  <button class="btn" id="openBtn">📂 Open Folder</button>
+</div>
+
+<div id="pip"><span id="pipLabel">tracking</span><video id="cam" playsinline muted></video><canvas id="hcanvas" width="200" height="150"></canvas></div>
+
+<div id="panel">
+  <h2 id="pTitle">Title</h2>
+  <div class="meta" id="pMeta"></div>
+  <pre id="pBody"></pre>
+  <div class="row" id="pRow"></div>
+</div>
+
+<div id="toast"></div>
+
+<div id="gate">
+  <div class="card">
+    <h1>AIRGLASS</h1>
+    <div class="sub">a floating 3D interface you steer with your hand</div>
+    <ol>
+      <li>Allow the camera when asked.</li>
+      <li><b>Point</b> your index finger to move the cursor.</li>
+      <li><b>Pinch</b> thumb + index to click a floating tile.</li>
+      <li>No camera? Move the <b>mouse</b> and click — same thing.</li>
+    </ol>
+    <button class="btn big" id="startBtn">▶ Enter AirGlass</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script>
+/* ---------------- content ---------------- */
+const HOME = [
+  { key:'vault',   title:'VAULT',   emoji:'📁', desc:'Colette knowledge vault', color:0x5fe3d0 },
+  { key:'prompts', title:'PROMPTS', emoji:'✨', desc:'reusable AI prompts',      color:0x39a0ff },
+  { key:'files',   title:'FILES',   emoji:'🗂', desc:'open any folder, live',    color:0xffb454 },
+  { key:'widgets', title:'WIDGETS', emoji:'🎛', desc:'jump to Ops tools',        color:0xc792ea },
+];
+const VAULT = [
+  {t:'Home.md', k:'note', d:'Vault landing note'},
+  {t:'Active Priorities.md', k:'note', d:'What matters right now'},
+  {t:'VAULT-INDEX.md', k:'note', d:'Master index of the vault'},
+  {t:'01-Daily', k:'folder', d:'Daily notes & briefs'},
+  {t:'02-Knowledge', k:'folder', d:'Rules, runbooks, marketing, ops'},
+  {t:'03-Projects', k:'folder', d:'Colette · Jarvis · Parasite Club'},
+  {t:'04-Claude-Memory', k:'folder', d:'About Me, decisions, people'},
+  {t:'Agency Agents', k:'folder', d:'Your agent roster'},
+  {t:'The 11 Rules', k:'note', d:'AI agent rules that keep it honest'},
+];
+const PROMPTS = [
+  {t:'Voice Line', d:'Talk to your agent out loud', p:'Set up a local push-to-talk voice line for my Claude Code agent: hold a key, speak, release, and it answers through my speakers in a real voice. Keep it $0 on my subscription with a local voice, and offer an ElevenLabs option.'},
+  {t:'Visualizer', d:'Reactive 3D scene', p:'Build a fullscreen browser visualizer that reacts to my voice agent as it listens, thinks, and speaks. Ask me what scene I want, wire it to a signal bus, and include a mock mode so it runs standalone.'},
+  {t:'AirGlass', d:'This hologram deck', p:'Build a hand-tracked 3D holographic menu (Three.js + MediaPipe Hands): floating glass tiles I navigate by pointing, pinch to select, that can browse folders and open my tools. Mouse fallback included.'},
+  {t:'Memory Vault', d:'Never-forget memory', p:'Set up the AI Memory Vault in my Obsidian vault so my agent has persistent markdown memory. Interview me first so the memory is about my life and business.'},
+  {t:'Daily Brief', d:'Morning briefing', p:'Every weekday morning, gather my calendar, key emails, and open tasks and give me a tight one-screen brief, then save it to my vault.'},
+];
+const WIDGETS = [
+  {t:'Dashboard', d:'Growth dashboard', url:'/dashboard.html'},
+  {t:'Ops', d:'Unified Ops shell', url:'/ops.html'},
+  {t:'Supplier Orders', d:'Costco · RD · Paname · Amazon · Cambie', url:'/supplier-order.html'},
+  {t:'Schedule', d:'Weekly coverage', url:'/week.html'},
+  {t:'Order Page', d:'Customer ordering', url:'/order.html'},
+];
+
+/* ---------------- three.js scene ---------------- */
+const sceneEl = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth, innerHeight);
+sceneEl.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x03070c, 0.055);
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 100);
+camera.position.set(0,0,6.5);
+scene.add(new THREE.AmbientLight(0x88aabb, 0.8));
+const key = new THREE.PointLight(0x66e0ff, 1.2, 50); key.position.set(4,5,8); scene.add(key);
+
+// starfield
+(function stars(){
+  const g=new THREE.BufferGeometry(); const n=1400; const p=new Float32Array(n*3);
+  for(let i=0;i<n;i++){ p[i*3]=(Math.random()-.5)*60; p[i*3+1]=(Math.random()-.5)*40; p[i*3+2]=-Math.random()*40-2; }
+  g.setAttribute('position', new THREE.BufferAttribute(p,3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({color:0x2a6d7a,size:0.06,transparent:true,opacity:.7})));
+})();
+// grid floor
+const grid = new THREE.GridHelper(60, 60, 0x123844, 0x0c2630); grid.position.y=-3.2; scene.add(grid);
+
+const menu = new THREE.Group(); scene.add(menu);
+const tiles = []; // active selectable tiles
+
+// build a glass tile with a canvas texture
+function makeTexture(emoji, title, sub, color){
+  const c=document.createElement('canvas'); c.width=512; c.height=320; const x=c.getContext('2d');
+  const hex='#'+color.toString(16).padStart(6,'0');
+  const g=x.createLinearGradient(0,0,512,320);
+  g.addColorStop(0,'rgba(12,34,44,0.92)'); g.addColorStop(1,'rgba(6,16,22,0.92)');
+  x.fillStyle=g; roundRect(x,6,6,500,308,26); x.fill();
+  x.lineWidth=4; x.strokeStyle=hex; x.shadowColor=hex; x.shadowBlur=26; roundRect(x,6,6,500,308,26); x.stroke(); x.shadowBlur=0;
+  // scanlines
+  x.globalAlpha=.06; x.fillStyle=hex; for(let y=20;y<312;y+=8) x.fillRect(14,y,484,2); x.globalAlpha=1;
+  if(emoji){ x.font='120px serif'; x.textAlign='center'; x.fillText(emoji,256,160); }
+  x.fillStyle='#eafffb'; x.textAlign='center'; x.font='bold 44px ui-monospace,Menlo,monospace';
+  x.fillText(title.slice(0,20),256, emoji?236:170);
+  if(sub){ x.fillStyle='#89b9c3'; x.font='22px ui-monospace,Menlo,monospace'; wrap(x, sub, 256, emoji?276:220, 460, 26); }
+  const t=new THREE.CanvasTexture(c); t.anisotropy=4; return t;
+}
+function roundRect(x,a,b,w,h,r){ x.beginPath(); x.moveTo(a+r,b); x.arcTo(a+w,b,a+w,b+h,r); x.arcTo(a+w,b+h,a,b+h,r); x.arcTo(a,b+h,a,b,r); x.arcTo(a,b,a+w,b,r); x.closePath(); }
+function wrap(x,text,cx,cy,maxw,lh){ const words=text.split(' '); let line=''; let y=cy; for(const w of words){ const test=line+w+' '; if(x.measureText(test).width>maxw&&line){ x.fillText(line.trim(),cx,y); line=w+' '; y+=lh; } else line=test; } x.fillText(line.trim(),cx,y); }
+
+function makeTile(data, w, h){
+  const tex=makeTexture(data.emoji||'', data.title||data.t, data.desc||data.d||'', data.color||0x5fe3d0);
+  const geo=new THREE.PlaneGeometry(w,h);
+  const mat=new THREE.MeshBasicMaterial({map:tex, transparent:true, opacity:.97, side:THREE.DoubleSide});
+  const mesh=new THREE.Mesh(geo,mat);
+  mesh.userData={data, base:{}, hover:0};
+  return mesh;
+}
+
+function clearMenu(){ while(menu.children.length){ const m=menu.children.pop(); if(m.geometry)m.geometry.dispose(); if(m.material){ if(m.material.map)m.material.map.dispose(); m.material.dispose(); } } tiles.length=0; }
+
+let view='home';
+function layoutArc(items, big){
+  clearMenu();
+  const w= big?2.5:2.1, h= big?1.6:1.34;
+  const n=items.length;
+  if(big){
+    items.forEach((it,i)=>{ const ang=(i-(n-1)/2)*0.42; const mesh=makeTile(it,w,h); mesh.position.set(Math.sin(ang)*4.4, 0, -Math.cos(ang)*1.6+1.6); mesh.rotation.y=-ang*0.7; mesh.userData.home={x:mesh.position.x,y:mesh.position.y,z:mesh.position.z,ry:mesh.rotation.y,phase:i}; menu.add(mesh); tiles.push(mesh); });
+  } else {
+    const cols=Math.min(4,n); const gapx=2.35, gapy=1.62; const rows=Math.ceil(n/cols);
+    items.forEach((it,i)=>{ const r=Math.floor(i/cols), c=i%cols; const inRow=Math.min(cols,n-r*cols);
+      const mesh=makeTile(it,w,h);
+      const x=(c-(inRow-1)/2)*gapx, y=((rows-1)/2-r)*gapy;
+      mesh.position.set(x,y,0); mesh.userData.home={x,y,z:0,ry:0,phase:i}; menu.add(mesh); tiles.push(mesh); });
+    // back tile
+    const back=makeTile({title:'BACK', emoji:'↩', desc:'return home', color:0xff6b6b}, 1.7,1.1);
+    back.position.set(0,-((rows)/2)*gapy-0.5,0.3); back.userData.data={back:true}; back.userData.home={x:back.position.x,y:back.position.y,z:.3,ry:0,phase:9}; menu.add(back); tiles.push(back);
+  }
+}
+function setView(v){
+  view=v;
+  document.getElementById('crumb').textContent = v==='home'?'HOME':v.toUpperCase();
+  if(v==='home') layoutArc(HOME,true);
+  else if(v==='vault') layoutArc(VAULT,false);
+  else if(v==='prompts') layoutArc(PROMPTS,false);
+  else if(v==='widgets') layoutArc(WIDGETS,false);
+  else if(v==='files') layoutArc(filesData.length?filesData:[{t:'Open a folder →',d:'tap “Open Folder” top-right',k:'hint'}],false);
+}
+
+/* cursor */
+const cursor=new THREE.Group();
+const ring=new THREE.Mesh(new THREE.RingGeometry(0.12,0.16,32), new THREE.MeshBasicMaterial({color:0x5fe3d0,transparent:true,opacity:.95,side:THREE.DoubleSide}));
+const dot=new THREE.Mesh(new THREE.SphereGeometry(0.04,16,16), new THREE.MeshBasicMaterial({color:0xffffff}));
+cursor.add(ring); cursor.add(dot); cursor.position.z=3; scene.add(cursor);
+
+/* ---------------- interaction ---------------- */
+const ray=new THREE.Raycaster();
+let ndc={x:0,y:0}, haveHand=false, pinch=false, prevPinch=false, hovered=null, lastAct=0;
+const tmp=new THREE.Vector3();
+
+function updateCursor(){
+  // place cursor on a plane at z=2.2 along the ray
+  ray.setFromCamera(ndc, camera);
+  const t=(2.4-camera.position.z)/ (ray.ray.direction.z);
+  tmp.copy(camera.position).add(ray.ray.direction.clone().multiplyScalar(t));
+  cursor.position.lerp(tmp,0.5);
+  ring.material.color.set(pinch?0xff6bd0:0x5fe3d0);
+  ring.scale.setScalar(pinch?0.6:1);
+}
+function pick(){
+  ray.setFromCamera(ndc,camera);
+  const hits=ray.intersectObjects(tiles,false);
+  const hit=hits.length?hits[0].object:null;
+  if(hit!==hovered){ hovered=hit; }
+}
+function activate(){
+  if(!hovered) return;
+  const now=performance.now(); if(now-lastAct<450) return; lastAct=now;
+  const d=hovered.userData.data;
+  pulse(hovered);
+  if(d.back){ setView('home'); return; }
+  if(view==='home'){ setView(d.key); return; }
+  if(view==='prompts'){ navigator.clipboard.writeText(d.p||'').then(()=>toast('Copied “'+d.t+'” prompt to clipboard')); showPanel(d.t,'prompt · click to copy again', d.p, [{label:'Copy',fn:()=>{navigator.clipboard.writeText(d.p);toast('Copied');}}]); return; }
+  if(view==='widgets'){ toast('Opening '+d.t+' …'); window.open(d.url,'_blank'); return; }
+  if(view==='vault'){ showPanel(d.t, (d.k||'item')+' · Colette vault', d.d+'\n\nThis is a live map of your Obsidian vault. To open the real file contents, use 📂 Open Folder (top-right) and pick your vault folder.', []); return; }
+  if(view==='files'){ openFileEntry(d); return; }
+}
+function pulse(mesh){ mesh.userData.pulse=1; }
+
+/* ---------------- File System Access ---------------- */
+let filesData=[]; let dirHandle=null;
+async function openFolder(){
+  if(!window.showDirectoryPicker){ toast('This browser can’t open folders — use Chrome/Edge'); return; }
+  try{
+    dirHandle=await window.showDirectoryPicker();
+    filesData=[];
+    for await (const [name,handle] of dirHandle.entries()){
+      if(name.startsWith('.')) continue;
+      filesData.push({t:name, d:handle.kind, k:handle.kind, handle});
+      if(filesData.length>=48) break;
+    }
+    filesData.sort((a,b)=> (a.k===b.k? a.t.localeCompare(b.t) : (a.k==='directory'?-1:1)));
+    setView('files'); toast('Loaded '+filesData.length+' items from '+dirHandle.name);
+  }catch(e){ /* user cancelled */ }
+}
+async function openFileEntry(d){
+  if(d.k==='hint'){ openFolder(); return; }
+  if(d.k==='directory' && d.handle){
+    filesData=[]; for await (const [name,handle] of d.handle.entries()){ if(name.startsWith('.'))continue; filesData.push({t:name,d:handle.kind,k:handle.kind,handle}); if(filesData.length>=48)break; }
+    filesData.sort((a,b)=> (a.k===b.k? a.t.localeCompare(b.t):(a.k==='directory'?-1:1)));
+    filesData.unshift({t:'⬆ Up / reopen', d:'pick folder', k:'hint'});
+    setView('files'); return;
+  }
+  if(d.handle && d.handle.getFile){
+    try{ const f=await d.handle.getFile();
+      if(f.size>200000){ showPanel(d.t, f.type||'file', '('+Math.round(f.size/1024)+' KB — too large to preview)', []); return; }
+      const txt=await f.text(); showPanel(d.t, (f.type||'file')+' · '+Math.round(f.size/1024)+' KB', txt.slice(0,20000), []);
+    }catch(e){ toast('Could not read file'); }
+  }
+}
+
+/* ---------------- overlay panel / toast ---------------- */
+const panel=document.getElementById('panel');
+function showPanel(title, meta, body, actions){
+  document.getElementById('pTitle').textContent=title;
+  document.getElementById('pMeta').textContent=meta||'';
+  document.getElementById('pBody').textContent=body||'';
+  const row=document.getElementById('pRow'); row.innerHTML='';
+  (actions||[]).forEach(a=>{ const b=document.createElement('button'); b.className='btn'; b.textContent=a.label; b.onclick=a.fn; row.appendChild(b); });
+  const cl=document.createElement('button'); cl.className='btn'; cl.textContent='Close'; cl.onclick=hidePanel; row.appendChild(cl);
+  panel.classList.add('show');
+}
+function hidePanel(){ panel.classList.remove('show'); }
+let toastT; function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
+
+/* ---------------- hand tracking ---------------- */
+const statusEl=document.getElementById('status');
+const hcanvas=document.getElementById('hcanvas'); const hctx=hcanvas.getContext('2d');
+function onResults(res){
+  hctx.clearRect(0,0,hcanvas.width,hcanvas.height);
+  if(res.multiHandLandmarks && res.multiHandLandmarks[0]){
+    const lm=res.multiHandLandmarks[0];
+    if(window.drawConnectors){ drawConnectors(hctx,lm,HAND_CONNECTIONS,{color:'#39506a',lineWidth:2}); drawLandmarks(hctx,lm,{color:'#5fe3d0',lineWidth:1,radius:2}); }
+    const tip=lm[8], thumb=lm[4], wrist=lm[0], mid=lm[9];
+    const mx=1-tip.x; // mirror
+    ndc.x = mx*2-1; ndc.y = -(tip.y*2-1);
+    const span=Math.hypot(wrist.x-mid.x, wrist.y-mid.y)||0.1;
+    const pd=Math.hypot(tip.x-thumb.x, tip.y-thumb.y)/span;
+    pinch = pd < 0.55;
+    haveHand=true;
+  } else { haveHand=false; }
+}
+async function startCamera(){
+  try{
+    const video=document.getElementById('cam');
+    const hands=new Hands({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
+    hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:0.6,minTrackingConfidence:0.6});
+    hands.onResults(onResults);
+    const cam=new Camera(video,{onFrame:async()=>{ await hands.send({image:video}); }, width:640,height:480});
+    await cam.start();
+    statusEl.innerHTML='camera: <b>on</b> · show your hand';
+  }catch(e){ statusEl.textContent='camera blocked — mouse still works'; }
+}
+
+/* ---------------- mouse fallback ---------------- */
+addEventListener('pointermove',e=>{ if(haveHand)return; ndc.x=(e.clientX/innerWidth)*2-1; ndc.y=-((e.clientY/innerHeight)*2-1); });
+addEventListener('pointerdown',e=>{ if(haveHand)return; if(e.target.closest('#tools,#panel,#gate'))return; pick(); activate(); });
+
+/* ---------------- loop ---------------- */
+let t0=0;
+function loop(ts){
+  const dt=(ts-t0)/1000; t0=ts;
+  updateCursor(); pick();
+  // pinch edge → activate
+  if(pinch && !prevPinch) activate();
+  prevPinch=pinch;
+  // animate tiles
+  tiles.forEach((m,i)=>{
+    const hm=m.userData.home; if(!hm)return;
+    const bob=Math.sin(ts*0.001+hm.phase)*0.06;
+    const isHover=(m===hovered);
+    m.userData.hover += ((isHover?1:0)-m.userData.hover)*0.2;
+    const s=1+m.userData.hover*0.12 + (m.userData.pulse||0)*0.12;
+    m.scale.setScalar(s);
+    m.position.y = hm.y + bob + m.userData.hover*0.05;
+    m.position.z = hm.z + m.userData.hover*0.5;
+    m.material.opacity = 0.86 + m.userData.hover*0.14;
+    if(m.userData.pulse){ m.userData.pulse*=0.86; if(m.userData.pulse<0.01)m.userData.pulse=0; }
+  });
+  // gentle parallax of whole deck toward cursor
+  menu.rotation.y += ((ndc.x*0.18) - menu.rotation.y)*0.05;
+  menu.rotation.x += ((-ndc.y*0.10) - menu.rotation.x)*0.05;
+  grid.material.opacity=0.5;
+  renderer.render(scene,camera);
+  requestAnimationFrame(loop);
+}
+
+/* ---------------- wire up ---------------- */
+document.getElementById('startBtn').onclick=()=>{ document.getElementById('gate').style.display='none'; startCamera(); };
+document.getElementById('homeBtn').onclick=()=>{ hidePanel(); setView('home'); };
+document.getElementById('openBtn').onclick=openFolder;
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+setView('home');
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
