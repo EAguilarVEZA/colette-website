@@ -65,6 +65,12 @@ body.readonly .adminonly{display:none}
   </div>
 </div>
 
+<div class="bar" id="tools" style="display:none;gap:8px;flex-wrap:wrap;align-items:center">
+  <button onclick="copyLastWeek()">⧉ Copy last week → shown week</button>
+  <button onclick="copyToNext()">Copy shown week → next →</button>
+  <button onclick="aiFill()">🤖 AI fill from history</button>
+  <span class="small muted" id="tools-note"></span>
+</div>
 <div class="reqs adminonly" id="reqs" style="display:none"></div>
 
 <div class="wrap"><table id="grid"></table></div>
@@ -120,6 +126,41 @@ function conflict(name,dateISO){
   const t=timeoff.find(x=>x.name===name && dateISO>=x.from && dateISO<=(x.to||x.from));
   if(t) return 'time off';
   return null;
+}
+
+function allNames(){ const s=new Set((staff||[]).map(p=>p.name)); Object.keys(roster||{}).forEach(n=>s.add(n)); Object.keys(shifts||{}).forEach(k=>s.add(k.split('|')[0])); return [...s]; }
+function weekDates(ws){ return DOW.map((_,i)=>iso(addDays(ws,i))); }
+function toolsNote(m){ const el=$('tools-note'); if(el) el.textContent=m; }
+function copyLastWeek(){
+  const dst=weekDates(weekStart), src=weekDates(addDays(weekStart,-7));
+  let n=0, skip=0;
+  allNames().forEach(name=>{ for(let i=0;i<7;i++){ const sk=keyOf(name,src[i]), dk=keyOf(name,dst[i]); if(shifts[sk]){ if(shifts[dk]){skip++;continue;} shifts[dk]={start:shifts[sk].start,end:shifts[sk].end}; n++; } } });
+  if(!n && !skip){ toolsNote('Nothing in last week to copy.'); return; }
+  render(); persist(); toolsNote('Copied '+n+' shift(s) from last week'+(skip?(' · kept '+skip+' already set'):'')+' ✓');
+}
+function copyToNext(){
+  const src=weekDates(weekStart), dst=weekDates(addDays(weekStart,7));
+  let n=0, skip=0;
+  allNames().forEach(name=>{ for(let i=0;i<7;i++){ const sk=keyOf(name,src[i]), dk=keyOf(name,dst[i]); if(shifts[sk]){ if(shifts[dk]){skip++;continue;} shifts[dk]={start:shifts[sk].start,end:shifts[sk].end}; n++; } } });
+  if(!n && !skip){ toolsNote('Nothing in the shown week to copy forward.'); return; }
+  render(); persist(); toolsNote('Copied '+n+' shift(s) into next week'+(skip?(' · kept '+skip):'')+' ✓ — press Next →'); 
+}
+// AI: learn each person's most common shift per weekday from all weeks BEFORE the shown week
+function aiFill(){
+  const cutoff=iso(weekStart);
+  const freq={}, weeksSeen={};
+  Object.keys(shifts).forEach(k=>{ const idx=k.indexOf('|'); const name=k.slice(0,idx), date=k.slice(idx+1); if(date>=cutoff) return;
+    const dow=(new Date(date+'T12:00:00').getDay()+6)%7; const s=shifts[k]; if(!s||!s.start) return;
+    freq[name]=freq[name]||{}; freq[name][dow]=freq[name][dow]||{}; const key=s.start+'-'+s.end;
+    freq[name][dow][key]=(freq[name][dow][key]||0)+1;
+    weeksSeen[name]=weeksSeen[name]||new Set(); weeksSeen[name].add(date.slice(0,7)+'-'+Math.floor(new Date(date+'T12:00:00').getTime()/6048e5)); });
+  const dst=weekDates(weekStart); let n=0; let maxWeeks=0;
+  allNames().forEach(name=>{ const f=freq[name]; if(!f) return; if(weeksSeen[name]) maxWeeks=Math.max(maxWeeks, weeksSeen[name].size);
+    for(let i=0;i<7;i++){ const dk=keyOf(name,dst[i]); if(shifts[dk]) continue; if(conflict(name,dst[i])) continue; const m=f[i]; if(!m) continue;
+      let best=null,bc=0; for(const key in m){ if(m[key]>bc){bc=m[key];best=key;} }
+      if(best){ const p=best.split('-'); shifts[dk]={start:p[0],end:p[1]}; n++; } } });
+  if(!n){ toolsNote('No past patterns to learn from yet — add a couple of weeks first.'); return; }
+  render(); persist(); toolsNote('🤖 AI filled '+n+' shift(s) from your patterns (learned from ~'+maxWeeks+' past week'+(maxWeeks===1?'':'s')+') ✓');
 }
 
 function shiftWeek(n){ weekStart=addDays(weekStart,7*n); render(); }
@@ -212,6 +253,9 @@ async function loadAll(){
 }
 $('ov').addEventListener('click',e=>{ if(e.target===$('ov')) closeEd(); });
 loadAll();
+
+// show scheduling tools for owner + managers
+try{ if(canEdit){ var _tb=document.getElementById('tools'); if(_tb) _tb.style.display='flex'; } }catch(e){}
 </script>
 </body>
 </html>
