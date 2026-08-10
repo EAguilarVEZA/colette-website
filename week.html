@@ -69,6 +69,7 @@ body.readonly .adminonly{display:none}
   <button onclick="copyLastWeek()">⧉ Copy last week → shown week</button>
   <button onclick="copyToNext()">Copy shown week → next →</button>
   <button onclick="aiFill()">🤖 AI fill from history</button>
+  <button onclick="suggestCoverage()">⚖ Check coverage</button>
   <span class="small muted" id="tools-note"></span>
 </div>
 <div class="reqs adminonly" id="reqs" style="display:none"></div>
@@ -101,6 +102,10 @@ body.readonly .adminonly{display:none}
 <script>
 const BACKEND='https://colette-app-backend.vercel.app';
 const DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+// Coverage targets by weekday (Mon..Sun). Mon closed. Fri–Sun 3rd person is a short 10a–2p.
+const COVER_TARGET=[0,2,2,2,3,3,3];
+const THIRD_SHORT={4:['10:00','14:00'],5:['10:00','14:00'],6:['10:00','14:00']};
+const DEFAULT_SHIFT=['07:30','16:30'];
 const $=id=>document.getElementById(id);
 const _params=new URLSearchParams(location.search);
 const _role=_params.get('role')||'admin';
@@ -159,8 +164,37 @@ function aiFill(){
     for(let i=0;i<7;i++){ const dk=keyOf(name,dst[i]); if(shifts[dk]) continue; if(conflict(name,dst[i])) continue; const m=f[i]; if(!m) continue;
       let best=null,bc=0; for(const key in m){ if(m[key]>bc){bc=m[key];best=key;} }
       if(best){ const p=best.split('-'); shifts[dk]={start:p[0],end:p[1]}; n++; } } });
-  if(!n){ toolsNote('No past patterns to learn from yet — add a couple of weeks first.'); return; }
-  render(); persist(); toolsNote('🤖 AI filled '+n+' shift(s) from your patterns (learned from ~'+maxWeeks+' past week'+(maxWeeks===1?'':'s')+') ✓');
+  const cov=enforceCoverage(dst, freq);
+  render(); persist();
+  let msg = n ? ('🤖 AI: filled '+n+' from patterns') : '🤖 AI: no past patterns yet';
+  if(cov.added) msg+=', added '+cov.added+' to hit coverage';
+  msg += cov.short.length ? (' · ⚠ still short: '+cov.short.join(', ')+' (need to hire/adjust)') : ' · coverage met ✓';
+  toolsNote(msg);
+}
+function currentCount(dateISO){ let c=0; allNames().forEach(nm=>{ if(shifts[keyOf(nm,dateISO)]) c++; }); return c; }
+function modalShift(freq,name,i){ const m=freq[name]&&freq[name][i]; if(!m) return null; let best=null,bc=0; for(const k in m){ if(m[k]>bc){bc=m[k];best=k;} } if(!best) return null; const p=best.split('-'); return {start:p[0],end:p[1]}; }
+function enforceCoverage(dst, freq){ let added=0; const short=[];
+  for(let i=0;i<7;i++){ const tgt=COVER_TARGET[i]||0; if(!tgt) continue; let cnt=currentCount(dst[i]);
+    while(cnt<tgt){ let cands=allNames().filter(nm=> !shifts[keyOf(nm,dst[i])] && !conflict(nm,dst[i]));
+      if(!cands.length){ short.push(DOW[i]); break; }
+      cands.sort((a,b)=> ((freq&&modalShift(freq,b,i))?1:0)-((freq&&modalShift(freq,a,i))?1:0));
+      const nm=cands[0]; let sh;
+      if(cnt>=2 && tgt>=3 && THIRD_SHORT[i]) sh={start:THIRD_SHORT[i][0],end:THIRD_SHORT[i][1]};
+      else sh=(freq&&modalShift(freq,nm,i))||{start:DEFAULT_SHIFT[0],end:DEFAULT_SHIFT[1]};
+      shifts[keyOf(nm,dst[i])]=sh; added++; cnt++;
+    }
+  }
+  return {added, short:[...new Set(short)]};
+}
+// Non-destructive: flag thin days + suggest who to add
+function suggestCoverage(){ const dst=weekDates(weekStart); const lines=[];
+  for(let i=0;i<7;i++){ const tgt=COVER_TARGET[i]||0; if(!tgt) continue; const cnt=currentCount(dst[i]); if(cnt>=tgt) continue;
+    const need=tgt-cnt; const cands=allNames().filter(nm=> !shifts[keyOf(nm,dst[i])] && !conflict(nm,dst[i]));
+    const who=cands.slice(0,need).join(', ')||'(no one free — hire/adjust)';
+    const slot=(tgt>=3 && THIRD_SHORT[i] && cnt>=2)?' [3rd 10a–2p]':'';
+    lines.push(DOW[i]+': +'+need+slot+' → '+who);
+  }
+  toolsNote(lines.length ? ('⚠ Thin days — '+lines.join(' · ')) : '✓ Coverage target met all week.');
 }
 
 function shiftWeek(n){ weekStart=addDays(weekStart,7*n); render(); }
@@ -189,7 +223,7 @@ function render(){
     body+=`<td class="rowtot">${rowHours.toFixed(1)}h${(isAdmin&&rate!=null)?`<br><span class="muted small">$${pay.toFixed(0)}</span>`:''}</td></tr>`;
   });
   body+='</tbody>';
-  let foot='<tfoot><tr><td class="name">Coverage</td>'+dayH.map((h,i)=>`<td>${dayN[i]} ppl<br><span class="muted small">${h.toFixed(1)}h</span></td>`).join('')+`<td class="rowtot">${weekHours.toFixed(1)}h</td></tr></tfoot>`;
+  let foot='<tfoot><tr><td class="name">Coverage</td>'+dayH.map((h,i)=>{const tgt=COVER_TARGET[i]||0; const sh=tgt-dayN[i]; const flag= tgt===0 ? '' : (sh>0?`<br><span class="warn">⚠ need ${sh}</span>`:`<br><span class="muted small" style="color:#2e7d32">✓ ${tgt}+</span>`); return `<td>${dayN[i]} ppl<br><span class="muted small">${h.toFixed(1)}h</span>${flag}</td>`;}).join('')+`<td class="rowtot">${weekHours.toFixed(1)}h</td></tr></tfoot>`;
   $('grid').innerHTML=head+body+foot;
   $('tot-hours').textContent=weekHours.toFixed(1)+' h';
   $('tot-pay').textContent=money(weekPay);
