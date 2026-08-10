@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Voice Visualizer — Colette</title>
+<style>
+  :root{--cy:#22e6ff;--mg:#ff2bd6;--ink:#eafffb}
+  *{box-sizing:border-box} html,body{margin:0;height:100%;background:#04030a;overflow:hidden;font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--ink)}
+  #c{position:fixed;inset:0;display:block}
+  #bar{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10;display:flex;gap:8px;align-items:center;
+       background:rgba(10,8,22,.5);backdrop-filter:blur(8px);border:1px solid rgba(34,230,255,.25);border-radius:14px;padding:7px 9px}
+  .tab{cursor:pointer;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:#cdeaf2;
+       padding:7px 12px;border-radius:9px;font-size:12px;letter-spacing:.5px}
+  .tab.on{border-color:var(--cy);color:#fff;background:linear-gradient(90deg,rgba(34,230,255,.18),rgba(255,43,214,.18));box-shadow:0 0 18px rgba(34,230,255,.3)}
+  #right{position:fixed;top:14px;right:16px;z-index:10;display:flex;gap:8px;align-items:center}
+  .btn{cursor:pointer;border:1px solid rgba(255,43,214,.4);background:rgba(20,8,22,.5);color:var(--mg);padding:7px 11px;border-radius:9px;font:inherit;font-size:12px}
+  .btn.live{border-color:var(--cy);color:var(--cy)}
+  #state{font-size:12px;color:#7fd7e6;letter-spacing:2px;min-width:92px;text-align:right;text-shadow:0 0 10px rgba(34,230,255,.4)}
+  #hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:10;font-size:11px;color:#6b8b97;text-align:center}
+  #cap{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);z-index:9;font-size:14px;color:#bfeaf2;max-width:80vw;text-align:center;opacity:.85;text-shadow:0 0 12px #000}
+  b{color:var(--cy)}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="bar">
+  <div class="tab on" data-s="0">◍ Orb</div>
+  <div class="tab" data-s="1">▦ Circuit</div>
+  <div class="tab" data-s="2">✷ Nebula</div>
+  <div class="tab" data-s="3">〜 Terrain</div>
+</div>
+<div id="right">
+  <div id="state">IDLE</div>
+  <button class="btn" id="liveBtn">◎ MOCK</button>
+  <button class="btn" id="fsBtn">⤢</button>
+</div>
+<div id="cap"></div>
+<div id="hint">keys <b>1–4</b> switch scene · <b>M</b> mock/live · <b>F</b> fullscreen · LIVE reads the Voice Line at 127.0.0.1:8787</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const CY=new THREE.Color(0x22e6ff), MG=new THREE.Color(0xff2bd6);
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight);
+const scene=new THREE.Scene(); scene.fog=new THREE.FogExp2(0x04030a,0.03);
+const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,0.1,200); camera.position.set(0,0,6);
+scene.add(new THREE.AmbientLight(0x334455,0.7));
+const l1=new THREE.PointLight(0x22e6ff,1.1,60); l1.position.set(5,4,6); scene.add(l1);
+const l2=new THREE.PointLight(0xff2bd6,1.1,60); l2.position.set(-5,-3,4); scene.add(l2);
+
+/* ---------- state signal ---------- */
+let S={state:'idle',level:0,text:''};
+let live=false, lastFetch=0;
+async function pollBus(){
+  if(!live) return;
+  const now=performance.now(); if(now-lastFetch<60) return; lastFetch=now;
+  try{ const r=await fetch('http://127.0.0.1:8787/state',{cache:'no-store'}); const j=await r.json(); S.state=j.state; S.level=j.level||0; S.text=j.text||''; }
+  catch(e){ /* bus offline */ }
+}
+// mock cycle
+let mockT=0, mi=0; const MOCK=[['idle',1.4],['listening',2.6],['thinking',2.0],['speaking',3.2]];
+const CAPS={idle:'',listening:'listening…',thinking:'thinking…',speaking:'speaking…'};
+function mockStep(dt){
+  if(live) return; mockT+=dt;
+  const [st,dur]=MOCK[mi]; S.state=st;
+  if(st==='listening') S.level=0.25+0.35*Math.abs(Math.sin(mockT*7))+0.2*Math.random();
+  else if(st==='speaking') S.level=0.4+0.5*Math.abs(Math.sin(mockT*9))*Math.abs(Math.sin(mockT*3.3));
+  else if(st==='thinking') S.level=0.25+0.1*Math.sin(mockT*2);
+  else S.level=0.05;
+  if(mockT>dur){ mockT=0; mi=(mi+1)%MOCK.length; }
+}
+function palette(){
+  // returns {color, energy} from state
+  let color=new THREE.Color(), energy;
+  if(S.state==='listening'){ color.copy(CY); energy=0.30+S.level*0.9; }
+  else if(S.state==='thinking'){ color.copy(MG); energy=0.5+0.15*Math.sin(performance.now()*0.004); }
+  else if(S.state==='speaking'){ color.copy(CY).lerp(MG,0.5+0.5*Math.sin(performance.now()*0.012)); energy=0.55+S.level*0.9; }
+  else { color.copy(CY).multiplyScalar(0.5); energy=0.15; }
+  return {color,energy};
+}
+
+/* ================= SCENES ================= */
+let current=null, group=null;
+function mount(){ group=new THREE.Group(); scene.add(group); }
+function unmount(){ if(group){ scene.remove(group); group.traverse(o=>{ if(o.geometry)o.geometry.dispose(); if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{if(m.map)m.map.dispose();m.dispose();});} }); group=null; } }
+
+/* --- 0: Liquid glass orb --- */
+const OrbScene={
+  build(){ mount();
+    this.geo=new THREE.IcosahedronGeometry(1.6,6); this.base=this.geo.attributes.position.array.slice();
+    this.mat=new THREE.MeshStandardMaterial({color:0x0d2a33,emissive:0x22e6ff,emissiveIntensity:.4,metalness:.4,roughness:.15,transparent:true,opacity:.6});
+    this.mesh=new THREE.Mesh(this.geo,this.mat); group.add(this.mesh);
+    this.wire=new THREE.Mesh(new THREE.IcosahedronGeometry(1.63,4), new THREE.MeshBasicMaterial({color:0x22e6ff,wireframe:true,transparent:true,opacity:.25})); group.add(this.wire);
+    this.halo=new THREE.Mesh(new THREE.SphereGeometry(2.2,32,32), new THREE.MeshBasicMaterial({color:0x22e6ff,transparent:true,opacity:.05,side:THREE.BackSide})); group.add(this.halo);
+  },
+  update(dt,t,P){
+    const pos=this.geo.attributes.position.array, b=this.base;
+    const amp=0.05+P.energy*0.5;
+    for(let i=0;i<pos.length;i+=3){ const x=b[i],y=b[i+1],z=b[i+2];
+      const n=Math.sin(x*3+t*2)*Math.sin(y*3+t*1.7)*Math.sin(z*3+t*1.3);
+      const f=1+n*amp*0.15+ (S.state==='speaking'?Math.sin(t*20+x*5)*0.02*P.energy:0);
+      pos[i]=x*f; pos[i+1]=y*f; pos[i+2]=z*f; }
+    this.geo.attributes.position.needsUpdate=true; this.geo.computeVertexNormals();
+    this.mat.emissive.copy(P.color); this.mat.emissiveIntensity=0.3+P.energy;
+    this.wire.material.color.copy(P.color); this.wire.material.opacity=0.15+P.energy*0.25;
+    this.halo.material.color.copy(P.color); this.halo.material.opacity=0.03+P.energy*0.08;
+    const s=1+P.energy*0.18; this.mesh.scale.setScalar(s); this.wire.scale.setScalar(s);
+    group.rotation.y+=dt*(0.15+P.energy*0.4); group.rotation.x=Math.sin(t*0.3)*0.15;
+  }, dispose(){ unmount(); }
+};
+
+/* --- 1: Living circuit board (shader) --- */
+const CircuitScene={
+  build(){ mount();
+    this.uni={t:{value:0},en:{value:0.2},cA:{value:new THREE.Color(0x22e6ff)},cB:{value:new THREE.Color(0xff2bd6)}};
+    const mat=new THREE.ShaderMaterial({uniforms:this.uni,transparent:true,
+      vertexShader:`varying vec2 v; void main(){ v=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+      fragmentShader:`
+        precision highp float; varying vec2 v; uniform float t; uniform float en; uniform vec3 cA; uniform vec3 cB;
+        float grid(vec2 p,float s){ vec2 g=abs(fract(p*s)-0.5)/fwidth(p*s); float l=min(g.x,g.y); return 1.0-min(l,1.0); }
+        float node(vec2 p,float s){ vec2 q=fract(p*s)-0.5; return smoothstep(0.14,0.0,length(q)); }
+        void main(){ vec2 p=v*2.0-1.0; p.x*=1.6;
+          float base=grid(v,14.0)*0.6 + grid(v,3.5)*0.5;
+          // travelling current pulses along the grid
+          float pulse=sin((v.x*14.0)-t*3.0)+sin((v.y*14.0)-t*2.3);
+          pulse=smoothstep(1.2,2.0,pulse)*(0.4+en*1.6);
+          float nodes=node(v,14.0)*(0.3+en*1.4)*(0.5+0.5*sin(t*3.0+v.x*30.0));
+          float glow=base*(0.15+en*0.5)+pulse+nodes;
+          vec3 col=mix(cA,cB,0.5+0.5*sin(t*0.6+v.x*3.0));
+          float vig=smoothstep(1.5,0.2,length(p));
+          gl_FragColor=vec4(col*glow*vig, clamp(glow*vig,0.0,1.0));
+        }`});
+    this.mesh=new THREE.Mesh(new THREE.PlaneGeometry(14,9,1,1),mat); this.mesh.position.z=-1; group.add(this.mesh);
+    camera.position.z=5.2;
+  },
+  update(dt,t,P){ this.uni.t.value=t; this.uni.en.value=P.energy;
+    this.uni.cA.value.copy(CY); this.uni.cB.value.copy(MG);
+    group.rotation.z=Math.sin(t*0.1)*0.03;
+  }, dispose(){ unmount(); camera.position.z=6; }
+};
+
+/* --- 2: Particle nebula --- */
+const NebulaScene={
+  build(){ mount(); const n=4000; const g=new THREE.BufferGeometry(); const p=new Float32Array(n*3); const col=new Float32Array(n*3);
+    for(let i=0;i<n;i++){ const r=1.4+Math.random()*1.1; const th=Math.random()*6.283, ph=Math.acos(2*Math.random()-1);
+      p[i*3]=r*Math.sin(ph)*Math.cos(th); p[i*3+1]=r*Math.sin(ph)*Math.sin(th); p[i*3+2]=r*Math.cos(ph);
+      const c=CY.clone().lerp(MG,Math.random()); col[i*3]=c.r; col[i*3+1]=c.g; col[i*3+2]=c.b; }
+    g.setAttribute('position',new THREE.BufferAttribute(p,3)); g.setAttribute('color',new THREE.BufferAttribute(col,3));
+    this.mat=new THREE.PointsMaterial({size:0.05,vertexColors:true,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false});
+    this.pts=new THREE.Points(g,this.mat); group.add(this.pts); this.scale=1;
+  },
+  update(dt,t,P){ let target= S.state==='listening'?0.7 : S.state==='speaking'?(1.35+P.level*0.4) : S.state==='thinking'?1.05:1.0;
+    this.scale+= (target-this.scale)*0.08; this.pts.scale.setScalar(this.scale + (S.state==='speaking'?Math.sin(t*16)*0.05:0));
+    this.mat.size=0.03+P.energy*0.07; this.mat.opacity=0.6+P.energy*0.4;
+    group.rotation.y+=dt*(0.1+P.energy*0.6); group.rotation.x+=dt*(0.05+P.energy*0.2*(S.state==='thinking'?1:0));
+  }, dispose(){ unmount(); }
+};
+
+/* --- 3: Waveform terrain --- */
+const TerrainScene={
+  build(){ mount(); this.rows=48; this.cols=90; this.lines=[]; this.mats=[];
+    for(let r=0;r<this.rows;r++){ const g=new THREE.BufferGeometry(); const p=new Float32Array(this.cols*3);
+      for(let c=0;c<this.cols;c++){ p[c*3]=(c/(this.cols-1)-0.5)*16; p[c*3+1]=0; p[c*3+2]=0; }
+      g.setAttribute('position',new THREE.BufferAttribute(p,3));
+      const m=new THREE.LineBasicMaterial({color:0x22e6ff,transparent:true,opacity:.5,blending:THREE.AdditiveBlending});
+      const ln=new THREE.Line(g,m); this.lines.push(ln); this.mats.push(m); group.add(ln); }
+    group.rotation.x=-0.9; group.position.y=-1.2; camera.position.z=7;
+  },
+  update(dt,t,P){ const amp=0.15+P.energy*1.7;
+    for(let r=0;r<this.rows;r++){ const zz=(r/(this.rows-1)-0.5)*20; const ln=this.lines[r]; const pos=ln.geometry.attributes.position.array;
+      for(let c=0;c<this.cols;c++){ const x=pos[c*3];
+        pos[c*3+2]=zz; pos[c*3+1]=Math.sin(x*0.5+t*2.2+r*0.28)*amp*Math.exp(-Math.abs(x)*0.05)+Math.sin(t*1.3+r*0.5)*0.2*P.energy; }
+      ln.geometry.attributes.position.needsUpdate=true;
+      const c=CY.clone().lerp(MG, 0.2+0.8*(r/this.rows)); this.mats[r].color.copy(P.color).lerp(c,0.5); this.mats[r].opacity=0.25+P.energy*0.5;
+    }
+  }, dispose(){ unmount(); camera.position.z=6; }
+};
+
+const SCENES=[OrbScene,CircuitScene,NebulaScene,TerrainScene];
+let idx=0;
+function setScene(i){ if(current)current.dispose(); idx=i; current=SCENES[i]; current.build();
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', +t.dataset.s===i)); }
+setScene(0);
+
+/* ---------- loop ---------- */
+let t0=performance.now()/1000;
+function loop(){ const now=performance.now()/1000; const dt=Math.min(0.05, now-t0); t0=now;
+  mockStep(dt); pollBus();
+  const P=palette();
+  l1.color.copy(P.color); l2.color.copy(CY.clone().lerp(MG,0.5)); l1.intensity=0.6+P.energy;
+  current.update(dt, now, P);
+  document.getElementById('state').textContent=S.state.toUpperCase();
+  document.getElementById('cap').textContent = S.text || CAPS[S.state] || '';
+  renderer.render(scene,camera); requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ---------- controls ---------- */
+document.querySelectorAll('.tab').forEach(tab=>tab.onclick=()=>setScene(+tab.dataset.s));
+const liveBtn=document.getElementById('liveBtn');
+liveBtn.onclick=()=>{ live=!live; liveBtn.textContent=live?'◉ LIVE':'◎ MOCK'; liveBtn.classList.toggle('live',live); };
+document.getElementById('fsBtn').onclick=()=>{ if(!document.fullscreenElement)document.documentElement.requestFullscreen(); else document.exitFullscreen(); };
+addEventListener('keydown',e=>{ if(e.key>='1'&&e.key<='4')setScene(+e.key-1); if(e.key.toLowerCase()==='m')liveBtn.click(); if(e.key.toLowerCase()==='f')document.getElementById('fsBtn').click(); });
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+</script>
+</body>
+</html>
