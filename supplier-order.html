@@ -141,6 +141,20 @@ body.owner-mode #submit-bar{display:none}
     <div id="cambie-out"></div>
   </div>
 
+  <div class="card">
+    <div class="suphead">
+      <div><h3>🧁 BakeDeco</h3><div class="small muted">bakedeco.com (Kerekes) · Silikomart macaron trays & pastry supplies</div></div>
+      <div class="small muted" id="badeko-total"></div>
+    </div>
+    <table><thead><tr><th>Item</th><th>Item #</th><th class="right">Unit $</th><th class="right">Qty</th></tr></thead><tbody id="badeko-rows"></tbody></table>
+    <div class="owner-actions" style="margin-top:14px;gap:10px;flex-wrap:wrap;align-items:center">
+      <button class="btn" onclick="sendBadeko()">🧁 Send to BakeDeco</button>
+      <button class="btn ghost" onclick="window.open('https://www.bakedeco.com','_blank')">Open BakeDeco</button>
+      <button class="btn ghost" onclick="copyBadeko()">Copy list</button>
+    </div>
+    <div id="badeko-out"></div>
+  </div>
+
   <div id="submit-bar">
     <b class="needs-pin">Ready?</b>
     <span class="small muted needs-pin">Enter your PIN, then submit — the Colette AI Assistant takes it from here.</span>
@@ -621,7 +635,11 @@ const CAMBIE=[
   {n:'Apricot Jam & Filling - 30.8 lbs',id:'500127',vid:48265278259493,p:118.31,url:'https://cambie.com/products/apricot-jam-14-kg',q:0},
   {n:'Dulce de Leche Repostero Soft - 11 lb',id:'800060',vid:49679127839013,p:37.65,url:'https://cambie.com/products/dulce-de-leche-repostero-soft-11-lb',q:0},
 ];
-const ARR={costco:COSTCO, rd:RD, ic:IC, paname:PANAME, amazon:AMAZON, cambie:CAMBIE};
+const BADEKO=[
+  {n:'Silikomart Clear Macaron Tray w/ Cover — 6 Cavities (Case of 90)',id:'55828',p:76.35,url:'https://www.bakedeco.com/product/silikomart-clear-macaron-tray-with-cover-6-cavities-case-of-90-55828',q:0},
+  {n:'Silikomart Clear Macaroon Tray w/ Cover (Case of 48)',id:'52175',p:76.35,url:'https://www.bakedeco.com/product/silikomart-clear-macaroon-tray-with-cover-case-of-48-52175',q:0},
+];
+const ARR={costco:COSTCO, rd:RD, ic:IC, paname:PANAME, amazon:AMAZON, cambie:CAMBIE, badeko:BADEKO};
 function stepper(a,i,q){
   return `<div class="stepper">
     <button type="button" onclick="bump('${a}',${i},-1)">−</button>
@@ -631,9 +649,9 @@ function stepper(a,i,q){
 }
 function setQ(a,i,v){ ARR[a][i].q=Math.max(0,parseInt(v||'0',10)||0); recalcFor(a); }
 function bump(a,i,d){ ARR[a][i].q=Math.max(0,(ARR[a][i].q||0)+d); renderFor(a); }
-function renderFor(a){ a==='costco'?renderCostco():a==='rd'?renderRD():a==='paname'?renderPaname():a==='amazon'?renderAmazon():a==='cambie'?renderCambie():renderIC(); }
-function recalcFor(a){ if(a==='costco')calc(); else if(a==='rd')calcRD(); else if(a==='paname')calcPaname(); else if(a==='amazon')calcAmazon(); else if(a==='cambie')calcCambie(); }
-function render(){ renderCostco(); renderRD(); renderIC(); renderPaname(); renderAmazon(); renderCambie(); }
+function renderFor(a){ a==='costco'?renderCostco():a==='rd'?renderRD():a==='paname'?renderPaname():a==='amazon'?renderAmazon():a==='cambie'?renderCambie():a==='badeko'?renderBadeko():renderIC(); }
+function recalcFor(a){ if(a==='costco')calc(); else if(a==='rd')calcRD(); else if(a==='paname')calcPaname(); else if(a==='amazon')calcAmazon(); else if(a==='cambie')calcCambie(); else if(a==='badeko')calcBadeko(); }
+function render(){ renderCostco(); renderRD(); renderIC(); renderPaname(); renderAmazon(); renderCambie(); renderBadeko(); }
 function renderCostco(){
   document.getElementById('costco-rows').innerHTML=COSTCO.map((it,i)=>`<tr>
     <td class="itemname">${it.n}${it.id?'':' <span class="muted" title="No Costco item # — submits to owner, add manually">• manual</span>'}</td>
@@ -784,6 +802,30 @@ function copyCambie(){
   const ls=CAMBIE.filter(it=>it.q>0);
   const txt='CAMBIE ORDER\n'+ls.map(x=>`${x.q} × ${x.n} (${x.id})`).join('\n');
   const out=document.getElementById('cambie-out'); out.style.display='block'; out.textContent=txt; navigator.clipboard.writeText(txt).catch(()=>{});
+}
+
+function renderBadeko(){
+  document.getElementById('badeko-rows').innerHTML=BADEKO.map((it,i)=>`<tr>
+    <td class="itemname">${it.n}</td>
+    <td class="muted" style="font-size:.8rem">${it.id||''}</td>
+    <td class="right muted">${it.p?('$'+(+it.p).toFixed(2)):''}</td>
+    <td class="right">${stepper('badeko',i,it.q)}</td>
+  </tr>`).join('');
+  calcBadeko();
+}
+function calcBadeko(){ const tot=BADEKO.reduce((s,it)=>s+(+it.p||0)*(it.q||0),0); const el=document.getElementById('badeko-total'); if(el) el.textContent='Est. total $'+tot.toFixed(2); }
+function sendBadeko(){
+  const ls=BADEKO.filter(it=>it.q>0).map(it=>({name:it.n, sku:it.id, qty:it.q, url:it.url||''}));
+  const s=document.getElementById('badeko-out'); s.style.display='block';
+  if(!ls.length){s.textContent='Set some quantities first.';return;}
+  if(!EXT){s.textContent='⚠ Install the Colette extension first (then reload). For now use “Copy list”.';return;}
+  window.dispatchEvent(new CustomEvent('colette-send',{detail:{supplier:'badeko',lines:ls}}));
+  s.textContent='Sent '+ls.length+' item(s) ✓ — Open BakeDeco → click the “Fill BakeDeco cart” button.';
+}
+function copyBadeko(){
+  const ls=BADEKO.filter(it=>it.q>0);
+  const txt='BAKEDECO ORDER\n'+ls.map(x=>`${x.q} × ${x.n} (${x.id})`).join('\n');
+  const out=document.getElementById('badeko-out'); out.style.display='block'; out.textContent=txt; navigator.clipboard.writeText(txt).catch(()=>{});
 }
 
 // ---- Employee submit → notify Edgar ----
