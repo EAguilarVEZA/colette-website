@@ -833,28 +833,34 @@ function copyBadeko(){
 // ---- Employee submit → notify Edgar ----
 // Gather non-zero quantities keyed by a stable id: Costco item#, RD SKU, Publix index.
 function gatherOrders(){
-  const c={},r={},i={};
+  const c={},r={},i={},p={},a={},cm={},bd={};
   COSTCO.forEach((it,idx)=>{ if(it.q>0) c[idx]=it.q; }); // by index — some items have no item #
   RD.forEach(it=>{ if(it.q>0) r[it.id]=it.q; });
   IC.forEach((it,idx)=>{ if(it.q>0) i[idx]=it.q; });
-  return {c,r,i};
+  PANAME.forEach((it,idx)=>{ if(it.q>0) p[idx]=it.q; });
+  AMAZON.forEach((it,idx)=>{ if(it.q>0) a[idx]=it.q; });
+  CAMBIE.forEach((it,idx)=>{ if(it.q>0) cm[idx]=it.q; });
+  BADEKO.forEach((it,idx)=>{ if(it.q>0) bd[idx]=it.q; });
+  return {c,r,i,p,a,cm,bd};
 }
 async function submitOrder(){
   const s=document.getElementById('submit-status');
   const pin=(document.getElementById('emp-pin').value||'').trim();
-  const {c,r,i}=gatherOrders();
-  const total=Object.keys(c).length+Object.keys(r).length+Object.keys(i).length;
+  const {c,r,i,p,a,cm,bd}=gatherOrders();
+  const total=Object.keys(c).length+Object.keys(r).length+Object.keys(i).length
+    +Object.keys(p).length+Object.keys(a).length+Object.keys(cm).length+Object.keys(bd).length;
   if(!total){ s.style.color='#a33'; s.textContent='Set some quantities first.'; return; }
   if(!pin){ s.style.color='#a33'; s.textContent='Enter your PIN.'; return; }
   s.style.color='#666'; s.textContent='Submitting…';
   try{
-    const resp=await fetch(BACKEND+'/api/ops?action=submit-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin,c,r,i})});
+    const resp=await fetch(BACKEND+'/api/ops?action=submit-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin,c,r,i,p,a,cm,bd})});
     const d=await resp.json().catch(()=>({}));
     if(!resp.ok||!d.ok){ s.style.color='#a33'; s.textContent=d.error==='Invalid PIN'?'PIN not recognized — check with Edgar.':('Could not submit: '+(d.error||resp.status)); return; }
     s.style.color='#2e7d32'; s.textContent=`✓ Order sent to the Colette AI Assistant (from ${d.employee}). It’ll be placed shortly. Sheet cleared — ready for the next order.`;
     document.getElementById('emp-pin').value='';
     // Clear the whole sheet to zero so the next order starts fresh.
-    COSTCO.forEach(it=>it.q=0); RD.forEach(it=>it.q=0); IC.forEach(it=>it.q=0); PANAME.forEach(it=>it.q=0);
+    COSTCO.forEach(it=>it.q=0); RD.forEach(it=>it.q=0); IC.forEach(it=>it.q=0);
+    PANAME.forEach(it=>it.q=0); AMAZON.forEach(it=>it.q=0); CAMBIE.forEach(it=>it.q=0); BADEKO.forEach(it=>it.q=0);
     render();
   }catch(e){ s.style.color='#a33'; s.textContent='Network error — try again.'; }
 }
@@ -871,6 +877,10 @@ function applyLoad(pl){
   Object.entries(pl.c||{}).forEach(([idx,q])=>{ if(COSTCO[idx]) COSTCO[idx].q=+q||0; }); // Costco keyed by index
   byId(RD,pl.r);
   Object.entries(pl.i||{}).forEach(([idx,q])=>{ if(IC[idx]) IC[idx].q=+q||0; });
+  Object.entries(pl.p||{}).forEach(([idx,q])=>{ if(PANAME[idx]) PANAME[idx].q=+q||0; });
+  Object.entries(pl.a||{}).forEach(([idx,q])=>{ if(AMAZON[idx]) AMAZON[idx].q=+q||0; });
+  Object.entries(pl.cm||{}).forEach(([idx,q])=>{ if(CAMBIE[idx]) CAMBIE[idx].q=+q||0; });
+  Object.entries(pl.bd||{}).forEach(([idx,q])=>{ if(BADEKO[idx]) BADEKO[idx].q=+q||0; });
   const when=pl.t?new Date(pl.t).toLocaleString('en-US',{timeZone:'America/New_York'}):'';
   const b=document.getElementById('load-banner');
   b.style.display='block';
