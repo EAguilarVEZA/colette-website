@@ -164,9 +164,80 @@ async function loadAlonDates(){
   try{ const r=await fetch(BACKEND+'/api/ops?action=alon-order-dates&t='+Date.now()).then(x=>x.json());
     ALON_DATES={}; (r.dates||[]).forEach(d=>ALON_DATES[d.date]=d.count); }catch(e){}
 }
+// Built-in Alon product list — used when the backend catalog isn't reachable
+// (e.g. catalog not yet synced). Codes/costs from the FlexiBake order form.
+const ALON_FALLBACK=[
+  {code:'4162',name:'Almond Cookie',price:2.00},
+  {code:'7152',name:'Almond Croissant',price:2.39},
+  {code:'7178',name:'Apple Bran Muffin',price:2.07},
+  {code:'7153',name:'Apple Danish',price:2.39},
+  {code:'9147',name:'Bagel Plain',price:1.65},
+  {code:'9141',name:'Bagel Poppyseed',price:1.65},
+  {code:'9148',name:'Bagel Sesame',price:1.65},
+  {code:'109108',name:'Baguette',price:3.00},
+  {code:'109137',name:'Baguette, Demi',price:1.13},
+  {code:'7151',name:'Banana Bread Loaf, Wholesale',price:24.15},
+  {code:'2569875',name:'Basque Cheesecake 5"',price:6.60},
+  {code:'2569877',name:'Basque Cheesecake 7"',price:24.99},
+  {code:'7184',name:'Blueberry Muffin',price:2.07},
+  {code:'7185',name:'Carrot Apple Muffin',price:2.07},
+  {code:'109111',name:'Challah, 1#',price:5.75},
+  {code:'7156',name:'Cheese Danish',price:2.39},
+  {code:'7160',name:'Chocolate Croissant',price:2.39},
+  {code:'141520',name:'Chocolate Louise, Individual',price:4.84},
+  {code:'2607',name:'Chocolate Praline Croissant',price:2.87},
+  {code:'141337',name:'Chocolate Truffle, Slice',price:4.84},
+  {code:'5509151',name:'Ciabatta, 5oz',price:1.04},
+  {code:'5698',name:'Cinnamon Crumb Cake',price:2.53},
+  {code:'7163',name:'Cinnamon Stick',price:2.39},
+  {code:'109114',name:'Country French, 1#',price:3.53},
+  {code:'209114',name:'Country French, 2#',price:6.19},
+  {code:'7164',name:'Cranberry Scone',price:2.39},
+  {code:'141340',name:'Creme Brulee',price:4.84},
+  {code:'4178',name:'Double Chocolate Chunk Cookie',price:2.00},
+  {code:'12563',name:'Dubai Ind',price:4.84},
+  {code:'141325',name:'Eclair, Chocolate',price:3.94},
+  {code:'9106',name:'Focaccia, Plain',price:4.95},
+  {code:'109119',name:'Focaccia, Rosemary',price:5.25},
+  {code:'7167',name:'Gruyere Scone',price:3.03},
+  {code:'19347',name:'Gruyere Sesame Twist',price:2.39},
+  {code:'795',name:'Hazelnut Chocolate Chip Danish',price:2.39},
+  {code:'4111',name:'Kouign Amann',price:3.09},
+  {code:'7302',name:'Mini Almond Croissant',price:1.72},
+  {code:'7319',name:'Mini Apple Bran Muffin',price:1.46},
+  {code:'7303',name:'Mini Apple Danish',price:1.72},
+  {code:'7321',name:'Mini Blueberry Muffins',price:1.46},
+  {code:'7304',name:'Mini Cheese Danish',price:1.72},
+  {code:'7306',name:'Mini Chocolate Croissant',price:1.72},
+  {code:'7307',name:'Mini Cinnamon Sticks',price:1.72},
+  {code:'7311',name:'Mini Hazelnut Danish',price:1.64},
+  {code:'7312',name:'Mini Pistachio Croissant',price:2.02},
+  {code:'7313',name:'Mini Plain Croissant 1.5oz',price:1.61},
+  {code:'7318',name:'Mini Raspberry Cheese Danish',price:1.72},
+  {code:'109120',name:'Multigrain, 1.5#',price:6.85},
+  {code:'17719',name:'New Opera',price:4.84},
+  {code:'7170',name:'Pistachio Croissant',price:2.81},
+  {code:'7171',name:'Plain Croissant',price:2.24},
+  {code:'7172',name:'Poppyseed Danish',price:2.39},
+  {code:'999997',name:'Quiche, IND Mushroom Fontina',price:4.66},
+  {code:'999995',name:'Quiche, IND Spinach & Butternut Squash',price:4.66},
+  {code:'141283',name:'Raspberry Chocolate Mousse, Individual',price:4.84},
+  {code:'7176',name:'Raspberry-Cheese Danish',price:2.39},
+  {code:'109128',name:'Rustic Wholewheat Sourdough',price:9.95},
+  {code:'17083',name:'Shokolina',price:4.84},
+  {code:'17272',name:'Shokolina 7x7',price:43.30},
+  {code:'109132',name:'Sourdough 1.5# Boule',price:5.25},
+  {code:'19242',name:'Strawberry Fields',price:4.84},
+  {code:'19747',name:'Strawberry Fields 7x7',price:43.30},
+  {code:'141313',name:'Tiramisu Chocolate, Individual',price:4.84},
+  {code:'0192',name:'Twice baked croissant',price:4.24}
+];
 async function loadAlonCatalog(){
   try{ const r=await fetch(BACKEND+'/api/ops?action=alon-catalog-get&t='+Date.now()).then(x=>x.json());
     ALON_CAT=(r.catalog||[]).map(c=>({code:String(c.code),name:c.name||'',price:+c.price||0})); }catch(e){ ALON_CAT=[]; }
+  // If the backend has no catalog (not synced / endpoint unavailable), use the built-in list
+  // so the order form always shows the products.
+  if(!ALON_CAT || !ALON_CAT.length){ ALON_CAT=ALON_FALLBACK.map(c=>({...c})); }
 }
 function renderCal(){
   const cal=$('alon-cal'); if(!cal) return;
