@@ -224,7 +224,7 @@ const COSTCO=[
   {n:'Raspberries',id:'56366',p:3.59,q:0},
   {n:'Kirkland Smoked Salmon, 12 oz, 2 ct',id:'1267000',p:27.69,q:0},
   {n:'Sparkling Water (Kirkland Italian, 16.9 oz, 24 ct)',id:'9262015',p:22.69,q:0},
-  {n:'Purified Drinking Water (Kirkland, 16.9 fl oz, 40 ct)',id:'782796',p:0,q:0},
+  {n:'Purified Drinking Water (Kirkland, 16.9 fl oz, 40 ct)',id:'782796',p:7.99,url:'https://www.costcobusinessdelivery.com/s?keyword=Kirkland%20Signature%20Purified%20Drinking%20Water%2C%2016.9%20fl%20oz%2C%2040%20ct',q:0},
   {n:'Sponges',id:'1717853',p:12.79,q:0},
   {n:'Organic Spring Salad Mix, 1 lb',id:'48757',p:5.99,q:0},
   {n:'Strawberries (Premium, 2 lb)',id:'27003',p:4.99,q:0},
@@ -674,7 +674,7 @@ function copyOrder(){
   const out=document.getElementById('out'); out.style.display='block'; out.textContent=txt;
   navigator.clipboard.writeText(txt).catch(()=>{});
 }
-function openAll(){ lines().slice(0,8).forEach(l=>window.open('https://www.costcobusinessdelivery.com/s?keyword='+l.id,'_blank')); }
+function openAll(){ lines().slice(0,8).forEach(l=>window.open(l.url||('https://www.costcobusinessdelivery.com/s?keyword='+l.id),'_blank')); }
 // Send the Costco order to the Chrome extension (which fills the cart on Costco).
 let EXT=false;
 window.addEventListener('colette-ext-ready',()=>{EXT=true; const s=document.getElementById('costco-status'); if(s)s.innerHTML='✓ Extension detected. Set quantities → <b>Send to Costco</b> → <b>Open Costco order page</b> → click the gold “Fill Costco cart” button.';});
