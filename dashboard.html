@@ -88,11 +88,11 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
       <span class="muted" id="ordernote" style="font-size:.78rem"></span>
       <div id="alon-cal"></div>
     </div>
-    <p class="muted" style="font-size:.82rem;margin:6px 0 10px">Tap <b>Change date</b> to pick a delivery date. The quantities show the <b>actual order Alon has</b> for that day; if there's none it says so and you can enter a new order. Then <b>Save order</b> or <b>Approve &amp; Place</b>.</p>
+    <p class="muted" style="font-size:.82rem;margin:6px 0 10px">Tap <b>Change date</b> to pick a delivery date. The <b>full product list always shows</b>; if Alon already has an order for that day, those quantities are <b>pre-filled</b> so you can add or bump items. Then hit <b>Approve &amp; Place</b> to send/update it at Alon.</p>
     <table><thead><tr><th>Item</th><th>Code</th><th class="right">Unit $</th><th class="right">Order</th></tr></thead><tbody id="orderrows"><tr><td class="muted" colspan="4">Pick a date…</td></tr></tbody></table>
     <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
-      <button class="reload" id="approveBtn" onclick="placeOrder()" style="padding:11px 22px;font-size:.95rem">✓ Approve &amp; Place Order</button>
-      <button id="saveAlonBtn" onclick="saveAlon()" style="background:none;border:1px solid var(--gold-deep);color:var(--gold-deep);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Save these quantities as the order for the selected date">💾 Save order</button>
+      <button class="reload" id="approveBtn" onclick="placeOrder()" style="padding:11px 22px;font-size:.95rem">✓ Approve &amp; Place at Alon</button>
+      <button id="recheckBtn" onclick="loadDateOrder()" style="background:none;border:1px solid var(--gold-deep);color:var(--gold-deep);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Re-check Alon for an existing order on this date">🔁 Re-check Alon</button>
       <button id="syncBtn" onclick="syncNow()" style="background:none;border:1px solid var(--line);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Pull today's Alon delivery into Clover now (instead of waiting for the daily run)">🔄 Sync now</button>
       <button id="resetBtn" onclick="resetInventory()" style="background:none;border:1px solid var(--wine);color:var(--wine);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Zero every item's stock in Clover — clean slate">♻️ Reset to zero</button>
       <button onclick="copyOrder()" style="background:none;border:1px solid var(--line);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem">Copy order</button>
@@ -286,25 +286,25 @@ function rowHtml(product,code,q,price){
     <td class="right"><input type="number" min="0" value="${q}" data-code="${code}" data-name="${String(product).replace(/"/g,'&quot;')}" style="width:56px;text-align:right;padding:5px;border:1px solid var(--line);border-radius:8px"></td></tr>`;
 }
 async function loadDateOrder(){
-  $('orderrows').innerHTML='<tr><td class="muted" colspan="4">Loading…</td></tr>';
+  if(!ORDER_DATE_ISO){ return; }
+  $('orderrows').innerHTML='<tr><td class="muted" colspan="4">Checking Alon for this date…</td></tr>';
   try{
+    // Re-check Alon (via the synced per-date store) for an existing order on this date.
     const od=await fetch(BACKEND+'/api/ops?action=alon-order-get&date='+ORDER_DATE_ISO+'&t='+Date.now()).then(x=>x.json()).catch(()=>({}));
     const lines=((od&&od.order&&od.order.lines)||[]);
-    const priceByCode={}, nameByCode={}; ALON_CAT.forEach(c=>{ priceByCode[c.code]=c.price||0; nameByCode[c.code]=c.name||''; });
+    const qtyByCode={}; lines.forEach(l=>{ qtyByCode[String(l.code)]=+l.qty||0; });
     const nice=new Date(ORDER_DATE_ISO+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
-    let rows='';
+    // ALWAYS render the full product list; pre-fill any quantities Alon already has for this date.
+    const cat=(ALON_CAT&&ALON_CAT.length)?ALON_CAT:ALON_FALLBACK;
+    let rows=cat.map(c=>rowHtml(c.name||('Item '+c.code),c.code,qtyByCode[String(c.code)]||0,c.price)).join('');
+    // Include any already-ordered codes that aren't in the catalog list (edge case).
+    lines.forEach(l=>{ const code=String(l.code); if(!cat.some(c=>String(c.code)===code)) rows+=rowHtml(l.name||('Item '+code),code,+l.qty||0,0); });
     if(lines.length){
-      // Order EXISTS in Alon → show ONLY the ordered items (editable).
-      const src=od.order.source;
-      $('ordernote').innerHTML='<span class=good>✓ Alon has an order for '+nice+'</span> — '+lines.length+' items'+(src==='manual'?' (edited here)':'')+'. Review, adjust, then Approve &amp; Place.';
-      rows=lines.map(l=>{ const code=String(l.code); const nm=l.name||nameByCode[code]||('Item '+code); return rowHtml(nm,code,+l.qty||0,priceByCode[code]); }).join('');
+      $('ordernote').innerHTML='<span class=good>✓ Alon already has an order for '+nice+'</span> — '+lines.length+' item(s) pre-filled below. Add or change anything, then <b>Approve &amp; Place</b> to update it at Alon.';
     } else {
-      // NO order → show the FULL Alon product list to build a new order.
-      $('ordernote').innerHTML='<span class=bad>No order in Alon for '+nice+'</span> — build a new order from the full list below, then Save or Approve &amp; Place.';
-      rows=(ALON_CAT||[]).map(c=>rowHtml(c.name||('Item '+c.code),c.code,0,c.price)).join('');
-      if(!rows) rows='<tr><td class="muted" colspan="4">Full product list not synced yet — run the catalog sync (Actions → Run workflow → task: catalog).</td></tr>';
+      $('ordernote').innerHTML='<span class=muted>No order found at Alon for '+nice+' yet.</span> Set quantities on any items below, then <b>Approve &amp; Place</b> to send it to Alon.';
     }
-    $('orderrows').innerHTML=rows||'<tr><td class="muted" colspan="4">No items.</td></tr>';
+    $('orderrows').innerHTML=rows||'<tr><td class="muted" colspan="4">Product list unavailable.</td></tr>';
   }catch(e){ $('orderrows').innerHTML='<tr><td class="muted" colspan="4">Could not load: '+e.message+'</td></tr>'; }
 }
 async function saveAlon(){
