@@ -108,8 +108,8 @@ const THIRD_SHORT={4:['10:00','14:00'],5:['10:00','14:00'],6:['10:00','14:00']};
 const DEFAULT_SHIFT=['07:30','16:30'];
 const $=id=>document.getElementById(id);
 const _params=new URLSearchParams(location.search);
-const _role=_params.get('role')||'admin';
-const isAdmin=_role==='admin';                 // owner: sees pay, approves time off
+const _role=_params.get('role')||'view';
+const isAdmin=_role==='admin' && (()=>{try{return !!localStorage.getItem('colette_admin_key');}catch(e){return false;}})();                 // owner: sees pay, approves time off
 const canEdit=(_role==='admin'||_role==='manager'); // owner + Marco/Melissa can edit shifts
 const MYPIN=_params.get('pin')||'';             // scheduler's PIN (manager mode saves with this)
 const adminKey=()=>{ try{ return localStorage.getItem('colette_admin_key')||''; }catch(e){ return ''; } };
