@@ -328,216 +328,37 @@ async function bootstrapAlon(){
   CAL_MONTH=new Date(def.getFullYear(),def.getMonth(),1);
   renderCal(); selectDate(isoOf(def));
 }
-function recalcOrderTotals(){let items=0,dollars=0;document.querySelectorAll('#orderrows input').forEach(inp=>{const q=parseInt(inp.value||'0',10)||0;const p=parseFloat(inp.dataset.price||'0')||0;items+=q;dollars+=q*p;});const ei=document.getElementById('ordertot-items'),ed=document.getElementById('ordertot-dollars');if(ei)ei.textContent=items;if(ed)ed.textContent='
-  return [...document.querySelectorAll('#orderrows input')].map(inp=>({code:inp.dataset.code,product:inp.dataset.name,qty:parseInt(inp.value||'0',10)})).filter(l=>l.qty>0);
+function recalcOrderTotals(){
+  let items=0,dollars=0;
+  document.querySelectorAll('#orderrows input').forEach(inp=>{
+    const q=parseInt(inp.value||'0',10)||0;
+    const p=parseFloat(inp.dataset.price||'0')||0;
+    items+=q; dollars+=q*p;
+  });
+  const ei=document.getElementById('ordertot-items'), ed=document.getElementById('ordertot-dollars');
+  if(ei) ei.textContent=items;
+  if(ed) ed.textContent='$'+dollars.toFixed(2);
 }
-function copyOrder(){
-  const lines=readOrderLines(); const txt=DOWN[ORDER_DOW]+' order:\n'+lines.map(l=>l.qty+' × '+l.product).join('\n');
-  navigator.clipboard.writeText(txt).then(()=>{$('ordermsg').innerHTML='<span class=good>Copied ✓</span>';});
-}
-async function placeOrder(){
-  const lines=readOrderLines(); if(!lines.length){$('ordermsg').textContent='Nothing to order.';return;}
-  const btn=$('approveBtn'); btn.disabled=true; $('ordermsg').textContent='Placing…';
+async function recheckAlon(){
+  if(!ORDER_DATE_ISO){ $('ordermsg').textContent='Pick a date first.'; return; }
+  const key=adminKey();
+  if(!key){ $('ordermsg').innerHTML='<span class=bad>Enter your admin key (Live Orders box) first.</span>'; return; }
+  const btn=$('recheckBtn'); btn.disabled=true;
+  let before=0;
+  try{ const o=await fetch(BACKEND+'/api/ops?action=alon-order-get&date='+ORDER_DATE_ISO+'&t='+Date.now()).then(x=>x.json()); before=(o&&o.order&&o.order.at)||0; }catch(e){}
+  $('ordermsg').innerHTML='Reading live from Alon… this takes ~2 min ⏳';
   try{
-    const r=await fetch(BACKEND+'/api/ops?action=place-order',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'place-order',targetDay:DOWN[ORDER_DOW],targetDate:ORDER_DATE_ISO,lines})}).then(x=>x.json());
-    if(!r||!r.ok) throw new Error(r&&r.error||'failed');
-    if(r.placed){$('ordermsg').innerHTML='<span class=good>✓ Order sent to Alon\'s for '+DOWN[ORDER_DOW]+'</span>';}
-    else{$('ordermsg').innerHTML='<span class=good>✓ Approved</span> <span class=muted>'+(r.note||'')+'</span>';}
-  }catch(e){$('ordermsg').innerHTML='<span class=bad>Error: '+e.message+'</span>';}
-  btn.disabled=false;
-}
-
-// ----- On-demand inventory controls -----
-function adminKey(){
-  try{ const k=localStorage.getItem('colette_admin_key'); if(k) return k; }catch(e){}
-  const inp=$('adminkey'); return inp && inp.value ? inp.value.trim() : '';
-}
-async function syncNow(){
-  const key=adminKey(); const m=$('invmsg');
-  if(!key){ m.innerHTML='<span class=bad>Enter your admin key (Live Orders box) first.</span>'; return; }
-  const btn=$('syncBtn'); btn.disabled=true; m.textContent='Requesting a fresh sync from Alon…';
-  try{
-    const r=await fetch(BACKEND+'/api/ops?action=run-task',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({task:'sync'})}).then(x=>x.json());
-    if(!r||!r.ok) throw new Error(r&&r.error||'failed');
-    if(r.dispatched){ m.innerHTML='<span class=good>✓ Sync started — Clover will show today’s numbers in ~2 min.</span>'; }
-    else { m.innerHTML='<span class=muted>'+(r.note||'Sync could not be triggered on demand.')+'</span>'; }
-  }catch(e){ m.innerHTML='<span class=bad>Error: '+e.message+'</span>'; }
-  btn.disabled=false;
-}
-async function resetInventory(){
-  if(!confirm('Zero the stock on EVERY item in Clover? This is the clean-slate reset.')) return;
-  const key=adminKey(); const m=$('invmsg');
-  if(!key){ m.innerHTML='<span class=bad>Enter your admin key (Live Orders box) first.</span>'; return; }
-  const btn=$('resetBtn'); btn.disabled=true;
-  let offset=0, done=0, total=0, guard=0;
-  try{
-    do{
-      const r=await fetch(BACKEND+'/api/ops?action=inventory-reset-zero',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({offset,limit:40})}).then(x=>x.json());
-      if(!r||!r.ok) throw new Error(r&&r.error||'failed');
-      total=r.total; done+=r.processed; offset=r.nextOffset;
-      m.textContent='Zeroing inventory… '+done+'/'+total;
-      if(r.done||offset==null){ m.innerHTML='<span class=good>✓ All '+total+' items reset to zero.</span>'; break; }
-    }while(++guard<50);
-  }catch(e){ m.innerHTML='<span class=bad>Error: '+e.message+'</span>'; }
-  btn.disabled=false;
-}
-
-function fmtHr(h){ if(h==null) return '—'; const hr=Math.floor(h); const mi=Math.round((h-hr)*60); const ap=hr<12?'am':'pm'; const h12=((hr+11)%12)+1; return h12+':'+String(mi).padStart(2,'0')+ap; }
-async function loadStockout(){
-  try{
-    const r=await fetch(BACKEND+'/api/ops?action=stockout&days=60&t='+Date.now()).then(x=>x.json());
-    if(!r||!r.ok) throw new Error(r&&r.error||'unavailable');
-    const items=(r.items||[]).filter(i=>i.soldoutRate>0).slice(0,12);
-    $('stockrows').innerHTML=items.length?items.map(i=>`<tr>
-      <td>${i.product}</td>
-      <td class="right ${i.soldoutRate>=40?'bad':''}">${i.soldoutRate}%</td>
-      <td class="right ${i.weekendSoldoutRate>=50?'bad':''}">${i.weekendSoldoutRate}%</td>
-      <td class="right muted">${i.avgUnitsPerDay}</td>
-      <td class="right muted">${fmtHr(i.avgLastSaleHour)}</td>
-    </tr>`).join(''):'<tr><td class="muted" colspan="5">No consistent early sell-outs detected.</td></tr>';
-  }catch(e){ $('stockrows').innerHTML='<tr><td class="muted" colspan="5">Could not load (heavy query): '+e.message+'</td></tr>'; }
-}
-
-function textCustomer(phone, sold){
-  const key=$('adminkey').value.trim();
-  const suggested=`Bonjour from Colette! We're out of ${sold||'an item on your order'} today — may we swap it for something similar or refund it? Reply here and we'll take care of it. Merci!`;
-  const msg=prompt('Text to send the customer:', suggested);
-  if(msg===null) return;
-  fetch(BACKEND+'/api/ops?action=notify-customer',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({action:'notify-customer',phone,message:msg})})
-    .then(r=>r.json()).then(r=>{ alert(r.sent?'✓ Text sent to customer':'Not sent: '+(r.reason||r.error||'error')+((r.reason||'').includes('not configured')?'\n\nCopy to send manually:\n'+msg:'')); })
-    .catch(e=>alert('Error: '+e.message));
-}
-async function loadPending(){
-  const key=$('adminkey').value.trim(); if(!key){$('pendingrows').innerHTML='<div class="muted" style="font-size:.85rem">Enter your admin key (in Live Orders) first.</div>';return;}
-  try{ localStorage.setItem('colette_admin_key',key); }catch(e){}
-  $('pendingrows').innerHTML='<div class="muted" style="font-size:.85rem">Loading…</div>';
-  try{
-    const r=await fetch(BACKEND+'/api/ops?action=pending-orders&t='+Date.now(),{headers:{'x-colette-secret':key}}).then(x=>x.json());
-    if(!r||!r.ok) throw new Error(r&&r.error||'unauthorized');
-    const orders=r.orders||[];
-    $('pending-count').textContent=orders.length;
-    $('pendingrows').innerHTML=orders.length?orders.map(o=>{
-      const t=o.at?new Date(o.at).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';
-      const c=o.counts||{};
-      return `<div style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${o.employee||'Staff'}</b><span class="muted" style="font-size:.78rem">${t}</span></div>
-        <div style="font-size:.85rem;margin:5px 0">Costco ${c.costco||0} · Restaurant Depot ${c.rd||0} · Publix ${c.ic||0} items</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <a href="${o.link}" target="_blank" style="background:var(--gold);color:#1a1206;border-radius:16px;padding:6px 14px;text-decoration:none;font-size:.8rem;font-weight:700">Open &amp; place →</a>
-          <button onclick="resolvePending('${o.id}')" style="background:none;border:1px solid var(--line);border-radius:16px;padding:5px 12px;cursor:pointer;font-size:.78rem">Mark placed</button>
-        </div>
-      </div>`;
-    }).join(''):'<div class="muted" style="font-size:.85rem">No orders waiting. (Staff submit from the supplier sheet.)</div>';
-  }catch(e){ $('pendingrows').innerHTML='<div class="bad" style="font-size:.85rem">Could not load: '+e.message+' — check your admin key.</div>'; }
-}
-async function resolvePending(id){
-  const key=$('adminkey').value.trim(); if(!key) return;
-  try{
-    await fetch(BACKEND+'/api/ops?action=resolve-order',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({id})});
-    loadPending();
-  }catch(e){ alert('Could not update: '+e.message); }
-}
-async function loadLiveOrders(){
-  const key=$('adminkey').value.trim(); if(!key){$('liverows').innerHTML='<div class="muted" style="font-size:.85rem">Enter your admin key first.</div>';return;}
-  try{ localStorage.setItem('colette_admin_key',key); }catch(e){}
-  $('liverows').innerHTML='<div class="muted" style="font-size:.85rem">Loading…</div>';
-  try{
-    const r=await fetch(BACKEND+'/api/ops?action=recent-orders&days=3&t='+Date.now(),{headers:{'x-colette-secret':key}}).then(x=>x.json());
-    if(!r||!r.ok) throw new Error(r&&r.error||'unauthorized');
-    const orders=r.orders||[];
-    $('liverows').innerHTML=orders.length?orders.map(o=>{
-      const t=o.createdTime?new Date(o.createdTime).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';
-      const items=o.lines.map(l=>l.soldOut?`<span class="bad">⚠ ${l.name}</span>`:l.name).join(', ')||'—';
-      const sold=(o.lines.filter(l=>l.soldOut).map(l=>l.name).join(', ')).replace(/'/g,'');
-      const btn=o.phone?`<button onclick="textCustomer('${o.phone}','${sold}')" style="background:${o.hasSoldOut?'var(--gold)':'none'};color:${o.hasSoldOut?'#1a1206':'inherit'};border:1px solid var(--line);border-radius:16px;padding:5px 12px;cursor:pointer;font-size:.78rem">Text customer</button>`:'<span class="muted" style="font-size:.75rem">no phone on file</span>';
-      return `<div style="border:1px solid ${o.hasSoldOut?'#f0c9ba':'var(--line)'};border-radius:10px;padding:10px 12px;margin-bottom:8px;background:${o.hasSoldOut?'#fff7f3':'transparent'}">
-        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${o.customer||o.orderType||'Order'}</b><span class="muted" style="font-size:.78rem">${t} · ${money(o.total)}</span></div>
-        <div style="font-size:.85rem;margin:4px 0">${items}</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${btn}${o.hasSoldOut?'<span class="muted" style="font-size:.74rem">· refund/edit in Clover if needed</span>':''}</div>
-      </div>`;
-    }).join(''):'<div class="muted" style="font-size:.85rem">No orders in the last 3 days.</div>';
-  }catch(e){ $('liverows').innerHTML='<div class="bad" style="font-size:.85rem">Could not load: '+e.message+' — check your admin key.</div>'; }
-}
-
-async function load(){
-  $('err').style.display='none';
-  try{ const k=localStorage.getItem('colette_admin_key'); if(k&&$('adminkey'))$('adminkey').value=k; }catch(e){}
-  if($('adminkey')&&$('adminkey').value.trim()) loadPending(); // show orders waiting to be placed
-  bootstrapAlon(); // Alon order calendar; stockout runs on demand via its Run button
-  try{
-    const [m,p]=await Promise.all([
-      fetch(BACKEND+'/api/ops?action=metrics&days=35').then(r=>r.json()),
-      fetch(BACKEND+'/api/popular?days=30').then(r=>r.json()).catch(()=>({items:[]}))
-    ]);
-    if(!m||!m.ok) throw new Error((m&&m.error)||'metrics unavailable');
-    render(m,p);
-    $('asof').textContent='updated '+new Date().toLocaleString();
-  }catch(e){
-    $('err').style.display='block';
-    $('err').textContent='Could not load live data yet: '+e.message+'. (The metrics endpoint goes live once the backend is deployed.)';
+    await fetch(BACKEND+'/api/ops?action=run-task',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({task:'sync'})});
+  }catch(e){ $('ordermsg').innerHTML='<span class=bad>Could not start sync: '+e.message+'</span>'; btn.disabled=false; return; }
+  let done=false;
+  for(let i=0;i<26 && !done;i++){
+    await new Promise(r=>setTimeout(r,9000));
+    try{ const o=await fetch(BACKEND+'/api/ops?action=alon-order-get&date='+ORDER_DATE_ISO+'&t='+Date.now()).then(x=>x.json()); const at=(o&&o.order&&o.order.at)||0; if(at&&at>before) done=true; }catch(e){}
   }
+  await loadDateOrder();
+  $('ordermsg').innerHTML = done ? '<span class=good>✓ Refreshed live from Alon</span>' : '<span class=muted>Sync still running — showing latest available; try again shortly.</span>';
+  btn.disabled=false;
 }
-
-function render(m,p){
-  const daily=m.daily||[];
-  const mk=thisMonth();
-  const mtd=daily.filter(d=>monthKey(d.date)===mk).reduce((s,d)=>s+d.revenue,0);
-  const pct=Math.min(100,Math.round(mtd/100000*100));
-  $('mtd').textContent=money(mtd);
-  $('goalbar').style.width=pct+'%';
-  $('pct').textContent=pct+'% of $100K';
-  // projection: MTD / days elapsed this month * ~26 open days
-  const dayNum=Number(new Date().toLocaleString('en-US',{timeZone:'America/New_York',day:'numeric'}));
-  const proj=dayNum>0?Math.round(mtd/dayNum* 30):0;
-  $('proj').textContent='projected '+money(proj)+'/mo';
-
-  // TODAY (live) — look up today's ET date in the daily series; $0 if no sales yet.
-  const todayISO=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
-  const tISO=todayISO.getFullYear()+'-'+String(todayISO.getMonth()+1).padStart(2,'0')+'-'+String(todayISO.getDate()).padStart(2,'0');
-  const todayRow=daily.find(d=>d.date===tISO);
-  const todayRev=todayRow?todayRow.revenue:0;
-  $('yest').textContent=money(todayRev);
-  const diff=todayRev-DAILY_TARGET;
-  $('yestd').innerHTML=(todayRow?(todayRow.orders+' orders · '):'no sales yet · ')+(diff>=0?'<span class=good>▲ '+money(Math.abs(diff))+' over</span>':'<span class=muted>'+money(Math.abs(diff))+' to target</span>');
-  $('aov').textContent='$'+(m.aov||0).toFixed(2);
-  $('orders').textContent=(m.totalOrders||0).toLocaleString();
-  $('ordd').textContent='~'+Math.round((m.totalOrders||0)/(m.days||35))+'/day';
-  $('repeat').textContent=(m.repeatRate||0)+'%';
-
-  // chart (last 30)
-  const d30=daily.slice(-30);
-  const labels=d30.map(d=>d.date.slice(5));
-  const vals=d30.map(d=>d.revenue);
-  if(chart)chart.destroy();
-  chart=new Chart($('chart'),{type:'bar',data:{labels,datasets:[{label:'Revenue',data:vals,backgroundColor:'#c99a3b'}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v}}}}});
-
-  // actions (simple rules)
-  const acts=[];
-  const last=daily.length?daily[daily.length-1]:null; // most recent day with data
-  if(m.aov && m.aov<40) acts.push('AOV is $'+m.aov.toFixed(2)+' (target $43+) → push the coffee-bag / "add a coffee" upsell and crêpe add-ons today.');
-  if((m.repeatRate||0)<20) acts.push('Repeat rate '+ (m.repeatRate||0)+'% is the biggest lever → make sure the Winback flow is on and send a "we miss you" SMS to 30-day lapsers.');
-  if(last && last.revenue<DAILY_TARGET) acts.push('Yesterday ('+money(last.revenue)+') was under the ~'+money(DAILY_TARGET)+' pace → run a crêpe Reel + a lunch SMS, and boost the leads ad set today.');
-  // weakest weekday
-  const byDow={};d30.forEach(d=>{const w=new Date(d.date+'T12:00:00').getDay();byDow[w]=(byDow[w]||0)+d.revenue;});
-  const names=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  let weak=null,min=Infinity;Object.entries(byDow).forEach(([w,v])=>{if(v<min){min=v;weak=w;}});
-  if(weak!==null) acts.push('Weakest day recently is <b>'+names[weak]+'</b> → schedule a '+names[weak]+'-only combo/offer to smooth demand.');
-  acts.push('Keep the Order Direct & Save push live everywhere (café price + flat $7.99 delivery + points).');
-  $('actions').innerHTML=acts.map(a=>'<li>'+a+'</li>').join('');
-
-  // top sellers
-  const items=(p&&p.items)||[];
-  $('top').innerHTML=items.length?items.slice(0,12).map(i=>`<tr><td>${i.name}</td><td class="right">${i.count}</td><td class="right">${money((i.revenue||0)/100)}</td></tr>`).join(''):'<tr><td class="muted" colspan="3">No data yet.</td></tr>';
-}
-load();
-</script>
-</body>
-</html>
-+dollars.toFixed(2);}
-async function recheckAlon(){if(!ORDER_DATE_ISO){$('ordermsg').textContent='Pick a date first.';return;}const key=adminKey();if(!key){$('ordermsg').innerHTML='<span class=bad>Enter your admin key (Live Orders box) first.</span>';return;}const btn=$('recheckBtn');btn.disabled=true;let before=0;try{const o=await fetch(BACKEND+'/api/ops?action=alon-order-get&date='+ORDER_DATE_ISO+'&t='+Date.now()).then(x=>x.json());before=(o&&o.order&&o.order.at)||0;}catch(e){}$('ordermsg').innerHTML='Reading live from Alon… this takes ~2 min ⏳';try{await fetch(BACKEND+'/api/ops?action=run-task',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({task:'sync'})});}catch(e){$('ordermsg').innerHTML='<span class=bad>Could not start sync: '+e.message+'</span>';btn.disabled=false;return;}let done=false;for(let i=0;i<26&&!done;i++){await new Promise(r=>setTimeout(r,9000));try{const o=await fetch(BACKEND+'/api/ops?action=alon-order-get&date='+ORDER_DATE_ISO+'&t='+Date.now()).then(x=>x.json());const at=(o&&o.order&&o.order.at)||0;if(at&&at>before)done=true;}catch(e){}}await loadDateOrder();$('ordermsg').innerHTML=done?'<span class=good>✓ Refreshed live from Alon</span>':'<span class=muted>Sync still running — showing latest available; try again shortly.</span>';btn.disabled=false;}
 function readOrderLines(){
   return [...document.querySelectorAll('#orderrows input')].map(inp=>({code:inp.dataset.code,product:inp.dataset.name,qty:parseInt(inp.value||'0',10)})).filter(l=>l.qty>0);
 }
