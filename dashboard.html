@@ -58,6 +58,15 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
     <div class="kpi"><div class="l">Repeat rate</div><div class="v" id="repeat">—</div><div class="d">target 25–30%</div></div>
   </div>
 
+  <div class="card" id="cashrecon" style="border:2px solid var(--gold-deep)">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0">💵 Cash to reconcile <span class="muted" id="cr-week" style="font-size:.8rem"></span></h3>
+      <button class="reload" onclick="loadCashRecon()" style="padding:7px 14px;font-size:.82rem">Refresh</button>
+    </div>
+    <p class="muted" style="font-size:.8rem;margin:6px 0 10px">Physical <b>cash</b> taken in last week (Mon–Sun), day by day. Every Monday, count the drawer + deposits against this. Cards/delivery are excluded. Admin only.</p>
+    <div id="cr-body"><div class="muted" style="font-size:.85rem">Enter your admin key (Live Orders box), then hit Refresh.</div></div>
+  </div>
+
   <div class="card" id="ordercard">
     <style>
     #alon-cal{display:none;position:absolute;top:100%;left:0;z-index:30;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:6px;max-width:360px;background:var(--card);box-shadow:0 12px 34px rgba(0,0,0,.18)}
@@ -551,6 +560,46 @@ function renderDaypart(d,s,e){
   document.getElementById('dp-body').innerHTML=html;
 }
 try{ if(document.readyState!=='loading') setDp('30'); else document.addEventListener('DOMContentLoaded',()=>setDp('30')); }catch(e){}
+
+// ----- Cash-to-reconcile card (last week, cash tender only) -----
+function crPriorWeek(){
+  const now=new Date();
+  const dow=(now.getDay()+6)%7; // Mon=0 .. Sun=6
+  const thisMon=new Date(now.getFullYear(),now.getMonth(),now.getDate()-dow,0,0,0,0);
+  return new Date(thisMon.getTime()-7*86400000); // last Monday 00:00
+}
+async function loadCashRecon(){
+  const key=(typeof adminKey==='function')?adminKey():'';
+  const body=document.getElementById('cr-body'); if(!body) return;
+  if(!key){ body.innerHTML='<div style="font-size:.85rem;color:var(--wine)">Enter your admin key (Live Orders box) first, then hit Refresh.</div>'; return; }
+  const lastMon=crPriorWeek();
+  const DN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const fmt=d=>d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  const wl=document.getElementById('cr-week'); if(wl) wl.textContent=fmt(lastMon)+' – '+fmt(new Date(lastMon.getTime()+6*86400000));
+  body.innerHTML='<div class="muted" style="font-size:.85rem">Loading last week’s cash…</div>';
+  try{
+    const days=Array.from({length:7},(_,i)=>new Date(lastMon.getTime()+i*86400000));
+    const results=await Promise.all(days.map(ds=>{
+      const s=new Date(ds.getFullYear(),ds.getMonth(),ds.getDate(),0,0,0,0).getTime();
+      const e=s+86400000-1000;
+      return fetch(BACKEND+'/api/ops?action=sales-breakdown&start='+s+'&end='+e+'&t='+Date.now(),{headers:{'x-colette-secret':key}}).then(x=>x.json()).catch(()=>null);
+    }));
+    let total=0,count=0; const rows=[];
+    results.forEach((r,i)=>{
+      const cashT=((r&&r.tenders)||[]).find(t=>/cash/i.test(t.label));
+      const amt=cashT?cashT.amount:0, c=cashT?cashT.count:0;
+      total+=amt; count+=c;
+      rows.push({d:DN[i],date:fmt(days[i]),amt,c});
+    });
+    const m=n=>'$'+(+n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    let html='<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px;flex-wrap:wrap"><div style="font-size:1.9rem;font-weight:800;color:var(--gold-deep)">'+m(total)+'</div><div class="muted" style="font-size:.85rem">expected cash across '+count+' transactions — count the drawer + deposits against this</div></div>';
+    html+='<table style="width:100%;border-collapse:collapse;font-size:.86rem"><thead><tr><th style="text-align:left">Day</th><th style="text-align:right">Txns</th><th style="text-align:right">Cash</th></tr></thead><tbody>';
+    rows.forEach(r=>{ html+='<tr><td style="padding:4px 0">'+r.d+' <span class="muted">'+r.date+'</span></td><td style="text-align:right" class="muted">'+r.c+'</td><td style="text-align:right">'+m(r.amt)+'</td></tr>'; });
+    html+='<tr style="font-weight:800;border-top:1px solid var(--line)"><td>Total</td><td style="text-align:right">'+count+'</td><td style="text-align:right;color:var(--gold-deep)">'+m(total)+'</td></tr></tbody></table>';
+    body.innerHTML=html;
+  }catch(e){ body.innerHTML='<div style="font-size:.85rem;color:var(--wine)">Error: '+e.message+'</div>'; }
+}
+try{ if(document.readyState!=='loading') loadCashRecon(); else document.addEventListener('DOMContentLoaded',loadCashRecon); }catch(e){}
 
 function readOrderLines(){
   return [...document.querySelectorAll('#orderrows input')].map(inp=>({code:inp.dataset.code,product:inp.dataset.name,qty:parseInt(inp.value||'0',10)})).filter(l=>l.qty>0);
