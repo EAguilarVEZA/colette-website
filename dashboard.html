@@ -93,7 +93,7 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
     <div id="ordertotals" style="display:flex;justify-content:flex-end;gap:24px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-weight:700;font-size:1rem"><span>Items ordered: <span id="ordertot-items" style="color:var(--gold-deep)">0</span></span><span>Order total: <span id="ordertot-dollars" style="color:var(--gold-deep)">$0.00</span></span></div>
     <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
       <button class="reload" id="approveBtn" onclick="placeOrder()" style="padding:11px 22px;font-size:.95rem">✓ Approve &amp; Place at Alon</button>
-      <button id="recheckBtn" onclick="recheckAlon()" style="background:none;border:1px solid var(--gold-deep);color:var(--gold-deep);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Read live from Alon now — runs a fresh sync (~2 min)">🔁 Re-check Alon</button>
+      <button id="recheckBtn" onclick="recheckAlon()" style="background:none;border:1px solid var(--gold-deep);color:var(--gold-deep);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Read live from Alon now — runs a fresh sync (~2 min)">🔁 Re-check Alon</button> <button id="cancelBtn" onclick="cancelAlon()" style="background:none;border:1px solid var(--wine);color:var(--wine);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Cancel/void the Alon order for this date">🗑️ Cancel order</button>
       <button id="syncBtn" onclick="syncNow()" style="background:none;border:1px solid var(--line);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Pull today's Alon delivery into Clover now (instead of waiting for the daily run)">🔄 Sync now</button>
       <button id="resetBtn" onclick="resetInventory()" style="background:none;border:1px solid var(--wine);color:var(--wine);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Zero every item's stock in Clover — clean slate">♻️ Reset to zero</button>
       <button onclick="copyOrder()" style="background:none;border:1px solid var(--line);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem">Copy order</button>
@@ -442,6 +442,19 @@ function renderBreakdown(d,s,e){
 }
 try{ if(document.readyState!=='loading') setRange('today'); else document.addEventListener('DOMContentLoaded',()=>setRange('today')); }catch(e){}
 
+async function cancelAlon(){
+  if(!ORDER_DATE_ISO){$('ordermsg').textContent='Pick a date first.';return;}
+  const key=adminKey();if(!key){$('ordermsg').innerHTML='<span class=bad>Enter your admin key (Live Orders box) first.</span>';return;}
+  if(!confirm('Cancel the Alon order for '+ORDER_DATE_ISO+'? This removes it at Alon.'))return;
+  const b=$('cancelBtn');if(b)b.disabled=true;
+  $('ordermsg').innerHTML='Cancelling at Alon\u2026 this takes ~2 min \u23f3';
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=run-task',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({task:'void',date:ORDER_DATE_ISO})}).then(x=>x.json());
+    if(!r||!r.ok) throw new Error((r&&r.error)||'failed');
+    $('ordermsg').innerHTML='<span class=good>\u2713 Cancel sent to Alon for '+ORDER_DATE_ISO+'. Hit Re-check Alon in ~2 min to confirm.</span>';
+  }catch(e){$('ordermsg').innerHTML='<span class=bad>Error: '+e.message+'</span>';}
+  if(b)b.disabled=false;
+}
 function readOrderLines(){
   return [...document.querySelectorAll('#orderrows input')].map(inp=>({code:inp.dataset.code,product:inp.dataset.name,qty:parseInt(inp.value||'0',10)})).filter(l=>l.qty>0);
 }
