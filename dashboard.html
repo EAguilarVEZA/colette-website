@@ -93,7 +93,7 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
     <div id="ordertotals" style="display:flex;justify-content:flex-end;gap:24px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-weight:700;font-size:1rem"><span>Items ordered: <span id="ordertot-items" style="color:var(--gold-deep)">0</span></span><span>Order total: <span id="ordertot-dollars" style="color:var(--gold-deep)">$0.00</span></span></div>
     <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
       <button class="reload" id="approveBtn" onclick="placeOrder()" style="padding:11px 22px;font-size:.95rem">✓ Approve &amp; Place at Alon</button>
-      <button id="recheckBtn" onclick="recheckAlon()" style="background:none;border:1px solid var(--gold-deep);color:var(--gold-deep);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Read live from Alon now — runs a fresh sync (~2 min)">🔁 Re-check Alon</button> <button id="cancelBtn" onclick="cancelAlon()" style="background:none;border:1px solid var(--wine);color:var(--wine);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Cancel/void the Alon order for this date">🗑️ Cancel order</button>
+      <button id="recheckBtn" onclick="recheckAlon()" style="background:none;border:1px solid var(--gold-deep);color:var(--gold-deep);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Read live from Alon now — runs a fresh sync (~2 min)">🔁 Re-check Alon</button>
       <button id="syncBtn" onclick="syncNow()" style="background:none;border:1px solid var(--line);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Pull today's Alon delivery into Clover now (instead of waiting for the daily run)">🔄 Sync now</button>
       <button id="resetBtn" onclick="resetInventory()" style="background:none;border:1px solid var(--wine);color:var(--wine);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem" title="Zero every item's stock in Clover — clean slate">♻️ Reset to zero</button>
       <button onclick="copyOrder()" style="background:none;border:1px solid var(--line);border-radius:20px;padding:10px 16px;cursor:pointer;font-size:.85rem">Copy order</button>
@@ -118,6 +118,20 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
     </div>
     <p class="muted" style="font-size:.8rem;margin:6px 0 10px">Tender types, refunds, and discounts from Clover for the selected period, with net after refunds. Admin only (uses the admin key below).</p>
     <div id="sb-body"><div class="muted" style="font-size:.85rem">Enter your admin key (Live Orders box), then pick a range.</div></div>
+  </div>
+
+  <div class="card" id="daypart">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0">🕑 Daypart &amp; sell-out <span class="muted" id="dp-range" style="font-size:.8rem"></span></h3>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="dp-presets">
+        <button class="dpp" data-r="7" onclick="setDp('7')" style="background:none;border:1px solid var(--line);border-radius:16px;padding:5px 12px;font-size:.8rem;cursor:pointer">Last 7 days</button>
+        <button class="dpp" data-r="30" onclick="setDp('30')" style="background:none;border:1px solid var(--line);border-radius:16px;padding:5px 12px;font-size:.8rem;cursor:pointer">Last 30 days</button>
+        <button class="dpp" data-r="mtd" onclick="setDp('mtd')" style="background:none;border:1px solid var(--line);border-radius:16px;padding:5px 12px;font-size:.8rem;cursor:pointer">Month-to-date</button>
+        <button class="dpp" data-r="all" onclick="setDp('all')" style="background:none;border:1px solid var(--line);border-radius:16px;padding:5px 12px;font-size:.8rem;cursor:pointer">All time</button>
+      </div>
+    </div>
+    <p class="muted" style="font-size:.8rem;margin:6px 0 10px">When sales happen by hour and weekday, plus which items sell out before 2pm. Admin only. Times Eastern.</p>
+    <div id="dp-body"><div class="muted" style="font-size:.85rem">Enter your admin key (Live Orders box), then pick a range.</div></div>
   </div>
 
   <div class="card" id="pendingorders">
@@ -442,19 +456,78 @@ function renderBreakdown(d,s,e){
 }
 try{ if(document.readyState!=='loading') setRange('today'); else document.addEventListener('DOMContentLoaded',()=>setRange('today')); }catch(e){}
 
-async function cancelAlon(){
-  if(!ORDER_DATE_ISO){$('ordermsg').textContent='Pick a date first.';return;}
-  const key=adminKey();if(!key){$('ordermsg').innerHTML='<span class=bad>Enter your admin key (Live Orders box) first.</span>';return;}
-  if(!confirm('Cancel the Alon order for '+ORDER_DATE_ISO+'? This removes it at Alon.'))return;
-  const b=$('cancelBtn');if(b)b.disabled=true;
-  $('ordermsg').innerHTML='Cancelling at Alon\u2026 this takes ~2 min \u23f3';
-  try{
-    const r=await fetch(BACKEND+'/api/ops?action=run-task',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({task:'void',date:ORDER_DATE_ISO})}).then(x=>x.json());
-    if(!r||!r.ok) throw new Error((r&&r.error)||'failed');
-    $('ordermsg').innerHTML='<span class=good>\u2713 Cancel sent to Alon for '+ORDER_DATE_ISO+'. Hit Re-check Alon in ~2 min to confirm.</span>';
-  }catch(e){$('ordermsg').innerHTML='<span class=bad>Error: '+e.message+'</span>';}
-  if(b)b.disabled=false;
+// ----- Daypart & sell-out card -----
+var DP_RANGE='30';
+function dpRangeMs(r){
+  const now=new Date(); const end=Date.now();
+  if(r==='7') return {s:end-7*864e5,e:end};
+  if(r==='30') return {s:end-30*864e5,e:end};
+  if(r==='mtd'){ const d=new Date(now.getFullYear(),now.getMonth(),1); return {s:d.getTime(),e:end}; }
+  return {s:Date.UTC(2026,4,1),e:end}; // all time — Clover history starts May 2026
 }
+function setDp(r){
+  DP_RANGE=r;
+  document.querySelectorAll('#dp-presets .dpp').forEach(b=>{ const on=b.dataset.r===r; b.style.fontWeight=on?'700':'400'; b.style.borderColor=on?'var(--gold-deep)':'var(--line)'; });
+  loadDaypart();
+}
+async function loadDaypart(){
+  const key=(typeof adminKey==='function')?adminKey():'';
+  const body=document.getElementById('dp-body'); if(!body) return;
+  if(!key){ body.innerHTML='<div style="font-size:.85rem;color:var(--wine)">Enter your admin key (Live Orders box) first, then pick a range.</div>'; return; }
+  const {s,e}=dpRangeMs(DP_RANGE);
+  body.innerHTML='<div class="muted" style="font-size:.85rem">Loading… (item pull can take a few seconds)</div>';
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=daypart&items=1&start='+s+'&end='+e+'&t='+Date.now(),{headers:{'x-colette-secret':key}}).then(x=>x.json());
+    if(!r||!r.ok) throw new Error((r&&r.error)||'failed');
+    renderDaypart(r,s,e);
+  }catch(err){ body.innerHTML='<div style="font-size:.85rem;color:var(--wine)">Error: '+err.message+'</div>'; }
+}
+function dpMoney(n){ return '$'+Math.round(+n||0).toLocaleString(); }
+function renderDaypart(d,s,e){
+  const dt=ms=>new Date(ms).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  const rg=document.getElementById('dp-range'); if(rg) rg.textContent=dt(s)+' – '+dt(e)+' · '+d.orders+' orders';
+  const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  // daypart bands
+  const H=d.byHour; const at=h=>H.find(x=>x.hour===h)||{orders:0,net:0};
+  const band=hrs=>hrs.reduce((a,h)=>{const x=at(h);a.o+=x.orders;a.n+=x.net;return a;},{o:0,n:0});
+  const morn=band([6,7,8,9,10]), lunch=band([11,12,13]), aft=band([14,15]);
+  const avg=b=>b.o?('$'+(b.n/b.o).toFixed(2)):'—';
+  const tile=(l,b,c)=>'<div style="flex:1;min-width:120px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px"><div class="muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.04em">'+l+'</div><div style="font-weight:700;font-size:1.05rem;color:'+(c||'inherit')+'">'+dpMoney(b.n)+'</div><div class="muted" style="font-size:.72rem">'+b.o+' orders · avg '+avg(b)+'</div></div>';
+  let html='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">';
+  html+=tile('Morning 6–11',morn)+tile('Lunch 11–2',lunch)+tile('Afternoon 2–4',aft,'var(--gold-deep)');
+  html+='</div>';
+  // hour chart
+  const maxH=Math.max(1,...H.map(x=>x.orders));
+  html+='<div style="font-weight:700;margin:4px 0 6px">Orders by hour</div>';
+  H.filter(x=>x.orders>0&&x.hour>=6&&x.hour<=19).forEach(x=>{
+    const h12=(x.hour%12||12)+(x.hour<12?'a':'p'); const w=Math.round(x.orders/maxH*100);
+    const col=x.hour>=14?'var(--wine)':(x.hour>=10&&x.hour<=12?'var(--gold-deep)':'#d8c6a8');
+    html+='<div style="display:flex;align-items:center;gap:8px;font-size:.8rem;margin:2px 0"><span class="muted" style="width:38px;text-align:right">'+h12+'</span><span style="flex:1;background:#f0e7dd;border-radius:4px;height:16px;overflow:hidden"><span style="display:block;height:100%;width:'+w+'%;background:'+col+'"></span></span><span style="width:120px;text-align:right;font-variant-numeric:tabular-nums">'+x.orders+' · '+dpMoney(x.net)+'</span></div>';
+  });
+  // day of week
+  const maxD=Math.max(1,...d.byDow.map(x=>x.orders));
+  html+='<div style="font-weight:700;margin:16px 0 6px">Orders by day of week</div>';
+  d.byDow.forEach((x,i)=>{ const w=Math.round(x.orders/maxD*100);
+    html+='<div style="display:flex;align-items:center;gap:8px;font-size:.8rem;margin:2px 0"><span class="muted" style="width:38px;text-align:right">'+DN[i]+'</span><span style="flex:1;background:#f0e7dd;border-radius:4px;height:16px;overflow:hidden"><span style="display:block;height:100%;width:'+w+'%;background:'+(x.orders===maxD?'var(--gold-deep)':'#d8c6a8')+'"></span></span><span style="width:120px;text-align:right;font-variant-numeric:tabular-nums">'+(x.orders?x.orders+' · '+dpMoney(x.net):'closed')+'</span></div>';
+  });
+  // sell-out list from items
+  const items=d.items||[]; const baseAft=d.orders?Math.round(band([14,15]).o/d.orders*100):17;
+  const rows=items.slice(0,60).map(it=>{const q=it.byHourQty||[];const a=(q[14]||0)+(q[15]||0);return {n:it.name,q:it.qty,pAft:Math.round(a/(it.qty||1)*100)};});
+  const outs=rows.filter(r=>r.q>=Math.max(20,d.orders*0.02)&&r.pAft<=Math.round(baseAft*0.55)).sort((a,b)=>b.q-a.q).slice(0,12);
+  const heroes=rows.filter(r=>r.q>=Math.max(15,d.orders*0.01)&&r.pAft>=Math.round(baseAft*1.4)).sort((a,b)=>b.pAft-a.pAft).slice(0,10);
+  html+='<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px">';
+  html+='<div style="flex:1;min-width:240px"><div style="font-weight:700;margin:0 0 4px">⚠️ Runs out before 2pm <span class="muted" style="font-weight:400;font-size:.78rem">(vs '+baseAft+'% store avg)</span></div>';
+  if(outs.length){ html+='<table style="width:100%;border-collapse:collapse;font-size:.82rem">'; outs.forEach(r=>{ html+='<tr><td style="padding:3px 0">'+r.n+'</td><td class="muted" style="text-align:right">'+r.q+'u</td><td style="text-align:right;color:var(--wine)">'+r.pAft+'% aft</td></tr>'; }); html+='</table>'; }
+  else html+='<div class="muted" style="font-size:.82rem">Not enough item data in this range.</div>';
+  html+='</div>';
+  html+='<div style="flex:1;min-width:240px"><div style="font-weight:700;margin:0 0 4px">✅ Afternoon movers</div>';
+  if(heroes.length){ html+='<table style="width:100%;border-collapse:collapse;font-size:.82rem">'; heroes.forEach(r=>{ html+='<tr><td style="padding:3px 0">'+r.n+'</td><td class="muted" style="text-align:right">'+r.q+'u</td><td style="text-align:right;color:var(--gold-deep)">'+r.pAft+'% aft</td></tr>'; }); html+='</table>'; }
+  else html+='<div class="muted" style="font-size:.82rem">Not enough item data in this range.</div>';
+  html+='</div></div>';
+  document.getElementById('dp-body').innerHTML=html;
+}
+try{ if(document.readyState!=='loading') setDp('30'); else document.addEventListener('DOMContentLoaded',()=>setDp('30')); }catch(e){}
+
 function readOrderLines(){
   return [...document.querySelectorAll('#orderrows input')].map(inp=>({code:inp.dataset.code,product:inp.dataset.name,qty:parseInt(inp.value||'0',10)})).filter(l=>l.qty>0);
 }
