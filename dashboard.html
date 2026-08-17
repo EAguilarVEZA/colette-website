@@ -610,15 +610,36 @@ function copyOrder(){
 }
 async function placeOrder(){
   const lines=readOrderLines(); if(!lines.length){$('ordermsg').textContent='Nothing to order.';return;}
-  const btn=$('approveBtn'); btn.disabled=true; $('ordermsg').textContent='Placing…';
+  const key=adminKey();
+  const btn=$('approveBtn'); btn.disabled=true; const rc=$('recheckBtn'); if(rc) rc.disabled=true;
+  const dateISO=ORDER_DATE_ISO, dow=DOWN[ORDER_DOW];
+  // Snapshot Alon's current read-back timestamp so we can detect a FRESH confirmation from Alon.
+  let before=0;
+  try{ if(key){ const o=await fetch(BACKEND+'/api/ops?action=alon-order-get&date='+dateISO+'&t='+Date.now(),{headers:{'x-colette-secret':key}}).then(x=>x.json()); before=(o&&o.order&&o.order.at)||0; } }catch(e){}
+  $('ordermsg').innerHTML='Sending to Alon…';
   try{
     const r=await fetch(BACKEND+'/api/ops?action=place-order',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'place-order',targetDay:DOWN[ORDER_DOW],targetDate:ORDER_DATE_ISO,lines})}).then(x=>x.json());
+      body:JSON.stringify({action:'place-order',targetDay:dow,targetDate:dateISO,lines})}).then(x=>x.json());
     if(!r||!r.ok) throw new Error(r&&r.error||'failed');
-    if(r.placed){$('ordermsg').innerHTML='<span class=good>✓ Order sent to Alon\'s for '+DOWN[ORDER_DOW]+'</span>';}
-    else{$('ordermsg').innerHTML='<span class=good>✓ Approved</span> <span class=muted>'+(r.note||'')+'</span>';}
-  }catch(e){$('ordermsg').innerHTML='<span class=bad>Error: '+e.message+'</span>';}
-  btn.disabled=false;
+    if(!r.placed){ $('ordermsg').innerHTML='<span class=good>✓ Approved</span> <span class=muted>'+(r.note||'')+'</span>'; btn.disabled=false; if(rc) rc.disabled=false; return; }
+  }catch(e){ $('ordermsg').innerHTML='<span class=bad>Error: '+e.message+'</span>'; btn.disabled=false; if(rc) rc.disabled=false; return; }
+  // Dispatched to Alon. Do NOT claim success from a local echo — VERIFY by reading Alon's order list back.
+  if(!key){ $('ordermsg').innerHTML='<span class=good>Sent to Alon.</span> <span class=muted>Enter your admin key and hit 🔁 Re-check Alon to verify it landed.</span>'; btn.disabled=false; if(rc) rc.disabled=false; return; }
+  $('ordermsg').innerHTML='Placing at Alon… <b>verifying against Alon’s order list</b> (~2–3 min) ⏳';
+  try{ await fetch(BACKEND+'/api/ops?action=run-task',{method:'POST',headers:{'Content-Type':'application/json','x-colette-secret':key},body:JSON.stringify({task:'sync'})}); }catch(e){}
+  let confirmed=false, lineCount=0;
+  for(let i=0;i<28 && !confirmed;i++){
+    await new Promise(res=>setTimeout(res,9000));
+    try{
+      const o=await fetch(BACKEND+'/api/ops?action=alon-order-get&date='+dateISO+'&t='+Date.now(),{headers:{'x-colette-secret':key}}).then(x=>x.json());
+      const ord=(o&&o.order)||{}; const at=ord.at||0;
+      if(ord.source==='alon' && at>before && (ord.lines||[]).length){ confirmed=true; lineCount=ord.lines.length; }
+    }catch(e){}
+  }
+  if(dateISO===ORDER_DATE_ISO){ try{ await loadDateOrder(); }catch(e){} }
+  if(confirmed){ $('ordermsg').innerHTML='<span class=good>✅ Confirmed at Alon</span> <span class=muted>— read back from Alon’s order list: '+lineCount+' item(s) for '+dow+'</span>'; }
+  else { $('ordermsg').innerHTML='<span class=bad>⚠ Sent, but Alon has NOT confirmed it yet.</span> <span class=muted>Wait a minute and hit 🔁 Re-check Alon. If it still doesn’t appear, the order did not land at Alon — re-place it.</span>'; }
+  btn.disabled=false; if(rc) rc.disabled=false;
 }
 
 // ----- On-demand inventory controls -----
