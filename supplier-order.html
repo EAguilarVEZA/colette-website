@@ -430,6 +430,8 @@ const IC=[
   {n:'Wholly Guacamole Chunky Bowl, 7.5 OZ', url:P+'20225955-wholly-guacamole-chunky-guacamole-7-5-oz'+S},
   {n:'Fresh Attitude Arugula, Prewashed', url:P+'242214-fresh-attitude-arugula-5-oz'+S},
   {n:'GreenWise Organic Spring Mix 16 oz', url:P+'3322351-greenwise-organic-spring-mix-16-oz'+S},
+  {n:'GreenWise Organic Blueberries 18 oz', url:P+'28295033-greenwise-organic-blueberries-18-oz'+S},
+  {n:'Beefsteak Tomato (each)', url:P+'3287524-beefsteak-tomato-each'+S},
   {n:'Publix Milk, Whole 1 gal', url:P+'324942-publix-milk-whole-1-ea'+S},
   {n:'Publix Milk, Reduced Fat, 2% Milkfat 1 gal', url:P+'18066278-publix-milk-reduced-fat-2-milkfat-1-ea'+S},
   {n:'Chobani Extra Creamy Oatmilk 52 fl oz', url:P+'20941373-chobani-oat-plain-extra-creamy-52-fl-oz'+S},
@@ -601,6 +603,7 @@ COSTCO.forEach(it=>it.q=0); RD.forEach(it=>it.q=0); IC.forEach(it=>it.q=0); PANA
 // straight into the array, and Send reads from the array — so what you see is what
 // gets ordered, on all three suppliers.
 const AMAZON=[
+  {n:'Gift Boxes — Karentology Classic House-Shaped w/ Bright Ribbons (20 pc, for treats)',id:'B0B2FK59XD',url:'https://www.amazon.com/dp/B0B2FK59XD',q:0},
   {n:'Happy Birthday Acrylic Cake Toppers (10 pcs)',id:'B093P6FWYC',p:5.99,url:'https://www.amazon.com/dp/B093P6FWYC',q:0},
   {n:'Orangina Orange Pulp Soda — 60oz (12 pk cans)',id:'B08SCKH423',p:32,url:'https://www.amazon.com/dp/B08SCKH423',q:0},
   {n:'Dessert / Tiramisu Cups w/ Lids & Sporks (20 pcs)',id:'B0DPHC98YN',p:24.99,url:'https://www.amazon.com/dp/B0DPHC98YN',q:0},
@@ -894,10 +897,15 @@ function applyLoad(pl){
 // only the Send/Open controls (no AI-submit). Triggered by ?owner=1.
 function applyPendingOrder(o){
   COSTCO.forEach(x=>x.q=0); RD.forEach(x=>x.q=0); IC.forEach(x=>x.q=0);
+  PANAME.forEach(x=>x.q=0); AMAZON.forEach(x=>x.q=0); CAMBIE.forEach(x=>x.q=0); BADEKO.forEach(x=>x.q=0);
   const m=(o&&o.orders)||{};
-  Object.entries(m.c||{}).forEach(([id,q])=>{const it=COSTCO.find(x=>String(x.id)===String(id)); if(it) it.q=+q||0;});
+  Object.entries(m.c||{}).forEach(([idx,q])=>{ if(COSTCO[idx]) COSTCO[idx].q=+q||0; });
   Object.entries(m.r||{}).forEach(([id,q])=>{const it=RD.find(x=>String(x.id)===String(id)); if(it) it.q=+q||0;});
   Object.entries(m.i||{}).forEach(([idx,q])=>{ if(IC[idx]) IC[idx].q=+q||0; });
+  Object.entries(m.p||{}).forEach(([idx,q])=>{ if(PANAME[idx]) PANAME[idx].q=+q||0; });
+  Object.entries(m.a||{}).forEach(([idx,q])=>{ if(AMAZON[idx]) AMAZON[idx].q=+q||0; });
+  Object.entries(m.cm||{}).forEach(([idx,q])=>{ if(CAMBIE[idx]) CAMBIE[idx].q=+q||0; });
+  Object.entries(m.bd||{}).forEach(([idx,q])=>{ if(BADEKO[idx]) BADEKO[idx].q=+q||0; });
   render();
 }
 function selPending(){ const i=+document.getElementById('pend-sel').value; applyPendingOrder((window.__PEND||[])[i]); }
