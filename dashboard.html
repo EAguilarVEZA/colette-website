@@ -60,10 +60,10 @@ th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase}
 
   <div class="card" id="cashrecon" style="border:2px solid var(--gold-deep)">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-      <h3 style="margin:0">💵 Cash to reconcile <span class="muted" id="cr-week" style="font-size:.8rem"></span></h3>
+      <h3 style="margin:0">💵 Cash — today &amp; week-to-date <span class="muted" id="cr-week" style="font-size:.8rem"></span></h3>
       <button class="reload" onclick="loadCashRecon()" style="padding:7px 14px;font-size:.82rem">Refresh</button>
     </div>
-    <p class="muted" style="font-size:.8rem;margin:6px 0 10px">Physical <b>cash</b> taken in last week (Mon–Sun), day by day. Every Monday, count the drawer + deposits against this. Cards/delivery are excluded. Admin only.</p>
+    <p class="muted" style="font-size:.8rem;margin:6px 0 10px">Physical <b>cash</b> collected — <b>today</b> and <b>this week to date</b> (Mon–today), day by day. Count the drawer + deposits against these. Cards/delivery excluded. Admin only.</p>
     <div id="cr-body"><div class="muted" style="font-size:.85rem">Enter your admin key (Live Orders box), then hit Refresh.</div></div>
   </div>
 
@@ -562,40 +562,45 @@ function renderDaypart(d,s,e){
 try{ if(document.readyState!=='loading') setDp('30'); else document.addEventListener('DOMContentLoaded',()=>setDp('30')); }catch(e){}
 
 // ----- Cash-to-reconcile card (last week, cash tender only) -----
-function crPriorWeek(){
+function crWeekStart(){
   const now=new Date();
   const dow=(now.getDay()+6)%7; // Mon=0 .. Sun=6
-  const thisMon=new Date(now.getFullYear(),now.getMonth(),now.getDate()-dow,0,0,0,0);
-  return new Date(thisMon.getTime()-7*86400000); // last Monday 00:00
+  return new Date(now.getFullYear(),now.getMonth(),now.getDate()-dow,0,0,0,0); // THIS week's Monday 00:00
 }
 async function loadCashRecon(){
   const key=(typeof adminKey==='function')?adminKey():'';
   const body=document.getElementById('cr-body'); if(!body) return;
   if(!key){ body.innerHTML='<div style="font-size:.85rem;color:var(--wine)">Enter your admin key (Live Orders box) first, then hit Refresh.</div>'; return; }
-  const lastMon=crPriorWeek();
+  const wkStart=crWeekStart();
+  const now=new Date();
+  const todayIdx=(now.getDay()+6)%7; // 0=Mon .. today's position this week
   const DN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const fmt=d=>d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
-  const wl=document.getElementById('cr-week'); if(wl) wl.textContent=fmt(lastMon)+' – '+fmt(new Date(lastMon.getTime()+6*86400000));
-  body.innerHTML='<div class="muted" style="font-size:.85rem">Loading last week’s cash…</div>';
+  const wl=document.getElementById('cr-week'); if(wl) wl.textContent=fmt(wkStart)+' – '+fmt(now)+' (WTD)';
+  body.innerHTML='<div class="muted" style="font-size:.85rem">Loading this week’s cash…</div>';
   try{
-    const days=Array.from({length:7},(_,i)=>new Date(lastMon.getTime()+i*86400000));
-    const results=await Promise.all(days.map(ds=>{
+    const days=Array.from({length:todayIdx+1},(_,i)=>new Date(wkStart.getTime()+i*86400000));
+    const results=await Promise.all(days.map((ds,i)=>{
       const s=new Date(ds.getFullYear(),ds.getMonth(),ds.getDate(),0,0,0,0).getTime();
-      const e=s+86400000-1000;
+      const e=(i===todayIdx)?Date.now():(s+86400000-1000); // today runs up to now
       return fetch(BACKEND+'/api/ops?action=sales-breakdown&start='+s+'&end='+e+'&t='+Date.now(),{headers:{'x-colette-secret':key}}).then(x=>x.json()).catch(()=>null);
     }));
-    let total=0,count=0; const rows=[];
+    let total=0,count=0,todayCash=0,todayCount=0; const rows=[];
     results.forEach((r,i)=>{
       const cashT=((r&&r.tenders)||[]).find(t=>/cash/i.test(t.label));
       const amt=cashT?cashT.amount:0, c=cashT?cashT.count:0;
       total+=amt; count+=c;
-      rows.push({d:DN[i],date:fmt(days[i]),amt,c});
+      if(i===todayIdx){ todayCash=amt; todayCount=c; }
+      rows.push({d:DN[i],date:fmt(days[i]),amt,c,today:i===todayIdx});
     });
     const m=n=>'$'+(+n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-    let html='<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px;flex-wrap:wrap"><div style="font-size:1.9rem;font-weight:800;color:var(--gold-deep)">'+m(total)+'</div><div class="muted" style="font-size:.85rem">expected cash across '+count+' transactions — count the drawer + deposits against this</div></div>';
+    let html='<div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:12px">'
+      +'<div><div class="muted" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em">Today</div><div style="font-size:1.9rem;font-weight:800;color:var(--gold-deep)">'+m(todayCash)+'</div><div class="muted" style="font-size:.78rem">'+todayCount+' cash txns so far</div></div>'
+      +'<div><div class="muted" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em">Week to date</div><div style="font-size:1.9rem;font-weight:800">'+m(total)+'</div><div class="muted" style="font-size:.78rem">'+count+' cash txns · Mon–today</div></div>'
+      +'</div>';
     html+='<table style="width:100%;border-collapse:collapse;font-size:.86rem"><thead><tr><th style="text-align:left">Day</th><th style="text-align:right">Txns</th><th style="text-align:right">Cash</th></tr></thead><tbody>';
-    rows.forEach(r=>{ html+='<tr><td style="padding:4px 0">'+r.d+' <span class="muted">'+r.date+'</span></td><td style="text-align:right" class="muted">'+r.c+'</td><td style="text-align:right">'+m(r.amt)+'</td></tr>'; });
-    html+='<tr style="font-weight:800;border-top:1px solid var(--line)"><td>Total</td><td style="text-align:right">'+count+'</td><td style="text-align:right;color:var(--gold-deep)">'+m(total)+'</td></tr></tbody></table>';
+    rows.forEach(r=>{ html+='<tr'+(r.today?' style="background:#fbf4e4"':'')+'><td style="padding:4px 0">'+r.d+' <span class="muted">'+r.date+'</span>'+(r.today?' <b style="color:var(--gold-deep)">· today</b>':'')+'</td><td style="text-align:right" class="muted">'+r.c+'</td><td style="text-align:right">'+m(r.amt)+'</td></tr>'; });
+    html+='<tr style="font-weight:800;border-top:1px solid var(--line)"><td>Week to date</td><td style="text-align:right">'+count+'</td><td style="text-align:right;color:var(--gold-deep)">'+m(total)+'</td></tr></tbody></table>';
     body.innerHTML=html;
   }catch(e){ body.innerHTML='<div style="font-size:.85rem;color:var(--wine)">Error: '+e.message+'</div>'; }
 }
@@ -786,7 +791,9 @@ function render(m,p){
   const proj=dayNum>0?Math.round(mtd/dayNum* 30):0;
   $('proj').textContent='projected '+money(proj)+'/mo';
 
-  // TODAY (live) — look up today's ET date in the daily series; $0 if no sales yet.
+  // TODAY (live) — order-based estimate first, then override with the TRUE money
+  // collected today from Clover /payments (catches custom-amount / catering / prior-day
+  // orders paid today that order-creation totals miss).
   const todayISO=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
   const tISO=todayISO.getFullYear()+'-'+String(todayISO.getMonth()+1).padStart(2,'0')+'-'+String(todayISO.getDate()).padStart(2,'0');
   const todayRow=daily.find(d=>d.date===tISO);
@@ -794,6 +801,14 @@ function render(m,p){
   $('yest').textContent=money(todayRev);
   const diff=todayRev-DAILY_TARGET;
   $('yestd').innerHTML=(todayRow?(todayRow.orders+' orders · '):'no sales yet · ')+(diff>=0?'<span class=good>▲ '+money(Math.abs(diff))+' over</span>':'<span class=muted>'+money(Math.abs(diff))+' to target</span>');
+  (async()=>{ try{
+    const _k=(function(){try{return localStorage.getItem('colette_admin_key')||'';}catch(e){return '';}})();
+    if(!_k) return;
+    const _n=new Date(); const _s=new Date(_n.getFullYear(),_n.getMonth(),_n.getDate(),0,0,0,0).getTime();
+    const pr=await fetch(BACKEND+'/api/ops?action=payments&start='+_s+'&end='+Date.now()+'&t='+Date.now(),{headers:{'x-colette-secret':_k}}).then(x=>x.json());
+    if(pr&&pr.ok){ const paid=pr.paymentsTotal||0; $('yest').textContent=money(paid); const d2=paid-DAILY_TARGET;
+      $('yestd').innerHTML=pr.paymentsCount+' payments collected'+(pr.paymentsTotal>todayRev+1?' <span class=muted>(incl. '+money(pr.paymentsTotal-todayRev)+' not yet in itemized orders)</span>':'')+' · '+(d2>=0?'<span class=good>▲ '+money(Math.abs(d2))+' over</span>':'<span class=muted>'+money(Math.abs(d2))+' to target</span>'); }
+  }catch(e){} })();
   $('aov').textContent='$'+(m.aov||0).toFixed(2);
   $('orders').textContent=(m.totalOrders||0).toLocaleString();
   $('ordd').textContent='~'+Math.round((m.totalOrders||0)/(m.days||35))+'/day';
