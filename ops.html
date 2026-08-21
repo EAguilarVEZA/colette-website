@@ -89,6 +89,7 @@ const $=id=>document.getElementById(id);
 const TABS=[
   {id:'clock',    label:'⏱️ Clock In/Out',  roles:['employee'],         src:'/clock.html'},
   {id:'myweek',   label:'🙋 My Week',       roles:['employee'],         src:'/my-week.html'},
+  {id:'tasks',    label:'✅ Prep Tasks',    roles:['employee','admin'], src:'/tasks.html'},
   {id:'schedule', label:'🗓️ Weekly Schedule', roles:['employee','admin'], src:'/week.html'},
   {id:'order',    label:'🛒 Order Supplies',roles:['employee','admin'], src:'/supplier-order.html'},
   {id:'dash',     label:'📊 Dashboard',     roles:['admin'],            src:'/dashboard.html'},
@@ -143,6 +144,11 @@ function srcFor(t){
   if(t.id==='order'){
     if(SESSION.role==='admin') return t.src+'?owner=1';
     if(SESSION.role==='employee' && SESSION.pin) return t.src+'?pin='+encodeURIComponent(SESSION.pin);
+  }
+  if(t.id==='tasks'){
+    if(SESSION.role==='admin') return t.src+'?owner=1';
+    if(SESSION.role==='employee' && SESSION.pin) return t.src+'?pin='+encodeURIComponent(SESSION.pin);
+    return t.src;
   }
   if((t.id==='clock'||t.id==='myweek') && SESSION.role==='employee' && SESSION.pin) return t.src+'?pin='+encodeURIComponent(SESSION.pin);
   return t.src;
