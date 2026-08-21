@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Colette · Prep Tasks</title>
+<style>
+:root{--paper:#faf6ef;--cream:#f3ead9;--ink:#241d16;--muted:#8a7c68;--line:#e3d7c3;--gold:#c99a3b;--gold-deep:#8a6a1f;--wine:#7c2d3a;--green:#2e7d32}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--paper);color:var(--ink);-webkit-text-size-adjust:100%}
+.wrap{max-width:640px;margin:0 auto;padding:16px 14px 60px}
+h1{font-size:1.35rem;margin:2px 0 2px}
+.sub{color:var(--muted);font-size:.85rem;margin-bottom:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:6px 4px;margin-bottom:16px;overflow:hidden}
+.dayhead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px 8px}
+.dayhead h2{font-size:1.05rem;margin:0}
+.dayhead .date{font-size:.78rem;color:var(--muted)}
+.dayhead.today h2{color:var(--gold-deep)}
+.pill{font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;background:var(--gold);color:#1a1206;border-radius:20px;padding:3px 9px;font-weight:700}
+.task{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);cursor:pointer;min-height:52px}
+.task:first-child{border-top:none}
+.box{flex:0 0 auto;width:26px;height:26px;border-radius:8px;border:2px solid var(--gold);display:grid;place-items:center;font-size:1rem;color:#fff;background:#fff}
+.task.done .box{background:var(--green);border-color:var(--green)}
+.task.done .tn{color:var(--muted);text-decoration:line-through}
+.tn{flex:1;font-size:1rem;line-height:1.25}
+.by{font-size:.74rem;color:var(--green);margin-top:2px}
+.task:not(.done) .by{display:none}
+.msg{font-size:.85rem;color:var(--wine);min-height:18px;margin:4px 2px}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.status-done{color:var(--green);font-weight:600}
+.status-pend{color:var(--muted)}
+.reload{background:none;border:1px solid var(--line);border-radius:20px;padding:6px 14px;font-size:.8rem;cursor:pointer}
+.seg{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;margin-bottom:12px}
+.seg button{border:none;background:none;padding:7px 14px;font-size:.82rem;cursor:pointer;color:var(--muted)}
+.seg button.on{background:var(--gold);color:#1a1206;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+    <div><h1>✅ Prep Tasks</h1><div class="sub" id="sub">Loading…</div></div>
+    <button class="reload" onclick="load()">↻ Refresh</button>
+  </div>
+  <div class="msg" id="msg"></div>
+  <div id="staffView"></div>
+  <div id="adminView" style="display:none"></div>
+</div>
+<script>
+const BACKEND='https://colette-app-backend.vercel.app';
+const $=id=>document.getElementById(id);
+const P=new URLSearchParams(location.search);
+const PIN=P.get('pin')||'';
+const IS_ADMIN=P.get('owner')==='1'||P.get('role')==='admin';
+
+// Fixed weekly template. offset = days after Monday (Tue=1, Wed=2, Thu=3).
+const DAYS=[
+  {key:'tue',label:'Tuesday',offset:1,tasks:['Slice Ham & Cheese','Slice Tomatoes','Prepare Béchamel Sauce','Make all the Paninis','Make all the Croque Monsieur','Boil Eggs & Potatoes']},
+  {key:'wed',label:'Wednesday',offset:2,tasks:['Prepare Dressing','Prepare Green Beans','Syrups']},
+  {key:'thu',label:'Thursday',offset:3,tasks:['Refill all creams','Check the crêpes fridge is clean & ready to go','Publix order','Butter & Jam','Clean the cutting board (main prep station)']},
+];
+const EVERYDAY=['Restroom cleaning'];
+
+let BOARD={};
+
+function weekMonday(d){ const x=new Date(d); const dow=(x.getDay()+6)%7; x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return x; }
+function iso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fmtD(d){ return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}); }
+function fmtTime(ms){ return new Date(ms).toLocaleString(undefined,{weekday:'short',hour:'numeric',minute:'2-digit'}); }
+const TODAY=new Date(); const MON=weekMonday(TODAY);
+const TODAY_KEY=['sun','mon','tue','wed','thu','fri','sat'][TODAY.getDay()];
+function dateForOffset(off){ const d=new Date(MON); d.setDate(d.getDate()+off); return d; }
+
+// taskId is stable: dayKey-index (e.g. tue-0). Label lookup for admin table.
+function labelFor(taskId){
+  const [k,i]=taskId.split('-');
+  if(k==='every') return EVERYDAY[+i]||taskId;
+  const day=DAYS.find(x=>x.key===k); return day?(day.tasks[+i]||taskId):taskId;
+}
+
+async function load(){
+  $('msg').textContent='';
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=prep-board&t='+Date.now()).then(x=>x.json());
+    BOARD=(r&&r.tasks)||{};
+  }catch(e){ $('msg').textContent='Could not load the board: '+e.message; }
+  if(IS_ADMIN) renderAdmin(); else renderStaff();
+}
+
+function done(date,taskId){ return BOARD[date+'|'+taskId]||null; }
+
+async function toggle(taskId,date){
+  if(!PIN){ $('msg').textContent='Open this from your staff login (PIN) to check off tasks.'; return; }
+  const cur=done(date,taskId);
+  try{
+    const r=await fetch(BACKEND+'/api/ops?action=prep-complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:PIN,taskId,date,done:!cur})}).then(x=>x.json());
+    if(!r.ok){ $('msg').textContent=r.error||'Could not update.'; return; }
+    BOARD=r.tasks||BOARD; $('msg').textContent=''; renderStaff();
+  }catch(e){ $('msg').textContent='Network error — try again.'; }
+}
+
+function renderStaff(){
+  $('staffView').style.display='block'; $('adminView').style.display='none';
+  $('sub').innerHTML='Tap a task to check it off. Week of <b>'+fmtD(MON)+'</b>.'+(PIN?'':' <span style="color:var(--wine)">(log in with your PIN to check off)</span>');
+  let html='';
+  // Everyday first (uses today's date)
+  const evDate=iso(TODAY);
+  html+='<div class="card"><div class="dayhead today"><h2>Every day</h2><span class="date">'+fmtD(TODAY)+'</span></div>';
+  EVERYDAY.forEach((t,i)=>{ const id='every-'+i; const d=done(evDate,id);
+    html+=taskRow(t,id,evDate,d); });
+  html+='</div>';
+  DAYS.forEach(day=>{
+    const d=dateForOffset(day.offset); const ds=iso(d); const isToday=day.key===TODAY_KEY;
+    html+='<div class="card"><div class="dayhead'+(isToday?' today':'')+'"><h2>'+day.label+(isToday?' <span class="pill">Today</span>':'')+'</h2><span class="date">'+fmtD(d)+'</span></div>';
+    day.tasks.forEach((t,i)=>{ const id=day.key+'-'+i; html+=taskRow(t,id,ds,done(ds,id)); });
+    html+='</div>';
+  });
+  $('staffView').innerHTML=html;
+}
+function taskRow(label,id,date,rec){
+  return '<div class="task'+(rec?' done':'')+'" onclick="toggle(\''+id+'\',\''+date+'\')">'
+    +'<span class="box">'+(rec?'✓':'')+'</span>'
+    +'<div class="tn">'+label+'<div class="by">✓ '+(rec?rec.employee+' · '+fmtTime(rec.at):'')+'</div></div></div>';
+}
+
+function renderAdmin(){
+  $('staffView').style.display='none'; $('adminView').style.display='block';
+  $('sub').innerHTML='Who completed each task — week of <b>'+fmtD(MON)+'</b>.';
+  // Build the full list of this-week tasks (weekday tasks on their date, everyday for each day Mon–today).
+  const rows=[];
+  DAYS.forEach(day=>{ const d=dateForOffset(day.offset); const ds=iso(d);
+    day.tasks.forEach((t,i)=>{ const id=day.key+'-'+i; const rec=done(ds,id);
+      rows.push({task:t, day:day.label, date:ds, rec}); }); });
+  // Everyday: one row per day Mon..today
+  for(let off=0; off<=((TODAY.getDay()+6)%7); off++){ const d=dateForOffset(off); const ds=iso(d);
+    EVERYDAY.forEach((t,i)=>{ const id='every-'+i; const rec=done(ds,id);
+      rows.push({task:t+' ('+d.toLocaleDateString(undefined,{weekday:'short'})+')', day:'Every day', date:ds, rec}); }); }
+  const doneRows=rows.filter(r=>r.rec).sort((a,b)=>b.rec.at-a.rec.at);
+  const pend=rows.filter(r=>!r.rec);
+  let html='<div class="seg"><button class="on">This week</button></div>';
+  html+='<div class="card" style="padding:0"><table><thead><tr><th>Task</th><th>Day</th><th>Completed by</th><th>Time</th></tr></thead><tbody>';
+  if(doneRows.length){ doneRows.forEach(r=>{ html+='<tr><td>'+r.task+'</td><td>'+r.day+'</td><td class="status-done">'+r.rec.employee+'</td><td>'+fmtTime(r.rec.at)+'</td></tr>'; }); }
+  else html+='<tr><td colspan="4" style="color:var(--muted)">No tasks completed yet this week.</td></tr>';
+  html+='</tbody></table></div>';
+  html+='<h2 style="font-size:1rem;margin:18px 2px 8px">Still pending ('+pend.length+')</h2>';
+  html+='<div class="card" style="padding:0"><table><tbody>';
+  if(pend.length){ pend.forEach(r=>{ html+='<tr><td>'+r.task+'</td><td>'+r.day+'</td><td class="status-pend" colspan="2">— not done</td></tr>'; }); }
+  else html+='<tr><td style="color:var(--green)">All tasks complete 🎉</td></tr>';
+  html+='</tbody></table></div>';
+  $('adminView').innerHTML=html;
+}
+
+load();
+</script>
+</body>
+</html>
