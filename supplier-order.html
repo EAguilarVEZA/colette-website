@@ -204,7 +204,6 @@ const COSTCO=[
   {n:"Hershey's Chocolate",id:'24000',p:46.69,q:0},
   {n:'Honey (Kirkland Wildflower, 5 lb)',id:'1347776',p:14.79,q:0},
   {n:'Lemons',id:'694975',p:42.39,q:0},
-  {n:'Lysol Bathroom Cleaner (VERIFY — no Costco item; only Toilet Bowl Cleaner carried)',id:'',p:12.59,q:0},
   {n:'Madeleines (Donsuemor Traditional, 28 ct)',id:'1343983',p:10.09,q:0},
   {n:'Marina Salt',id:'384732',p:4.09,q:0},
   {n:'Mayonnaise (Hellmann\'s Real, 1 Gallon)',id:'4581',p:15.99,q:0},
@@ -260,7 +259,7 @@ const RD=[
   {n:'Hubei White Hinged Container 6in, 400 ct',id:'761747',p:10.69,q:0},
   {n:'CuBEware 16oz Black Rect. Microwave Container, 150 ct',id:'3290084',p:49.24,q:0},
   {n:'Sunset Pizza Box Brown 10x2, 50 ct',id:'23167',p:15.27,q:0},
-  {n:'Kari-Out 10x7 Tripak Micro Oblong Black, 100 ct',id:'761635b',p:101.64,q:0},
+  {n:'Kari-Out 10x7 Tripak Micro Oblong Black, 100 ct',id:'',p:101.64,q:0},
   {n:'Thank You Take-Out Bags 19x10x19, 250/cs',id:'760443',p:43.06,q:0},
   {n:'Duro 8lb White Shopping Bags, 500 ct',id:'75169',p:24.75,q:0},
   {n:'Duro 6lb White Paper Bags, 500 ct',id:'75168',p:22.20,q:0},
@@ -378,7 +377,7 @@ const RD=[
   {n:'Grey Poupon Mustard, 48 oz',id:'62569',p:27.41,q:0},
   {n:"French's Dijon Mustard, 105 oz",id:'2010010',p:32.89,q:0},
   {n:'Kikkoman Sriracha, 20 oz',id:'2020431',p:4.42,q:0},
-  {n:'RedPack Pizza Sauce w/Basil #10',id:'12607b',p:8.15,q:0},
+  {n:'RedPack Pizza Sauce w/Basil #10',id:'',p:8.15,q:0},
   {n:'Supremo Pitted Ripe Black Olives #10',id:'35996',p:10.81,q:0},
   {n:'Heinz Red Wine Vinegar, gal',id:'19725',p:16.98,q:0},
   {n:'Regina Red Wine Vinegar, gal',id:'38600',p:12.57,q:0},
@@ -408,7 +407,7 @@ const RD=[
   {n:'Coca-Cola 12oz, 35 pk',id:'441541',p:23.15,q:0},
   {n:'Coca-Cola Mini 7.5oz, 10 pk',id:'441750',p:21.89,q:0},
   {n:'Dawn Pot & Pan Detergent, 1 gal',id:'2190086',p:29.10,q:0},
-  {n:'Dawn Pot & Pan Detergent, 5 gal',id:'2190095b',p:97.26,q:0},
+  {n:'Dawn Pot & Pan Detergent, 5 gal',id:'',p:97.26,q:0},
   {n:'Scotch-Brite Griddle Cleaner, 32 oz',id:'2230156',p:18.69,q:0},
   {n:'Skyline Grease Trap Cleaner, gal',id:'50857',p:10.01,q:0},
   {n:'Skyline Pink Hand Soap, gal',id:'2270047',p:9.75,q:0},
@@ -443,8 +442,8 @@ const IC=[
   {n:'Sargento Gouda Sliced Cheese, 10 slices 7 oz', url:P+'77159-sargento-sliced-gouda-natural-cheese-7-oz'+S},
   {n:'Sara Lee Artesano Brioche Bakery Bread, 20 oz', url:P+'20150038-sara-lee-artesano-brioche-bakery-bread-20-oz'+S},
   {n:'Sriracha (Huy Fong, 17 oz)', url:P+'35512-huy-fong-foods-sriracha-chili-sauce-17-oz'+S},
-  {n:'Chobani Plain Nonfat Greek Yogurt', url:P+'29327'+S},
-  {n:'Fresh Attitude Baby Spinach, Prewashed 5 oz', url:P+'380531'+S},
+  {n:'Chobani Plain Nonfat Greek Yogurt', url:P+'29327-chobani-yogurt-greek-non-fat-plain-32-oz'+S},
+  {n:'Fresh Attitude Baby Spinach, Prewashed 5 oz', url:P+'380531-fresh-attitude-baby-spinach-5-oz'+S},
 ].map(x=>({n:x.n, url:x.url||'', q:0}));
 const PANAME=[
   {n:'Cafiza: Cleaning Product for Espresso Machines',id:'12-ESP20',p:17.99,q:0,url:'https://panamecoffeewholesale.b2b.cin7.com/products/details/107'},
@@ -603,6 +602,7 @@ COSTCO.forEach(it=>it.q=0); RD.forEach(it=>it.q=0); IC.forEach(it=>it.q=0); PANA
 // straight into the array, and Send reads from the array — so what you see is what
 // gets ordered, on all three suppliers.
 const AMAZON=[
+  {n:'Lysol Power Foaming Bathroom Cleaner, 32 oz',id:'B0BX7B5KJ3',p:12.59,url:'https://www.amazon.com/dp/B0BX7B5KJ3',q:0},
   {n:'Gift Boxes — Karentology Classic House-Shaped w/ Bright Ribbons (20 pc, for treats)',id:'B0B2FK59XD',url:'https://www.amazon.com/dp/B0B2FK59XD',q:0},
   {n:'Happy Birthday Acrylic Cake Toppers (10 pcs)',id:'B093P6FWYC',p:5.99,url:'https://www.amazon.com/dp/B093P6FWYC',q:0},
   {n:'Orangina Orange Pulp Soda — 60oz (12 pk cans)',id:'B08SCKH423',p:32,url:'https://www.amazon.com/dp/B08SCKH423',q:0},
