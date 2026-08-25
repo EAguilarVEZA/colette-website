@@ -413,8 +413,10 @@ Object.assign(PHOTO,{"americano":"americano","avocadotoast":"avocado-toast","ban
 function photoFor(name){ return PHOTO[norm(name)] || null; }
 /* upgrade the local fallback items to real photos where we have one */
 MENU.forEach(m=>{ const p=photoFor(m.name); if(p) m.img=p; });
+function photoUrl(m){ return m && m.imgurl ? m.imgurl : (m && m.img ? ('images/'+m.img+'.jpg') : null); }
+async function loadPastries(){ try{ var t=await (await fetch('/pastries.html?t='+Date.now(),{cache:'no-store'})).text(); var d=document.implementation.createHTMLDocument('x'); d.documentElement.innerHTML=t; var cards=[].slice.call(d.querySelectorAll('a.card')); cards.forEach(function(cc){ var h=cc.querySelector('h4'), im=cc.querySelector('img'), pr=cc.querySelector('.pr'); if(!h||!im)return; var nm=h.textContent.trim(); var url=im.getAttribute('src'); if(!url||!nm)return; var price=pr?(parseFloat((pr.textContent||'').replace(/[^0-9.]/g,''))||0):0; var ex=MENU.find(function(m){return norm(m.name)===norm(nm);}); if(ex){ ex.imgurl=url; if((!ex.price||ex.price<=0)&&price>0)ex.price=price; } else { MENU.push({id:'pastry-'+norm(nm),name:nm,price:price,cat:'Patisseries',img:null,imgurl:url,desc:'Freshly baked in-house French pastry.'}); } }); if(typeof buildFilters==='function')buildFilters(); render(); }catch(e){console.warn('pastry load',e);} }
 function priceLabel(m){ return m.price>0 ? '$'+m.price.toFixed(2) : (modsFor(m.id).length?'Options':'—'); }
-function imgHtml(m){ return m.img ? `<img src="images/${m.img}.jpg" alt="${m.name}" loading="lazy">` : `<div class="ph-ph"><span class="phmk">colette</span></div>`; }
+function imgHtml(m){ return photoUrl(m) ? `<img src="${photoUrl(m)}" alt="${m.name}" loading="lazy">` : `<div class="ph-ph"><span class="phmk">colette</span></div>`; }
 
 /* ---------- state ---------- */
 let cart = [];   // {key,id,qty,mods:[labels],unit}
@@ -527,7 +529,7 @@ function renderPopular(){
   for(const p of POPULAR){const m=MENU.find(x=>norm(x.name)===norm(p.name));if(m&&!seen.has(m.id)){seen.add(m.id);cards.push(card(m));}if(cards.length>=8)break;}
   host.innerHTML=cards.length?`<div class="catname">★ Most popular</div><div class="grid">${cards.join('')}</div>`:'';
 }
-loadClover().then(loadPopular);
+loadClover().then(loadPastries).then(loadPopular);
 
 /* ---------- item detail ---------- */
 function showItem(id){
@@ -535,7 +537,7 @@ function showItem(id){
   document.getElementById('modal').innerHTML=`
     <div class="mhd"><h3>${m.name}</h3><button class="x" onclick="closeModal()">×</button></div>
     <div class="mbody">
-      ${m.img?`<img src="images/${m.img}.jpg" alt="${m.name}" style="width:100%;border-radius:12px;margin-bottom:16px">`:`<div class="ph-ph" style="height:170px;border-radius:12px;margin-bottom:16px;display:flex;align-items:center;justify-content:center"><span class="phmk" style="font-size:1rem">colette</span></div>`}
+      ${photoUrl(m)?`<img src="${photoUrl(m)}" alt="${m.name}" style="width:100%;border-radius:12px;margin-bottom:16px">`:`<div class="ph-ph" style="height:170px;border-radius:12px;margin-bottom:16px;display:flex;align-items:center;justify-content:center"><span class="phmk" style="font-size:1rem">colette</span></div>`}
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
         <h3 style="font-size:1.7rem">${m.name}</h3><span style="font-family:var(--serif);font-weight:600;color:var(--accent-deep);font-size:1.3rem">${priceLabel(m)}</span></div>
       ${m.desc?`<p style="color:var(--muted);margin-bottom:14px">${m.desc}</p>`:''}
@@ -652,7 +654,7 @@ function renderCart(){
   const lines=document.getElementById('lines'),foot=document.getElementById('dfoot');
   if(!cart.length){lines.innerHTML=`<div class="cart-empty">Your order is empty 🥐<br>Add something delicious.</div>`;foot.innerHTML='';return;}
   lines.innerHTML=cart.map(c=>{const m=byId(c.id);return `<div class="cl">
-    <img src="images/${m.img}.jpg" alt="">
+    <img src="${photoUrl(m)||''}" alt="">
     <div class="ci"><h5>${m.name}</h5>
       ${c.mods.length?`<div class="cmods">${c.mods.join(' · ')}</div>`:''}
       <div class="p">$${c.unit.toFixed(2)}</div>
