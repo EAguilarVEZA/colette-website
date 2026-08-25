@@ -1,0 +1,48 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Upload Colette Photos</title>
+<style>
+body{margin:0;background:#0c0b0a;color:#f4ecdd;font-family:system-ui,Arial;display:flex;justify-content:center;padding:32px}
+.card{width:540px;max-width:94vw;background:#141210;border:1px solid #c9a24a;border-radius:16px;padding:28px}
+h1{font-size:21px;color:#e6cd8b;margin:0 0 10px}
+p{color:#b6a888;font-size:14px;line-height:1.5}
+input[type=text]{width:100%;padding:10px;border-radius:8px;border:1px solid #c9a24a;background:#0c0b0a;color:#f4ecdd;box-sizing:border-box}
+.btn{display:block;text-align:center;cursor:pointer;background:#c9a24a;color:#0c0b0a;font-weight:700;padding:15px;border-radius:10px;margin-top:14px;font-size:15px}
+#st{margin-top:16px;font-size:14px;white-space:pre-line;color:#f4ecdd}
+small{color:#7c6f57}
+</style></head>
+<body><div class="card">
+<h1>Upload Colette caf&eacute; &amp; drink photos</h1>
+<p><b>Step 1</b> &mdash; admin key (auto-filled if you have used the dashboard):</p>
+<input id="key" type="text" placeholder="admin key">
+<p style="margin-top:16px"><b>Step 2</b> &mdash; click the gold button, then select <b>all 44 .jpg files</b> in <b>Downloads / colette-menu-photos</b> (press Cmd+A, then Open). They deploy by themselves.</p>
+<label class="btn">Choose the 44 photos&hellip;<input id="up" type="file" accept="image/jpeg" multiple style="display:none"></label>
+<div id="st"></div>
+<p><small>Photos go live about 30&ndash;60 seconds after upload while the site republishes.</small></p>
+</div>
+<script>
+var BACKEND="https://colette-app-backend.vercel.app";
+var keyEl=document.getElementById("key"),st=document.getElementById("st");
+try{var k=localStorage.getItem("colette_admin_key");if(k)keyEl.value=k;}catch(e){}
+keyEl.addEventListener("change",function(){try{localStorage.setItem("colette_admin_key",keyEl.value.trim());}catch(e){}});
+function readB64(f){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(String(r.result).split(",")[1]);};r.onerror=rej;r.readAsDataURL(f);});}
+document.getElementById("up").addEventListener("change",async function(e){
+ var key=keyEl.value.trim();try{if(key)localStorage.setItem("colette_admin_key",key);}catch(_){}
+ if(!key){st.textContent="Enter your admin key first (Step 1).";return;}
+ var files=[].slice.call(e.target.files).filter(function(f){return /\.jpe?g$/i.test(f.name);});
+ if(!files.length){st.textContent="No .jpg files selected.";return;}
+ st.textContent="Encoding "+files.length+" photos...";
+ var entries=[];
+ for(var i=0;i<files.length;i++){var b=await readB64(files[i]);entries.push({path:"img/"+files[i].name,content:b,encoding:"base64"});}
+ var B=12,committed=0,batches=0,errs=[];
+ for(var j=0;j<entries.length;j+=B){
+  var chunk=entries.slice(j,j+B);batches++;
+  st.textContent="Deploying batch "+batches+" ("+committed+"/"+entries.length+" done)...";
+  try{
+   var r=await fetch(BACKEND+"/api/ops?action=commit-files",{method:"POST",headers:{"Content-Type":"application/json","x-colette-secret":key},body:JSON.stringify({repo:"website",files:chunk,message:"Add cafe/drink photos"})});
+   var jr=await r.json().catch(function(){return{};});
+   if(jr&&jr.ok){committed+=(jr.count||chunk.length);}else{errs.push("batch"+batches+":"+((jr&&jr.error)||r.status));}
+  }catch(x){errs.push("batch"+batches+":"+x);}
+ }
+ st.textContent=(errs.length?("Committed "+committed+"/"+entries.length+". Errors: "+errs.join(" | ")):("Deployed all "+committed+" photos. They will appear on the site in ~30-60s."));
+});
+</script>
+</body></html>
