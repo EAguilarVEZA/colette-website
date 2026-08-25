@@ -1,7 +1,7 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Upload Colette Photos</title>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Publish Colette Photos</title>
 <style>
 body{margin:0;background:#0c0b0a;color:#f4ecdd;font-family:system-ui,Arial;display:flex;justify-content:center;padding:32px}
-.card{width:540px;max-width:94vw;background:#141210;border:1px solid #c9a24a;border-radius:16px;padding:28px}
+.card{width:560px;max-width:94vw;background:#141210;border:1px solid #c9a24a;border-radius:16px;padding:28px}
 h1{font-size:21px;color:#e6cd8b;margin:0 0 10px}
 p{color:#b6a888;font-size:14px;line-height:1.5}
 input[type=text]{width:100%;padding:10px;border-radius:8px;border:1px solid #c9a24a;background:#0c0b0a;color:#f4ecdd;box-sizing:border-box}
@@ -10,13 +10,13 @@ input[type=text]{width:100%;padding:10px;border-radius:8px;border:1px solid #c9a
 small{color:#7c6f57}
 </style></head>
 <body><div class="card">
-<h1>Upload Colette caf&eacute; &amp; drink photos</h1>
-<p><b>Step 1</b> &mdash; admin key (auto-filled if you have used the dashboard):</p>
+<h1>Publish the corrected Colette photos</h1>
+<p><b>Step 1</b> &mdash; admin key (auto-filled):</p>
 <input id="key" type="text" placeholder="admin key">
-<p style="margin-top:16px"><b>Step 2</b> &mdash; click the gold button, then select <b>all 44 .jpg files</b> in <b>Downloads / colette-menu-photos</b> (press Cmd+A, then Open). They deploy by themselves.</p>
-<label class="btn">Choose the 44 photos&hellip;<input id="up" type="file" accept="image/jpeg" multiple style="display:none"></label>
+<p style="margin-top:16px"><b>Step 2</b> &mdash; click the gold button, open <b>Downloads / colette-menu-photos</b>, press <b>Cmd+A</b> to select all the .jpg files, then Open. They publish to the menu <i>and</i> the order screen automatically.</p>
+<label class="btn">Choose the photos&hellip;<input id="up" type="file" accept="image/jpeg" multiple style="display:none"></label>
 <div id="st"></div>
-<p><small>Photos go live about 30&ndash;60 seconds after upload while the site republishes.</small></p>
+<p><small>Live about 30&ndash;60 seconds after upload while the site republishes.</small></p>
 </div>
 <script>
 var BACKEND="https://colette-app-backend.vercel.app";
@@ -31,18 +31,18 @@ document.getElementById("up").addEventListener("change",async function(e){
  if(!files.length){st.textContent="No .jpg files selected.";return;}
  st.textContent="Encoding "+files.length+" photos...";
  var entries=[];
- for(var i=0;i<files.length;i++){var b=await readB64(files[i]);entries.push({path:"img/"+files[i].name,content:b,encoding:"base64"});}
- var B=12,committed=0,batches=0,errs=[];
+ for(var i=0;i<files.length;i++){var b=await readB64(files[i]);entries.push({path:"img/"+files[i].name,content:b,encoding:"base64"});entries.push({path:"images/"+files[i].name,content:b,encoding:"base64"});}
+ var B=10,committed=0,batches=0,errs=[];
  for(var j=0;j<entries.length;j+=B){
   var chunk=entries.slice(j,j+B);batches++;
-  st.textContent="Deploying batch "+batches+" ("+committed+"/"+entries.length+" done)...";
+  st.textContent="Publishing... ("+Math.min(committed,files.length*2)+"/"+entries.length+")";
   try{
-   var r=await fetch(BACKEND+"/api/ops?action=commit-files",{method:"POST",headers:{"Content-Type":"application/json","x-colette-secret":key},body:JSON.stringify({repo:"website",files:chunk,message:"Add cafe/drink photos"})});
+   var r=await fetch(BACKEND+"/api/ops?action=commit-files",{method:"POST",headers:{"Content-Type":"application/json","x-colette-secret":key},body:JSON.stringify({repo:"website",files:chunk,message:"Corrected photos"})});
    var jr=await r.json().catch(function(){return{};});
-   if(jr&&jr.ok){committed+=(jr.count||chunk.length);}else{errs.push("batch"+batches+":"+((jr&&jr.error)||r.status));}
-  }catch(x){errs.push("batch"+batches+":"+x);}
+   if(jr&&jr.ok){committed+=(jr.count||chunk.length);}else{errs.push("b"+batches+":"+((jr&&jr.error)||r.status));}
+  }catch(x){errs.push("b"+batches+":"+x);}
  }
- st.textContent=(errs.length?("Committed "+committed+"/"+entries.length+". Errors: "+errs.join(" | ")):("Deployed all "+committed+" photos. They will appear on the site in ~30-60s."));
+ st.textContent=(errs.length?("Published "+committed+"/"+entries.length+". Errors: "+errs.join(" | ")):("Done. Published all "+files.length+" photos to the menu and order screen. Live in ~30-60s."));
 });
 </script>
 </body></html>
