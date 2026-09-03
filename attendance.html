@@ -1,0 +1,77 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Attendance</title>
+<style>
+:root{--bg:#0c0b0a;--card:#141210;--ink:#f4ecdd;--muted:#b6a888;--gold:#c9a24a;--line:rgba(201,162,74,.20);--bad:#e06a6a;--good:#6fce87}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,Arial;padding:16px}
+h1{font-size:20px;color:#e6cd8b;margin:0 0 2px}.sub{color:var(--muted);font-size:13px;margin-bottom:12px}
+.nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.nav button{background:var(--card);color:var(--gold);border:1px solid var(--gold);border-radius:8px;padding:8px 12px;cursor:pointer;font:600 13px system-ui}
+.now{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.now h2{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border-radius:20px;padding:5px 12px;font-size:13px;font-weight:600;background:rgba(111,206,135,.12);border:1px solid var(--good);color:var(--good)}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:640px}
+th,td{border:1px solid var(--line);padding:7px 8px;text-align:center;vertical-align:top}
+th{color:var(--muted);font-weight:600;background:var(--card)}
+td.name,th.name{text-align:left;font-weight:600;color:var(--ink);white-space:nowrap;background:var(--card)}
+.io{color:var(--ink);white-space:nowrap}.hrs{color:var(--gold);font-weight:700;font-size:11px;display:block;margin-top:2px}
+.absent{color:var(--bad);font-weight:700}.live{color:var(--good);font-weight:700;font-size:10px;display:block}
+.tot{color:var(--gold);font-weight:700}.msg{color:var(--muted);padding:24px;text-align:center}
+.legend{color:var(--muted);font-size:12px;margin-top:10px}
+</style></head><body>
+<h1>Attendance</h1><div class="sub" id="range">Loading...</div>
+<div class="nav"><button id="prev">&#9664; Prev week</button><button id="thisw">This week</button><button id="next">Next week &#9654;</button><button id="refresh">&#8635; Refresh</button></div>
+<div class="now"><h2>Clocked in right now</h2><div class="chips" id="nowchips"><span style="color:#b6a888">Loading...</span></div></div>
+<div class="wrap" id="grid"><div class="msg">Loading attendance...</div></div>
+<div class="legend">Green = clocked in now. Red = did not clock in that day. Times in store time (ET). First in &rarr; last out; hours = total worked.</div>
+<script>
+var BK="https://colette-app-backend.vercel.app",TZ="America/New_York",offset=0,PUN=[],TEAM=[];
+function key(){try{return localStorage.getItem("colette_admin_key")||"";}catch(e){return "";}}
+function dayKey(ms){var p=new Intl.DateTimeFormat("en-CA",{timeZone:TZ,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(ms)),o={};p.forEach(function(x){o[x.type]=x.value;});return o.year+"-"+o.month+"-"+o.day;}
+function hm(ms){return new Intl.DateTimeFormat("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"}).format(new Date(ms));}
+function etWeekday(ms){return new Intl.DateTimeFormat("en-US",{timeZone:TZ,weekday:"short"}).format(new Date(ms));}
+function fmtDur(min){if(min<=0)return "0m";var h=Math.floor(min/60),m=Math.round(min%60);return (h?h+"h ":"")+(h&&!m?"":m+"m");}
+function weekDates(off){var today=dayKey(Date.now());var base=new Date(today+"T12:00:00Z");var wd=etWeekday(base.getTime());var map={Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6,Sun:7};var idx=map[wd]||1;var mon=new Date(base);mon.setUTCDate(base.getUTCDate()-(idx-1)+off*7);var out=[];for(var i=0;i<7;i++){var d=new Date(mon);d.setUTCDate(mon.getUTCDate()+i);out.push({date:new Date(d),key:dayKey(d.getTime())});}return out;}
+function personDay(name,dkey){var evs=PUN.filter(function(p){return p.name===name&&dayKey(p.at)===dkey;}).sort(function(a,b){return a.at-b.at;});if(!evs.length)return null;var firstIn=null,lastOut=null,total=0,openAt=null;for(var i=0;i<evs.length;i++){var e=evs[i];if(e.type==="in"){if(firstIn===null)firstIn=e.at;openAt=e.at;}else{if(openAt!==null){total+=(e.at-openAt)/60000;openAt=null;}lastOut=e.at;}}return {firstIn:firstIn,lastOut:lastOut,total:total,open:openAt!==null};}
+function currentlyIn(){var by={};PUN.slice().sort(function(a,b){return a.at-b.at;}).forEach(function(p){by[p.name]=p.type;});return Object.keys(by).filter(function(n){return by[n]==="in";});}
+function render(){
+ var days=weekDates(offset);
+ document.getElementById("range").textContent="Week of "+new Intl.DateTimeFormat("en-US",{timeZone:TZ,month:"short",day:"numeric"}).format(days[0].date)+" - "+new Intl.DateTimeFormat("en-US",{timeZone:TZ,month:"short",day:"numeric",year:"numeric"}).format(days[6].date);
+ var inNow=currentlyIn();var nc=document.getElementById("nowchips");
+ nc.innerHTML=inNow.length?inNow.map(function(n){return '<span class="chip">'+n+'</span>';}).join(""):'<span style="color:#b6a888">Nobody is clocked in right now.</span>';
+ var names=TEAM.map(function(t){return t.name;}).filter(Boolean);
+ PUN.forEach(function(p){if(names.indexOf(p.name)<0)names.push(p.name);});
+ names=names.filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
+ if(!names.length){document.getElementById("grid").innerHTML='<div class="msg">No staff or punches yet.</div>';return;}
+ var todayKey=dayKey(Date.now());
+ var html='<table><thead><tr><th class="name">Staff</th>';
+ days.forEach(function(d){var lbl=new Intl.DateTimeFormat("en-US",{timeZone:TZ,weekday:"short"}).format(d.date)+" "+new Intl.DateTimeFormat("en-US",{timeZone:TZ,month:"numeric",day:"numeric"}).format(d.date);html+='<th'+(d.key===todayKey?' style="color:#e6cd8b"':'')+'>'+lbl+'</th>';});
+ html+='<th>Total</th></tr></thead><tbody>';
+ names.forEach(function(nm){
+  html+='<tr><td class="name">'+nm+'</td>';var wtot=0;
+  days.forEach(function(d){var r=personDay(nm,d.key);
+   if(!r){var future=d.key>todayKey;html+='<td>'+(future?'<span style="color:#7c6f57">-</span>':'<span class="absent">Absent</span>')+'</td>';return;}
+   wtot+=r.total;
+   var outp=r.lastOut?hm(r.lastOut):(r.open?'<span class="live">IN now</span>':'?');
+   html+='<td><span class="io">'+(r.firstIn?hm(r.firstIn):'?')+' &rarr; '+outp+'</span><span class="hrs">'+fmtDur(r.total)+'</span></td>';
+  });
+  html+='<td class="tot">'+fmtDur(wtot)+'</td></tr>';
+ });
+ html+='</tbody></table>';document.getElementById("grid").innerHTML=html;
+}
+async function load(){
+ var k=key();
+ if(!k){document.getElementById("grid").innerHTML='<div class="msg">Open this from inside the Ops page as owner.</div>';return;}
+ try{
+  var r=await fetch(BK+"/api/ops?action=punches&t="+Date.now(),{headers:{"x-colette-secret":k}});
+  var j=await r.json();
+  if(!j||!j.ok){document.getElementById("grid").innerHTML='<div class="msg">Could not load ('+((j&&j.error)||r.status)+').</div>';return;}
+  PUN=j.punches||[];TEAM=j.team||[];render();
+ }catch(e){document.getElementById("grid").innerHTML='<div class="msg">Network error.</div>';}
+}
+document.getElementById("prev").onclick=function(){offset--;render();};
+document.getElementById("next").onclick=function(){offset++;render();};
+document.getElementById("thisw").onclick=function(){offset=0;render();};
+document.getElementById("refresh").onclick=load;
+load();setInterval(load,60000);
+</script></body></html>
