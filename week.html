@@ -102,6 +102,10 @@ body.readonly .adminonly{display:none}
 <script>
 const BACKEND='https://colette-app-backend.vercel.app';
 const DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+// HARD RULE: total team hours per week. Over the cap = only Edgar can save
+// (the backend enforces this too — a scheduler save over cap is rejected and
+// Edgar is notified for approval). Warn as the week approaches the cap.
+const MAX_WEEK_HOURS=130, WARN_WEEK_HOURS=120;
 // Coverage targets by weekday (Mon..Sun). Mon closed. Fri–Sun 3rd person is a short 10a–2p.
 const COVER_TARGET=[0,2,2,2,3,3,3];
 const THIRD_SHORT={4:['10:00','14:00'],5:['10:00','14:00'],6:['10:00','14:00']};
@@ -225,7 +229,10 @@ function render(){
   body+='</tbody>';
   let foot='<tfoot><tr><td class="name">Coverage</td>'+dayH.map((h,i)=>{const tgt=COVER_TARGET[i]||0; const sh=tgt-dayN[i]; const flag= tgt===0 ? '' : (sh>0?`<br><span class="warn">⚠ need ${sh}</span>`:`<br><span class="muted small" style="color:#2e7d32">✓ ${tgt}+</span>`); return `<td>${dayN[i]} ppl<br><span class="muted small">${h.toFixed(1)}h</span>${flag}</td>`;}).join('')+`<td class="rowtot">${weekHours.toFixed(1)}h</td></tr></tfoot>`;
   $('grid').innerHTML=head+body+foot;
-  $('tot-hours').textContent=weekHours.toFixed(1)+' h';
+  let capNote='';
+  if(weekHours>MAX_WEEK_HOURS+1e-9) capNote=' <span style="color:var(--wine)">⛔ over the '+MAX_WEEK_HOURS+'h cap — Edgar approval required</span>';
+  else if(weekHours>=WARN_WEEK_HOURS) capNote=' <span style="color:#a05a00">⚠ approaching the '+MAX_WEEK_HOURS+'h cap</span>';
+  $('tot-hours').innerHTML=weekHours.toFixed(1)+' / '+MAX_WEEK_HOURS+' h'+capNote;
   $('tot-pay').textContent=money(weekPay);
 }
 
@@ -248,10 +255,35 @@ async function persist(){
   try{
     const r=await fetch(BACKEND+'/api/ops?action=shifts-save',{method:'POST',headers,body:JSON.stringify(payload)});
     const d=await r.json().catch(()=>({}));
+    if(d.needsApproval){
+      alert(d.error||('Over the '+MAX_WEEK_HOURS+'h weekly team cap. Nothing was saved — Edgar has been notified for approval.'));
+      note('⛔ Needs Edgar\'s approval — not saved');
+      await loadAll(); // revert to what the server actually has
+      return;
+    }
     note(d.ok?'✓ Saved':(d.error||'Save failed'));
   }catch(e){ note('Save failed'); }
 }
-function saveShift(){ if(!edKey) return; const s=$('ed-start').value,e=$('ed-end').value; if(!s||!e) return; shifts[keyOf(edKey.name,edKey.dateISO)]={start:s,end:e}; closeEd(); render(); persist(); }
+// Total team hours for the week containing dateISO, optionally previewing one changed cell.
+function weekTotalFor(dateISO, previewKey, previewShift){
+  const ws=mondayOf(new Date(dateISO+'T12:00:00'));
+  const dates=weekDates(ws); let tot=0;
+  allNames().forEach(nm=>{ dates.forEach(di=>{ const k=keyOf(nm,di); const s=(k===previewKey)?previewShift:shifts[k]; if(s) tot+=hoursBetween(s.start,s.end); }); });
+  return tot;
+}
+function saveShift(){
+  if(!edKey) return; const s=$('ed-start').value,e=$('ed-end').value; if(!s||!e) return;
+  const k=keyOf(edKey.name,edKey.dateISO);
+  const tot=weekTotalFor(edKey.dateISO,k,{start:s,end:e});
+  if(tot>MAX_WEEK_HOURS+1e-9){
+    if(isAdmin){
+      if(!confirm('This takes the team to '+tot.toFixed(1)+'h — over the '+MAX_WEEK_HOURS+'h weekly cap.\n\nSave anyway? (Saving as owner counts as your approval.)')) return;
+    }else{
+      if(!confirm('⛔ This takes the team to '+tot.toFixed(1)+'h — over the '+MAX_WEEK_HOURS+'h weekly cap.\n\nThe schedule cannot go over the cap without Edgar. Send it to Edgar for approval?')) return;
+    }
+  }
+  shifts[k]={start:s,end:e}; closeEd(); render(); persist();
+}
 function clearShift(){ if(!edKey) return; delete shifts[keyOf(edKey.name,edKey.dateISO)]; closeEd(); render(); persist(); }
 
 // Admin: pending time-off requests
