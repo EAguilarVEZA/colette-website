@@ -73,5 +73,5 @@ document.getElementById("prev").onclick=function(){offset--;render();};
 document.getElementById("next").onclick=function(){offset++;render();};
 document.getElementById("thisw").onclick=function(){offset=0;render();};
 document.getElementById("refresh").onclick=load;
-load();setInterval(load,60000);
+load();setInterval(function(){if(!document.hidden)load();},600000); // 10 min, visible tab only — use ⟳ Refresh for instant
 </script></body></html>
