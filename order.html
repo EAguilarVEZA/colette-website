@@ -282,6 +282,17 @@ const CONFIG = {
   taxRate: 0.08,
 };
 const PAYMENTS_LIVE = !!CONFIG.cloverPublicKey;
+const ATTRIBUTION_KEYS={utm_campaign:'campaign',utm_source:'source',utm_medium:'medium',utm_content:'content',utm_term:'term',gclid:'gclid',fbclid:'fbclid'};
+function readCampaignAttribution(){
+  const p=new URLSearchParams(location.search),current={};
+  Object.entries(ATTRIBUTION_KEYS).forEach(([query,key])=>{const v=(p.get(query)||'').trim();if(v)current[key]=v.slice(0,160);});
+  current.landingPath=(p.get('landing_path')||document.referrer||location.pathname).slice(0,120);
+  let saved={};try{saved=JSON.parse(sessionStorage.getItem('colette_campaign_attribution')||'{}')||{};}catch(e){}
+  const merged={...saved,...current};
+  try{sessionStorage.setItem('colette_campaign_attribution',JSON.stringify(merged));}catch(e){}
+  return merged;
+}
+const CAMPAIGN_ATTRIBUTION=readCampaignAttribution();
 
 /* =========================================================
    MENU — clear descriptions, ingredients, allergens, diet tags.
@@ -410,6 +421,14 @@ Object.entries(ALIAS).forEach(([c,k])=>{ if(ENRICH[k]) ENRICH[c]=ENRICH[k]; });
 /* real product photos (88 shots), keyed by normalized Clover item name -> image slug */
 const PHOTO = {"tomatosoup":"tomato-soup","americano":"americano","cappuchino":"cappuchino","chaitealatte":"chai-tea-latte","hotchocolate":"hot-chocolate","hotteapot":"hot-tea-pot","icedmocca":"iced-mocca","latte":"latte","matchagreentealatte":"matcha-green-tea-latte","pistachiolatte":"pistachio-latte","strawberrymatchalatte":"strawberry-matcha-latte","applejuice":"apple-juice","eviansmall":"evian-small","frenchorangejuice":"french-orange-juice","glassofmilk":"glass-of-milk","orangina":"orangina","perrier":"perrier","sanpellegrino":"sanpellegrino","smallcokezero":"small-coke-zero","smallcoke":"small-coke","sparklingstrawberrylemonade":"sparkling-strawberry-lemonade","agenda":"agenda","hoodieblack":"hoodie-black","hoodiewhite":"hoodie-white","mug":"merch-mug","tshirtblack":"t-shirt-black","tshirtwhite":"t-shirt-white","yeti":"yeti","blackforestwholecake":"black-forest-whole-cake","exoticwholecake":"exotic-whole-cake","matignonwholecake":"matignon-whole-cake","royalwholecake":"royal-whole-cake","sophiawholecake":"sophia-whole-cake","champagnecookies":"champagne-cookies","chocolatecoveredorangestripes":"chocolate-covered-orange-stripes","chocolatecoveredalmonds":"chocolate-covered-almonds","img0340":"img-0340","macaronsbox12pcsassorted":"macarons-box-12-pcs-assorted","macaronsbox6pcsassorted":"macarons-box-6-pcs-assorted","madeleine":"madeleine","palmiers":"palmiers","saltedcaramel":"salted-caramel","coffeepearlnoir":"coffee-pearl-noir","capresepanini":"caprese-panini","hamcheesecroquemonsieur":"ham-cheese-croque-monsieur","parfaitbowl":"parfait-bowl","appletartindividual":"apple-tart-individual","apricottartindividual":"apricot-tart-individual","basquecheesecaketart5individual":"basque-cheesecake-tart-5-individual","cheesecakefraiseindividual":"cheesecake-fraise-individual","chocolatetartindividual":"chocolate-tart-individual","cremebruleetartindividual":"creme-brulee-tart-individual","dubaichocolatemousseindividual":"dubai-chocolate-mousse-individual","exoticindividual":"exotic-individual","fraisierindividual":"fraisier-individual","frenchmoussetiramisuindividual":"french-mousse-tiramisu-individual","italiantiramisuindividual":"italian-tiramisu-individual","keylimetartindividual":"key-lime-tart-individual","lemonmeringtartindividual":"lemon-mering-tart-individual","matignonindividual":"matignon-individual","mixedfruittartindividual":"mixed-fruit-tart-individual","napoleonindividual":"napoleon-individual","operaindividual":"opera-individual","peachtartindividual":"peach-tart-individual","pecantartindividual":"pecan-tart-individual","petitfourminitarts":"petit-four-mini-tarts","sainthonoreindividual":"saint-honore-individual","almondcroissant":"almond-croissant","applevanilladanish":"apple-vanilla-danish","apricotcroissant":"apricot-croissant","baguette":"baguette","blueberrymuffin":"blueberry-muffin","cheesedanish":"cheese-danish","chocolatecroissant":"chocolate-croissant","cinammonstick":"cinammon-stick","cranberry":"cranberry","dulcedelechecroissant":"dulce-de-leche-croissant","gruyeresesametwist":"gruyere-sesame-twist","hazelnutchocolatedanish":"hazelnut-chocolate-danish","kouignamann":"kouign-amann","latteenocciolacroissant":"latte-e-nocciola-croissant","nutellacroissant":"nutella-croissant","pistachiocroissant":"pistachio-croissant","plaincroissant":"plain-croissant","raspberrycheesedanish":"raspberry-cheese-danish","twicebakedalmondcroissant":"twice-baked-almond-croissant","freshorangejuice":"french-orange-juice","hoodie":"hoodie-black","tshirt":"t-shirt-black"};
 Object.assign(PHOTO,{"americano":"americano","avocadotoast":"avocado-toast","bananacaramellatte":"banana-caramel-latte","bananaparfait":"banana-parfait","berryhibiscusfizz":"berry-hibiscus-fizz","cafelatte":"cafe-latte","cappuccino":"cappuccino","capresepanini":"caprese-panini","chailatte":"chai-latte","cordonbleupanini":"cordon-bleu-panini","crepesuzette":"crepe-suzette","croquemadame":"croque-madame","espresso":"espresso","frenchhottea":"french-hot-tea","freshorangejuice":"fresh-orange-juice","hamcheesecroquemonsieur":"ham-cheese-croque-monsieur","hotchocolate":"hot-chocolate","housesalad":"house-salad","icedmatchalemonade":"iced-matcha-lemonade","lacomplete":"la-complete","lycheerosesparkler":"lychee-rose-sparkler","macchiato":"macchiato","mangomatcha":"mango-matcha","mangoparfait":"mango-parfait","mixedberryparfait":"mixed-berry-parfait","mocha":"mocha","nicoisesalad":"nicoise-salad","nutellastrawberrycrepe":"nutella-strawberry-crepe","passionmangocooler":"passion-mango-cooler","peachmatcha":"peach-matcha","quiche":"quiche","salmoncroquemonsieur":"salmon-croque-monsieur","salmontoast":"salmon-toast","saltedcaramellatte":"salted-caramel-latte","spanishcreamlatte":"spanish-cream-latte","strawberrymatcha":"strawberry-matcha","tarolatte":"taro-latte","taromatcha":"taro-matcha","tomatoavocadotoast":"tomato-avocado-toast","tomatosoup":"tomato-soup","turkeybaconpanini":"turkey-bacon-panini","vanillalatte":"vanilla-latte","watermelonmintcooler":"watermelon-mint-cooler","yuzucitrusspritz":"yuzu-citrus-spritz","thecolettesuzzette":"crepe-suzette","nutella":"nutella-strawberry-crepe","grandecomplete":"la-complete","fraiseconfiture":"nutella-strawberry-crepe","chocolat":"nutella-strawberry-crepe","citronetmiel":"crepe-suzette","beurresucre":"crepe-suzette","cabecouetmiel":"la-complete","lamarguerite":"la-complete","saumon":"salmon-croque-monsieur","jamboncomte":"la-complete","hamcheesebaguette":"ham-cheese-croque-monsieur"});
+Object.assign(PHOTO,{
+  "peachfruit":"campaigns/fruit-icons/peach-fruit",
+  "raspberryfruit":"campaigns/fruit-icons/raspberry-fruit",
+  "mangofruit":"campaigns/fruit-icons/mango-fruit",
+  "pinklemonade":"campaigns/fruit-icons/pink-lemonade",
+  "dubailabubu":"campaigns/fruit-icons/dubai-labubu",
+  "dubaiteddybear":"campaigns/fruit-icons/dubai-teddy-bear"
+});
 function photoFor(name){ return PHOTO[norm(name)] || null; }
 /* upgrade the local fallback items to real photos where we have one */
 MENU.forEach(m=>{ const p=photoFor(m.name); if(p) m.img=p; });
@@ -529,7 +548,13 @@ function renderPopular(){
   for(const p of POPULAR){const m=MENU.find(x=>norm(x.name)===norm(p.name));if(m&&!seen.has(m.id)){seen.add(m.id);cards.push(card(m));}if(cards.length>=8)break;}
   host.innerHTML=cards.length?`<div class="catname">★ Most popular</div><div class="grid">${cards.join('')}</div>`:'';
 }
-loadClover().then(loadPastries).then(loadPopular);
+async function applyProductDeepLink(){
+  const name=(new URLSearchParams(location.search).get('product')||'').trim();
+  if(!name)return;
+  const item=MENU.find(m=>norm(m.name)===norm(name));
+  if(item)showItem(item.id);
+}
+loadClover().then(loadPastries).then(loadPopular).then(applyProductDeepLink);
 
 /* ---------- item detail ---------- */
 function showItem(id){
@@ -798,7 +823,7 @@ async function placeOrder(source){
       const promoCode=(val('ck-promo')||'').trim();
       const deliveryFeeCents=orderType==='DELIVERY'?Math.round(DELIVERY_FEE*100):0;
       const r=await fetch(CONFIG.backendBaseURL+'/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({lines,source:source||'NO_TOKEN',amountCents,customerName:name,note,orderType,deliveryFeeCents,promoCode,email:(val('ck-email')||'').trim(),phone:(val('ck-phone')||'').trim()})}).then(x=>x.json());
+        body:JSON.stringify({lines,source:source||'NO_TOKEN',amountCents,customerName:name,note,orderType,deliveryFeeCents,promoCode,email:(val('ck-email')||'').trim(),phone:(val('ck-phone')||'').trim(),attribution:CAMPAIGN_ATTRIBUTION})}).then(x=>x.json());
       if(!r||!r.ok){throw new Error((r&&r.error)||'checkout failed');}
       if(promoCode && !r.bogoApplied && r.bogoReason){ flashErr2(r.bogoReason); }
       return confirmOrder(r.orderId||genNum(), r.printed);
