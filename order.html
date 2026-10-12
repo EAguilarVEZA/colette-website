@@ -282,6 +282,17 @@ const CONFIG = {
   taxRate: 0.08,
 };
 const PAYMENTS_LIVE = !!CONFIG.cloverPublicKey;
+const ATTRIBUTION_KEYS={utm_campaign:'campaign',utm_source:'source',utm_medium:'medium',utm_content:'content',utm_term:'term',gclid:'gclid',fbclid:'fbclid'};
+function readCampaignAttribution(){
+  const p=new URLSearchParams(location.search),current={};
+  Object.entries(ATTRIBUTION_KEYS).forEach(([query,key])=>{const v=(p.get(query)||'').trim();if(v)current[key]=v.slice(0,160);});
+  current.landingPath=(p.get('landing_path')||document.referrer||location.pathname).slice(0,120);
+  let saved={};try{saved=JSON.parse(sessionStorage.getItem('colette_campaign_attribution')||'{}')||{};}catch(e){}
+  const merged={...saved,...current};
+  try{sessionStorage.setItem('colette_campaign_attribution',JSON.stringify(merged));}catch(e){}
+  return merged;
+}
+const CAMPAIGN_ATTRIBUTION=readCampaignAttribution();
 
 /* =========================================================
    MENU — clear descriptions, ingredients, allergens, diet tags.
@@ -529,7 +540,13 @@ function renderPopular(){
   for(const p of POPULAR){const m=MENU.find(x=>norm(x.name)===norm(p.name));if(m&&!seen.has(m.id)){seen.add(m.id);cards.push(card(m));}if(cards.length>=8)break;}
   host.innerHTML=cards.length?`<div class="catname">★ Most popular</div><div class="grid">${cards.join('')}</div>`:'';
 }
-loadClover().then(loadPastries).then(loadPopular);
+async function applyProductDeepLink(){
+  const name=(new URLSearchParams(location.search).get('product')||'').trim();
+  if(!name)return;
+  const item=MENU.find(m=>norm(m.name)===norm(name));
+  if(item)showItem(item.id);
+}
+loadClover().then(loadPastries).then(loadPopular).then(applyProductDeepLink);
 
 /* ---------- item detail ---------- */
 function showItem(id){
@@ -798,7 +815,7 @@ async function placeOrder(source){
       const promoCode=(val('ck-promo')||'').trim();
       const deliveryFeeCents=orderType==='DELIVERY'?Math.round(DELIVERY_FEE*100):0;
       const r=await fetch(CONFIG.backendBaseURL+'/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({lines,source:source||'NO_TOKEN',amountCents,customerName:name,note,orderType,deliveryFeeCents,promoCode,email:(val('ck-email')||'').trim(),phone:(val('ck-phone')||'').trim()})}).then(x=>x.json());
+        body:JSON.stringify({lines,source:source||'NO_TOKEN',amountCents,customerName:name,note,orderType,deliveryFeeCents,promoCode,email:(val('ck-email')||'').trim(),phone:(val('ck-phone')||'').trim(),attribution:CAMPAIGN_ATTRIBUTION})}).then(x=>x.json());
       if(!r||!r.ok){throw new Error((r&&r.error)||'checkout failed');}
       if(promoCode && !r.bogoApplied && r.bogoReason){ flashErr2(r.bogoReason); }
       return confirmOrder(r.orderId||genNum(), r.printed);
